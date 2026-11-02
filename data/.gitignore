@@ -1,0 +1,4 @@
+# Downloaded hackathon data stays out of git
+*
+!.gitignore
+!README.md
