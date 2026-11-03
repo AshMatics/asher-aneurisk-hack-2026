@@ -1,8 +1,8 @@
-# The hunt: rules and scoring
+# The spot-the-flaw 'hunt': rules and scoring
 
 ## The setup
 
-- **Six dev hospitals**, released Friday night. Each is a folder of the same files (see [data-card.md](data-card.md)).
+- **Six dev hospitals**, released Friday night and the data are in folders with similar structure (see [data-card.md](data-card.md)).
 - Each hospital hides **one or two planted problems** ("Waldos"). Some are about who the patients are, some about how they were scanned, some about how they were labeled, some about how the data was assembled.
 - **At least one hospital is clean.** Saying so, with evidence, is a correct answer.
 - **Two tutorial answer keys** are released Friday night so you can calibrate your tool.

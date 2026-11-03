@@ -6,15 +6,13 @@ Sponsor problem for the 2026 Nucleate hackathon, presented by **Asher Informatic
 
 ## The problem in one paragraph
 
-Nearly every medical AI model assumes its training and test data are independent and identically distributed (IID). Usually that gets justified with "we shuffled it." In practice, many scans come from the same patient, hospitals use different scanners and protocols, and readers measure the same finding differently. Left unmeasured, these problems produce impressive accuracy that fails quietly on the patients, sites and subgroups that matter most. Tools like Cleanlab catch label errors and duplicates. Nothing open and practical answers the bigger questions: can this dataset support the claims made about it, how much real evidence is in a pile of correlated scans, and does the training data resemble the patients a model will serve?
+Nearly every medical AI model assumes its training and test data are independent and identically distributed (IID). Usually that gets justified with "we shuffled it." In practice, many scans come from the same patient, hospitals use different scanners and protocols, and readers measure the same finding differently. Left unmeasured and mitigated, these problems produce impressive accuracy on test data sets but cause an AI system to perform very differently on data in a particular clinic. And often the performance is worse in sites and patient subgroups that can lead to further marginilization or biased care. Tools like Cleanlab catch label errors and duplicates in data cohorts. But there are few, if any, integrated tools that help answer the bigger questions: can this dataset support the claims made about it, how and in what ways does a training cohort violate assumption, and does the training data resemble the patients a model will serve?
 
 ## The weekend
 
-**The hook.** One abdominal aortic aneurysm (AAA) model, three scores: random split, patient-level split, hospital-level split. Which number would the paper report?
+**The hunt.** You are provided six virtual hospitals with real abdominal CT study data constructed to replicate the nature and type of data seen 'in the wild'. Five of the hosptial's dataset hides at least one flaw that would affect an AI model trained with it. One hosptial has "clean" data cohort (or at least inline with our best assumptions of training data). Find these flaws with your solution, name what kind of problem each is, and be able to explain these flaws such that a user (like a vascular surgeon) would understand its importance when using an AI trained, or tested, with those data. You will get access to three additional hospital datasets Sunday morning. See [docs/hunt-rules.md](docs/hunt-rules.md).
 
-**The hunt.** You get six virtual hospitals built from real abdominal CT. Each hides at least one planted problem. One is clean. Find them, name what kind of problem each is, and explain it so a vascular surgeon would act on it. Three more hospitals arrive Sunday morning with no answers attached. See [docs/hunt-rules.md](docs/hunt-rules.md).
-
-**The customers.** Pick one and build for them. They are in the room all weekend. See [docs/personas.md](docs/personas.md).
+**The customers.** Pick one customer type and orient your solution to their persona needs. These customer types will be available to interact with throughout the weekend. See [docs/personas.md](docs/personas.md).
 
 | Customer | Their question |
 | --- | --- |
@@ -22,11 +20,11 @@ Nearly every medical AI model assumes its training and test data are independent
 | Hospital AI committee | "Will this AAA model work on our patients, and what should we watch after go-live?" |
 | Data network | "I have six hospitals and can't move their data. Can I audit them anyway?" |
 
-**The form is yours.** A library, a report generator, an agent that interrogates a dataset, a visualization, a deployment-match tool, or something we haven't thought of.
+**You decide the form and function of the solution.** It could be purely and SDK/library, a report generator, an agent that interrogates a dataset, a visualization, a deployment-match tool, or holographic projector.
 
 ## The data (preview)
 
-Abdominal CT drawn from public datasets, resampled into virtual hospitals with heterogeneity we defined in advance.
+Abdominal CT drawn from public datasets, resampled into virtual hospitals with heterogeneity and structure we established for this exercise.
 
 - **Fast lane (default):** per-case tables, image embeddings, baseline model predictions. Under five minutes from download to first result.
 - **Deep lane (opt-in):** full CT volumes (NIfTI), a small DICOM sample with real headers, and an imaging 101 notebook. Some problems are only visible in the pixels.
