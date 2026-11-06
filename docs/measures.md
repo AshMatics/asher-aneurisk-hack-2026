@@ -1,6 +1,22 @@
 # Measuring non-IIDness: a reference
 
-A starting map of published and standard measures, what each one can see, and what it misses. The gaps are where your toolkit can contribute.
+A starting map of published and standard measures, what each one can see, and what it misses. The gaps are where your toolkit can contribute. For the theory behind them, see [background.md](background.md).
+
+## Start from the question, not the score
+
+A useful audit asks several questions and answers each one separately. One universal "IID score" hides which assumption broke.
+
+| Question | Useful methods |
+| --- | --- |
+| Do training and test sets share patients or related observations? | Patient and study identifiers, duplicate and near-duplicate checks, patient-grouped splitting |
+| Do known attributes differ across sites? | Distribution plots, standardized differences, categorical proportion comparisons, KS or chi-square tests |
+| Do image representations differ? | Maximum mean discrepancy (MMD), Wasserstein distance, held-out classifiers trained to tell source from target |
+| Are the differences distinguishable from sampling noise? | Permutation tests, multiple-testing control, uncertainty estimates |
+| Do the differences affect the model? | Patient-, site- and time-held-out evaluation; subgroup performance and calibration |
+
+Patient-aware splitting addresses leakage. Two-sample tests and domain classifiers address distributional differences. They are complementary checks, not substitutes for each other.
+
+Failing to detect a difference does not establish IID. The test may lack power, or it may look at a representation that misses the difference that matters.
 
 ## Published methods
 
@@ -38,7 +54,7 @@ Estimate with calibrated, held-out classifiers. Variational MI bounds cap out ne
 
 ## Clustering and effective sample size
 
-For clustered data, the design-effect approximation:
+For clustered data, the design-effect approximation (worked example in [background.md](background.md), section 2):
 
 ```
 n_eff = n / (1 + (k - 1) * rho)

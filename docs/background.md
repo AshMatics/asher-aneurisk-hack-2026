@@ -246,6 +246,7 @@ Conformal guarantees require **exchangeability** between calibration and deploym
 - Quantifying non-IIDness is acknowledged as under-studied ([survey](https://arxiv.org/html/2411.12377v2)), and existing approaches are siloed without a unified benchmark ([heterogeneity benchmark](https://arxiv.org/html/2410.07286v2)).
 - Existing measures: EMD over labels ([Zhao et al.](https://www.alphaxiv.org/abs/1806.00582)), Hellinger distance ([assessment study](https://arxiv.org/html/2503.17070v2)), heterogeneity indices ([AAAI 2021](https://cdn.aaai.org/ojs/17291/17291-13-20785-1-2-20210518.pdf)), multi-modal divergence frameworks, non-IID degree estimation ([PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC12290147/)), Client2Vec ([ICCV 2025](https://openaccess.thecvf.com/content/ICCV2025/papers/Guo_Client2Vec_Improving_Federated_Learning_by_Distribution_Shifts_Aware_Client_Indexing_ICCV_2025_paper.pdf)), and medical segmentation-specific assessment ([PMLR 2024](https://proceedings.mlr.press/v250/alekseenko24a.html)).
 - Common weakness: collapsing several axes into one scalar, or measuring only label skew.
+- What each of these measures sees and misses: [measures.md](measures.md).
 
 ### Cleanlab: what it covers and what it doesn't
 

@@ -25,7 +25,7 @@ The data are not in this repo. They sit in a cloud storage folder (an Asher Info
 | Saturday evening | `practice/keys.zip` | Answer keys for the remaining practice hospitals, with reference measurements on those cohorts. |
 | Sunday morning | `sunday/sunday.zip`, `sunday/images/` | The Sunday test hospitals. No answer 'in the back of the book' for these. |
 
-These folders will apear here on the github throughout the weekend. 
+These folders appear in the storage folder as each part is released, not in this GitHub repo.
 
 ## 3. How to download
 

@@ -31,4 +31,4 @@ The sponsors play the three customers all weekend. They are not the event judges
 
 ## Spirit of the thing
 
-The strongest submissions tend to find something unflattering and report it honestly, explain results so a non-ML reader can act on them, and can be reproduced by someone else quickly.
+See "What strong submissions tend to have in common" in [directions.md](directions.md).
