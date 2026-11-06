@@ -1,18 +1,18 @@
 # IID Is a Lie: Build the Open-Source Audit Toolkit for Medical AI Training Data
 
-Sponsor problem for the 2026 Nucleate hackathon, presented by **Asher Informatics PBC** and **Aneurisk Inc.**
+Sponsor problem for the 2026 Nucleate Pittsbrugh hackathon, presented by **Asher Informatics PBC** and **Aneurisk Inc.**
 
 > **New here?** [docs/README.md](docs/README.md) is the guide to every document: what to read first, reading paths by background and by customer, and which docs matter on which day. For the data, go to [docs/getting-started.md](docs/getting-started.md).
 
-## The problem in one paragraph
+## The problem
 
 Nearly every medical AI model assumes its training and test data are independent and identically distributed (IID). Usually that gets justified with "we shuffled it." In practice, many scans come from the same patient, hospitals use different scanners and protocols, and readers measure the same finding differently. Left unmeasured and unmitigated, these problems produce impressive accuracy on test data sets but cause an AI system to perform very differently on data in a particular clinic. And often the performance is worse in sites and patient subgroups that can lead to further marginalization or biased care. Tools like Cleanlab catch label errors and duplicates in data cohorts. But there are few, if any, integrated tools that help answer the bigger questions: can this dataset support the claims made about it, how and in what ways does a training cohort violate the IID assumption, and does the training data resemble the patients a model will serve?
 
 ## The weekend
 
-**The hunt.** You are given five practice hospitals built from real abdominal CT studies, assembled to look like data seen 'in the wild'. Most of them hide at least one flaw that would affect an AI model trained or tested on them. At least one is clean (or as close to our best assumptions about training data as we could make it). Find these flaws with your solution, name what kind of problem each is, and be able to explain these flaws such that a user (like a vascular surgeon) would understand its importance when using an AI trained, or tested, with those data. You get two more hospitals Sunday morning. See [docs/hunt-rules.md](docs/hunt-rules.md).
+**Where's 'waldo' features .** You are given five practice hospitals built from real abdominal CT studies, assembled to look like data seen 'in the wild'. Most of them hide at least one flaw that would affect an AI model trained or tested on them. At least one is clean (or as close to our best assumptions about training data as we could make it). Find these flaws with your solution, name what kind of problem each is, and be able to explain these flaws such that a user (like a vascular surgeon) would understand its importance when using an AI trained, or tested, with those data. You get two more hospitals Sunday morning. See [docs/hunt-rules.md](docs/hunt-rules.md).
 
-**The customers.** Pick one customer type and orient your solution to their persona needs. These customer types will be available to interact with throughout the weekend. See [docs/personas.md](docs/personas.md).
+**The customers.** Pick one customer type and orient your solution to their persona needs. These customer types will be available to interact with throughout the weekend during scheduled office hours or ad hoc. Our notifications may be off at 3AM though. See [docs/personas.md](docs/personas.md).
 
 | Customer | Their question |
 | --- | --- |
@@ -33,7 +33,7 @@ Schema: [docs/data-card.md](docs/data-card.md).
 
 ## Compute
 
-Each team gets cloud GPU credits, and each participant gets LLM inference and search API credits. Details at kickoff.
+Each team gets cloud GPU credits, and each participant gets LLM inference and search API credits. Details at kickoff and see the Slack channel.
 
 ## Repo layout
 
