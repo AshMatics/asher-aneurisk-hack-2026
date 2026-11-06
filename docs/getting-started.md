@@ -49,7 +49,15 @@ Via Python (Rust or other languages have similar SDKs to/from azure). Not, you s
   from azure.storage.blob import ContainerClient   # pip install azure-storage-blob
   c = ContainerClient.from_container_url("<link>")
   for b in c.list_blobs():
-      print(b.name, b.size)
+      print(b.name, round(b.size / 1e6, 1), "MB")
+
+  # download the practice tables (a few MB)
+  with open("practice.zip", "wb") as f:
+      f.write(c.download_blob("practice/practice.zip").readall())
+
+  # image zips are GBs: stream to disk instead of holding them in memory
+  with open("hospital_a.zip", "wb") as f:
+      c.download_blob("practice/images/hospital_a.zip").readinto(f)
   ```
 
 Unzip into `data/` in your local clone of this repo. This is your copy so Git ignores that folder, so the data cannot be committed by accident.
