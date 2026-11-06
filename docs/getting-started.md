@@ -29,7 +29,7 @@ These folders will apear here on the github throughout the weekend.
 
 ## 3. How to download
 
-**Tables (a few MB): start here.** The tables and embeddings are enough to allow you in your 'storming and forming' stage. They are manageable size-wise and they open on any laptop.
+**Tables (a few MB): start here.** The tables and embeddings are enough to let you get started Friday night during your 'storming and forming' stage. They are manageable size-wise and they open on any laptop.
 
 You can navigate to the data themselves via browser (you shuoldn't need to need your personal or school microsoft account: 
 - **Browser:** insert the file path into the link, right before the `?`. For example, `.../students/practice/practice.zip?se=...` downloads the practice tables.
@@ -43,7 +43,7 @@ And, what you should really be using - even if not an engineering or CS student.
   Put the link in quotes. To skip the images, add `--exclude-path "practice/images"`.
 - **Python:**
 
-Via Python (Rust or other languages have similar SDKs to/from azure). Not, you should have a virtualenv setup, or use google cloab etc.. ensure you have the azure-storage-blob pip installed: azure-storage-blob, you could "roll your own" with requests or urllib if you have a complete, moral objection to microsoft, but it would be a pain. BTW, other useful libraries that could be helpful throughout the weekend:adlfs + fsspec - allows for streaming of parquet from azure containr storage (blobs). Also azcopy is the os, cli tool (brew install etc).
+Via Python (Rust or other languages have similar SDKs to/from azure). You should have a virtualenv setup, or use google cloab etc.. ensure you have the azure-storage-blob pip installed: azure-storage-blob, you could "roll your own" with requests or urllib, if you have a moral objection to microsoft, but it would be a pain. BTW, other useful libraries that could be helpful throughout the weekend:adlfs + fsspec - allows for streaming of parquet from azure containr storage (blobs). Also azcopy is the os, cli tool (brew install etc).
 
   ```python
   from azure.storage.blob import ContainerClient   # pip install azure-storage-blob
