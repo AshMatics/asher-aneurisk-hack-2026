@@ -2,7 +2,7 @@
 
 Sponsor problem for the 2026 Nucleate hackathon, presented by **Asher Informatics PBC** and **Aneurisk Inc.**
 
-> Start with [docs/getting-started.md](docs/getting-started.md): where the documents and data are, and how to download.
+> **New here?** [docs/README.md](docs/README.md) is the guide to every document: what to read first, reading paths by background and by customer, and which docs matter on which day. For the data, go to [docs/getting-started.md](docs/getting-started.md).
 
 ## The problem in one paragraph
 
@@ -38,7 +38,7 @@ Each team gets cloud GPU credits, and each participant gets LLM inference and se
 ## Repo layout
 
 ```
-docs/       problem background, personas, hunt rules, data card, measures reference
+docs/       all documentation; start at docs/README.md
 harness/    federated audit harness: run your audit inside each hospital, return only summaries
 starter/    starter notes
 data/       download instructions (data itself is hosted elsewhere)
@@ -46,10 +46,7 @@ data/       download instructions (data itself is hosted elsewhere)
 
 ## Background reading
 
-- [docs/background.md](docs/background.md): what IID really assumes, effective sample size, a heterogeneity framework, prior work and gaps
-- [docs/technical-reference.md](docs/technical-reference.md): the long, careful version, with the conditions behind each claim and sources
-- [docs/measures.md](docs/measures.md): which method answers which audit question, and what published non-IID measures see and miss
-- [docs/directions.md](docs/directions.md): possible directions, mapped to the three customers
+Start with [docs/background.md](docs/background.md), then [docs/measures.md](docs/measures.md) and [docs/directions.md](docs/directions.md). The full list, with what each document is for, is in [docs/README.md](docs/README.md).
 
 ## Ownership
 

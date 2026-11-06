@@ -4,15 +4,7 @@ One page, yo.  Read me first!!
 
 ## 1. The problem
 
-Everything about the problem statement and why/how pose it lives in this repo:
-
-| Read | For |
-| --- | --- |
-| [README](../README.md) | The problem in one paragraph and how the weekend runs |
-| [personas.md](personas.md) | The three customers. Pick one. |
-| [hunt-rules.md](hunt-rules.md) | The flaw hunt: what is released when, and how to post a find |
-| [data-card.md](data-card.md) | Every file and column you will receive |
-| [background.md](background.md), [technical-reference.md](technical-reference.md), [measures.md](measures.md), [directions.md](directions.md) | Background reading and possible directions |
+Everything about the problem statement and why/how we pose it lives in this repo. The [repo README](../README.md) has the problem in one paragraph; the [documentation guide](README.md) lists every document, what to read first, and reading paths by background and by customer.
 
 ## 2. The data
 
