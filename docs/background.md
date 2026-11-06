@@ -23,7 +23,7 @@ These are logically separate. Examples:
 | Case | Example |
 |---|---|
 | Identical, not independent | Many patches or slices from one patient's CT |
-| Independent, not identical | One study each from many different scanners |
+| Independent, not identical | One study each from a fixed set of scanners, analyzed scanner by scanner |
 | Neither | Typical multi-site clinical data with repeat patients and scanner drift |
 
 **A mixture is not automatically non-IID.** If each new case is drawn by first picking a site at random with fixed probabilities and then drawing a case from that site, the cases are IID from the mixture, even though the sites differ. What matters is how the data were actually collected (random draws or site-by-site blocks), and whether the deployment mix of sites, scanners and patients matches the one you evaluated on.
@@ -36,9 +36,9 @@ The likelihood is usually written as a product:
 L(\theta) = \prod_{i=1}^{n} p(x_i \mid \theta)
 ```
 
-The product form requires independence. The shared p and theta require identical distribution.
+The product form requires the observations to be independent, or independent once you condition on covariates or random effects you have modeled. A shared theta does not require every case to have the same distribution: in a regression, each case's distribution depends on its covariates and the product is still valid. The trouble starts when differences between sources are not modeled.
 
-**Independence violated.** The point estimate can stay consistent if the marginal model is right (quasi-likelihood and composite-likelihood theory), but only in a suitable regime, such as a growing number of independent patients; correct marginals alone do not guarantee it under arbitrary dependence. The usual failure is that the variance is underestimated because correlated observations are counted as independent. Confidence intervals are too narrow and p-values are too small. Standard fixes include sandwich (Huber-White) variance estimators, cluster-robust errors, GEE, and mixed-effects models.
+**Independence violated.** The point estimate can stay consistent if the marginal model is right (quasi-likelihood and composite-likelihood theory), but only in a suitable regime, such as a growing number of independent patients; correct marginals alone do not guarantee it under arbitrary dependence. The usual failure is that the variance is underestimated because correlated observations are counted as independent. Confidence intervals are too narrow and p-values are too small. Standard fixes treat the patient as the unit: cluster-robust (Liang-Zeger) sandwich standard errors, GEE, mixed-effects models, or a patient-level bootstrap. All need enough clusters; with only a handful of hospitals, site-clustered standard errors are not trustworthy.
 
 **Identical distribution violated.** If the differences are captured by modeled covariates, this is just regression and is fine. If the shift is unmodeled, MLE converges to the best fit for the training mixture, weighted by however the sample happened to draw from each source. That bias does not shrink as n grows.
 
@@ -47,7 +47,7 @@ The product form requires independence. The shared p and theta require identical
 Bayes' theorem itself never breaks. The likelihood plugged into it does.
 
 - **Independence violated:** the posterior concentrates too quickly. One repeated signal looks like overwhelming evidence, and credible intervals shrink unjustifiably. The natural fix is a hierarchical model (patient-level and site-level random effects), which makes observations conditionally independent given the latent structure.
-- **Identical distribution violated and unmodeled:** under standard regularity conditions, the posterior concentrates on the parameter that minimizes KL divergence from the true mixture to the model class. That parameter has no clinical meaning, and a reasonable prior will not rescue it.
+- **Identical distribution violated and unmodeled:** under standard regularity conditions, the posterior concentrates on the parameter that minimizes KL divergence from the true mixture to the model class. That parameter describes the training mix of sites. It need not match any one site or the deployment population, and a reasonable prior will not fix that.
 
 ### Which violation is worse?
 
@@ -70,17 +70,17 @@ A neural network is a flexible parametric estimator fit by minimizing empirical 
 
 Two kinds of convergence get conflated:
 
-1. **Optimization convergence.** SGD finds a low-loss region of the empirical risk on the fixed training set. This works whether or not the data are IID with respect to the world. Correlated mini-batches (for example, all patches from one patient) add gradient variance and slow training, which is why patient-aware batching and shuffling matter. They don't prevent convergence.
-2. **Statistical convergence.** The classical guarantee that empirical risk approaches population risk uniformly requires IID samples from the deployment distribution P.
+1. **Optimization convergence.** SGD finds a low-loss region of the empirical risk on the fixed training set. This works whether or not the data are IID with respect to the world. Correlated mini-batches (for example, all patches from one patient) add gradient variance, and data read site by site without shuffling bias each step toward the current block. Shuffling and patient-aware batching address both. Whether training loss goes down depends on the optimizer and the objective, not on whether the data are IID.
+2. **Statistical convergence.** The classical guarantee that empirical risk approaches population risk uniformly needs IID samples and a model class of limited capacity. It is a statement about the population you sampled from, and it covers deployment only if deployment draws from that same population.
 
-- With independence violated, the empirical risk is still unbiased for the same population, but the generalization gap closes much more slowly because the effective sample size is smaller.
-- With unmodeled identical-distribution violations, SGD converges to the minimizer of training risk, not deployment risk:
+- With independence violated, the row-average empirical risk is still unbiased, but for an observation-weighted target in which patients with more scans count more. If the claim is per patient, average within each patient first. Either way, the gap between training and population risk closes more slowly because the effective sample size is smaller.
+- With unmodeled identical-distribution violations, training targets the training risk, and the best model for the training data need not be the best for deployment:
 
 ```math
-\hat{\theta}_{\text{ERM}} \rightarrow \arg\min_\theta R_{\text{train}}(\theta) \neq \arg\min_\theta R_{\text{deploy}}(\theta)
+\arg\min_\theta R_{\text{train}}(\theta) \quad \text{need not equal} \quad \arg\min_\theta R_{\text{deploy}}(\theta)
 ```
 
-No stopping criterion or learning-rate schedule reveals this. The training curve looks the same either way. Only an audit of what the training data represents can show it.
+No stopping criterion or learning-rate schedule reveals this, and training curves and an internal validation split look the same either way. An audit of what the training data represent, or a test on data from the deployment setting, can show it.
 
 ---
 
@@ -105,9 +105,9 @@ For clustered data, the classic design-effect approximation is:
 n_{\text{eff}} = \frac{n}{1 + (k - 1)\rho}
 ```
 
-where n is the total number of observations, k is the cluster size, and rho is the intracluster correlation.
+where n is the total number of observations, k is the cluster size, and rho is the intracluster correlation. This is for a mean, with equal cluster sizes and one common rho.
 
-**Patient-level generalization.** Patches from one volume share anatomy, scanner, protocol, contrast timing, and body habitus. For claims about new patients, the effective sample size is bounded by the number of patients: about 500, not 50,000. That's roughly a 100x shrinkage.
+**Patient-level generalization.** Patches from one volume share anatomy, scanner, protocol, contrast timing, and body habitus. For claims about new patients you have 500 independent units, not 50,000. For a simple mean with 100 patches per patient, n_eff = 50,000 / (1 + 99 rho), which runs from 50,000 at rho = 0 down to 500 at rho = 1: about 4,600 at rho = 0.1 and about 990 at rho = 0.5. Adding patches never reduces the part of the uncertainty that comes from differences between patients. The same logic applies one level up: a claim about new hospitals rests on the handful of hospitals you have, however many patients each contributes.
 
 **Nodule-level task: where the formula stops working.** It is tempting to plug in an average of 1.6 nodules per patient and get a tidy n_eff for the 800 nodules. Don't. The formula assumes clusters of equal size, and here most patients have 0 or 1 nodules while a few have 5 or more. With uneven clusters, use a patient-clustered bootstrap or a model built for the design instead of an average-cluster-size correction.
 
@@ -145,7 +145,7 @@ These AUC ranges are illustrative, not measured, and the ordering is not guarant
 
 ### 3D-specific heterogeneity axes
 
-Slice thickness (1 mm vs 5 mm), reconstruction kernel (soft vs sharp), reconstruction algorithm (filtered back projection vs iterative), contrast timing, and dose all change the image. They correlate with institution and era, and they're available in DICOM headers. That makes them easy, concrete audit targets.
+Slice thickness (1 mm vs 5 mm), reconstruction kernel (soft vs sharp), reconstruction algorithm (filtered back projection vs iterative), contrast timing, and dose all change the image. They correlate with institution and era. Most are in DICOM headers, though contrast phase often has to be inferred from the series description or from HU in the aorta. In the hackathon data, the available ones are columns in `features.parquet` (see the [data card](data-card.md)); reconstruction kernel and algorithm are not provided. That makes them easy, concrete audit targets.
 
 ### Multiple findings per scan
 
@@ -159,8 +159,8 @@ A single scalar "non-IID score" hides more than it shows. Useful audits report s
 
 | Axis | What differs | Example measures |
 |---|---|---|
-| Label prior | P(Y) across partitions | KL, Hellinger, Wasserstein / EMD over label distributions |
-| Covariate / feature | P(X) in a pretrained encoder's embedding space (e.g., DINOv2, RadDINO, BiomedCLIP) | MMD, Fréchet distance, classifier two-sample tests |
+| Label prior | P(Y) across partitions | Hellinger, total variation, KL (smoothed; direction matters). Wasserstein only where labels have an order or distance, such as size class or diameter in mm |
+| Covariate / feature | P(X) in a pretrained encoder's embedding space (here, the provided Merlin CT embeddings) | MMD, Fréchet distance (compares means and covariances only), classifier two-sample tests |
 | Metadata | Scanner, protocol, demographics, era | Chi-square, Wasserstein, standardized differences |
 | Conditional / concept | P(Y given X): same finding labeled differently across sites or readers | Cross-site label models, inter-reader agreement, disagreement on matched cases |
 | Quantity / clustering | Cases per patient, studies per site | Intracluster correlation, design effect, n_eff |
@@ -185,7 +185,7 @@ Autoregressive training sidesteps this by estimating conditional distributions, 
 
 ### Embedding geometry
 
-- Embedding clouds are **anisotropic**. They sit in a narrow cone, and the top principal directions largely reflect token frequency and training dynamics, not meaning ([Mu and Viswanath, "All-but-the-Top"](https://arxiv.org/abs/1702.01417); [Gao et al., representation degeneration](https://arxiv.org/abs/1907.12009); [Ethayarajh 2019](https://arxiv.org/abs/1909.00512)).
+- Many trained embedding spaces are **anisotropic**: vectors crowd into a narrow cone ([Gao et al. 2019](https://arxiv.org/abs/1907.12009); [Ethayarajh 2019](https://arxiv.org/abs/1909.00512)). For static word vectors, the top principal directions track word frequency more than meaning ([Mu, Bhat and Viswanath 2018, "All-but-the-Top"](https://arxiv.org/abs/1702.01417)).
 - This doesn't come from linear algebra alone. Training puts frequency-related variance in the top directions (gradient-count asymmetry, softmax pressure on rare tokens), and PCA faithfully surfaces whatever dominates variance.
 - Meaning lives in local neighborhoods and many mid-spectrum directions, often superposed ([monosemanticity / sparse autoencoder work](https://transformer-circuits.pub/2023/monosemantic-features/index.html)). That's why removing top components or whitening often improves semantic similarity.
 - **Parallel to imaging:** in imaging, the top variance directions are often scanner and site effects; in text, they're often frequency effects. In both cases nuisance variance can swamp what you care about.
@@ -217,7 +217,7 @@ Attention heads don't each produce logits that collapse at the output. Within ev
 ### Where calibration is actually hard
 
 1. **Token probability is not claim probability.** One meaning has many phrasings, and sequence probability depends on length and wording. [Semantic entropy (Farquhar et al., Nature 2024)](https://www.nature.com/articles/s41586-024-07421-0) clusters sampled answers by meaning and measures uncertainty over meanings.
-2. **Post-training can change calibration.** [Larger base models are well calibrated on multiple-choice and true/false questions in the right format (Kadavath et al.)](https://arxiv.org/abs/2207.05221). The GPT-4 technical report found expected calibration error on an MMLU subset rose from 0.007 to 0.074 after RLHF ([summary](https://www.chriswirz.com/reviews/gpt-4-technical-report/index.html)). Neither result is a general law: measure calibration for your model, task and population rather than assuming a direction.
+2. **Post-training can change calibration.** [Larger base models are well calibrated on multiple-choice and true/false questions in the right format (Kadavath et al.)](https://arxiv.org/abs/2207.05221). In the GPT-4 Technical Report, expected calibration error on an MMLU subset was 0.007 for the pre-trained model and 0.074 after post-training, which included RLHF ([OpenAI 2023, Figure 8](https://arxiv.org/abs/2303.08774)). Neither result is a general law: measure calibration for your model, task and population rather than assuming a direction.
 3. **Free text has no fixed outcome space.** You have to decide what is being calibrated: the report, the sentence, or the finding.
 4. **Stated confidence is a separate signal.** Hedge words like "possible" or "cannot exclude" are generated text and may not match internal uncertainty.
 
@@ -245,7 +245,7 @@ Conformal guarantees require **exchangeability** between calibration and deploym
 ### Measuring non-IID in federated learning
 
 - Quantifying non-IIDness is acknowledged as under-studied ([survey](https://arxiv.org/html/2411.12377v2)), and existing approaches are siloed without a unified benchmark ([heterogeneity benchmark](https://arxiv.org/html/2410.07286v2)).
-- Existing measures: EMD over labels ([Zhao et al.](https://www.alphaxiv.org/abs/1806.00582)), Hellinger distance ([assessment study](https://arxiv.org/html/2503.17070v2)), heterogeneity indices ([AAAI 2021](https://cdn.aaai.org/ojs/17291/17291-13-20785-1-2-20210518.pdf)), multi-modal divergence frameworks, non-IID degree estimation ([PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC12290147/)), Client2Vec ([ICCV 2025](https://openaccess.thecvf.com/content/ICCV2025/papers/Guo_Client2Vec_Improving_Federated_Learning_by_Distribution_Shifts_Aware_Client_Indexing_ICCV_2025_paper.pdf)), and medical segmentation-specific assessment ([PMLR 2024](https://proceedings.mlr.press/v250/alekseenko24a.html)).
+- Existing measures: EMD over labels ([Zhao et al. 2018](https://arxiv.org/abs/1806.00582)), Hellinger distance ([assessment study](https://arxiv.org/html/2503.17070v2)), heterogeneity indices ([AAAI 2021](https://cdn.aaai.org/ojs/17291/17291-13-20785-1-2-20210518.pdf)), multi-modal divergence frameworks, non-IID degree estimation ([PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC12290147/)), Client2Vec ([ICCV 2025](https://openaccess.thecvf.com/content/ICCV2025/papers/Guo_Client2Vec_Improving_Federated_Learning_by_Distribution_Shifts_Aware_Client_Indexing_ICCV_2025_paper.pdf)), and medical segmentation-specific assessment ([PMLR 2024](https://proceedings.mlr.press/v250/alekseenko24a.html)).
 - Common weakness: collapsing several axes into one scalar, or measuring only label skew.
 - What each of these measures sees and misses: [measures.md](measures.md).
 
@@ -258,7 +258,7 @@ Conformal guarantees require **exchangeability** between calibration and deploym
 - Underperforming groups: clusters in feature space where a model does poorly, a useful partial check for hidden stratification. It also accepts your own `cluster_ids`, so you can pass sites or scanners as the groups
 - Annotator quality and active learning
 
-**Its non-IID test is ordering-based.** It builds a k-NN graph on features, then compares index gaps between feature neighbors and random pairs with a permutation test ([Cleanlab blog](https://cleanlab.ai/blog/learn/non-iid-detection/); [Snorrason and Mueller](https://huggingface.co/papers/2305.15696)). The documentation says not to shuffle first, because shuffling destroys the signal the test relies on; it also notes that shuffling doesn't fix the underlying problem ([issue type guide](https://docs.cleanlab.ai/stable/cleanlab/datalab/guide/issue_type_description.html)).
+**Its non-IID test is ordering-based.** It builds a k-NN graph on features, then compares index gaps between feature neighbors and random pairs with a permutation test ([Cleanlab blog](https://cleanlab.ai/blog/learn/non-iid-detection/); [Cummings, Snorrason and Mueller 2023](https://arxiv.org/abs/2305.15696)). The documentation says not to shuffle first, because shuffling destroys the signal the test relies on; it also notes that shuffling doesn't fix the underlying problem ([issue type guide](https://docs.cleanlab.ai/stable/cleanlab/datalab/guide/issue_type_description.html)).
 
 **Gaps relative to this problem:**
 
@@ -298,7 +298,7 @@ Non-IID measurement and federated learning
 
 - Non-IID data in FL survey: https://arxiv.org/html/2411.12377v2
 - Benchmarking data heterogeneity evaluation: https://arxiv.org/html/2410.07286v2
-- Zhao et al., FL with non-IID data: https://www.alphaxiv.org/abs/1806.00582
+- Zhao et al., FL with non-IID data (2018): https://arxiv.org/abs/1806.00582
 - Thorough assessment of non-IID impact: https://arxiv.org/html/2503.17070v2
 - Curse or Redemption (AAAI 2021): https://cdn.aaai.org/ojs/17291/17291-13-20785-1-2-20210518.pdf
 - Non-IID degree estimation: https://pmc.ncbi.nlm.nih.gov/articles/PMC12290147/
@@ -310,18 +310,18 @@ Cleanlab
 - Repository: https://github.com/cleanlab/cleanlab
 - Documentation: https://docs.cleanlab.ai/stable/index.html
 - Non-IID detection blog: https://cleanlab.ai/blog/learn/non-iid-detection/
-- Snorrason and Mueller: https://huggingface.co/papers/2305.15696
+- Cummings, Snorrason and Mueller (2023): https://arxiv.org/abs/2305.15696
 - Issue type guide: https://docs.cleanlab.ai/stable/cleanlab/datalab/guide/issue_type_description.html
 
 Embeddings and LLM uncertainty
 
-- Mu and Viswanath, All-but-the-Top: https://arxiv.org/abs/1702.01417
+- Mu, Bhat and Viswanath, All-but-the-Top (ICLR 2018): https://arxiv.org/abs/1702.01417
 - Gao et al., Representation degeneration: https://arxiv.org/abs/1907.12009
 - Ethayarajh, Contextual representations: https://arxiv.org/abs/1909.00512
 - Towards Monosemanticity: https://transformer-circuits.pub/2023/monosemantic-features/index.html
 - Farquhar et al., Semantic entropy: https://www.nature.com/articles/s41586-024-07421-0
 - Kadavath et al., Language Models (Mostly) Know What They Know: https://arxiv.org/abs/2207.05221
-- GPT-4 technical report summary: https://www.chriswirz.com/reviews/gpt-4-technical-report/index.html
+- OpenAI, GPT-4 Technical Report (2023), Figure 8: https://arxiv.org/abs/2303.08774
 - Quach et al., Conformal language modeling: https://arxiv.org/abs/2306.10193
 - Mohri and Hashimoto, Conformal factuality: https://raw.githubusercontent.com/mlresearch/v235/main/assets/mohri24a/mohri24a.pdf
 

@@ -19,10 +19,10 @@ Teams choose their own direction. These are examples to spark ideas, not tracks.
 - **Split and evaluation harness:** generate patient-, site-, scanner-, and time-based splits from one dataset and report clustered-bootstrap CIs, patient-level metrics, and finding-level metrics side by side.
 - **Multi-axis heterogeneity report:** a one-page audit of label prior, embedding, metadata, and conditional shift across partitions, readable by a clinician.
 - **Effective-sample-size estimator:** estimate intracluster correlation in embedding space and report what a dataset can realistically support.
-- **Acquisition-parameter audit:** relate model performance to slice thickness, kernel, and scanner, using DICOM headers.
+- **Acquisition-parameter audit:** relate model performance to slice thickness, contrast phase and scanner, using the acquisition columns in the data card.
 - **VLM corpus audit:** duplication, temporal fingerprinting, concept coverage, and embedding-cloud coverage of a target clinical corpus.
 - **Report-generation reliability:** hallucination and prompt-induced bias in a CXR or CT report model, stratified by site or acquisition.
-- **Calibration under shift:** show a claim-level conformal guarantee holding at one site and failing at another, and propose a detector.
+- **Calibration under shift:** test whether a conformal guarantee calibrated at one site still holds at another, and propose a detector for when it does not.
 - **Federated cohort audit:** test whether heterogeneity measures predict FedAvg vs FedProx vs FedPer outcomes.
 - **Provenance and CDM extension:** represent audit results and AI findings in OMOP MI-CDM.
 - **Regulatory memo:** what a data characterization section and post-market shift-monitoring plan should contain.
