@@ -2,7 +2,7 @@
 
 Sponsor problem for the 2026 Nucleate hackathon, presented by **Asher Informatics PBC** and **Aneurisk Inc.**
 
-> Status: under construction. Data, starter kit and harness land before the event. Watch this repo.
+> Start with [docs/getting-started.md](docs/getting-started.md): where the documents and data are, and how to download.
 
 ## The problem in one paragraph
 
@@ -10,7 +10,7 @@ Nearly every medical AI model assumes its training and test data are independent
 
 ## The weekend
 
-**The hunt.** You are provided six virtual hospitals with real abdominal CT study data constructed to replicate the nature and type of data seen 'in the wild'. Five of the hosptial's dataset hides at least one flaw that would affect an AI model trained with it. One hosptial has "clean" data cohort (or at least inline with our best assumptions of training data). Find these flaws with your solution, name what kind of problem each is, and be able to explain these flaws such that a user (like a vascular surgeon) would understand its importance when using an AI trained, or tested, with those data. You will get access to three additional hospital datasets Sunday morning. See [docs/hunt-rules.md](docs/hunt-rules.md).
+**The hunt.** You are given five practice hospitals built from real abdominal CT studies, assembled to look like data seen 'in the wild'. Most of them hide at least one flaw that would affect an AI model trained or tested on them. At least one is clean (or as close to our best assumptions about training data as we could make it). Find these flaws with your solution, name what kind of problem each is, and be able to explain these flaws such that a user (like a vascular surgeon) would understand its importance when using an AI trained, or tested, with those data. You get two more hospitals Sunday morning. See [docs/hunt-rules.md](docs/hunt-rules.md).
 
 **The customers.** Pick one customer type and orient your solution to their persona needs. These customer types will be available to interact with throughout the weekend. See [docs/personas.md](docs/personas.md).
 
@@ -27,20 +27,20 @@ Nearly every medical AI model assumes its training and test data are independent
 Abdominal CT drawn from public datasets, resampled into virtual hospitals with heterogeneity and structure we established for this exercise.
 
 - **Fast lane (default):** per-case tables, image embeddings, baseline model predictions. Under five minutes from download to first result.
-- **Deep lane (opt-in):** full CT volumes (NIfTI), a small DICOM sample with real headers, and an imaging 101 notebook. Some problems are only visible in the pixels.
+- **Deep lane (opt-in):** CT volumes and aorta masks (NIfTI) for the same cases. Some problems are only visible in the pixels.
 
 Schema: [docs/data-card.md](docs/data-card.md).
 
 ## Compute
 
-Organizers are arranging per-team GPU cloud credits and per-participant LLM inference and search API credits. Details will be posted here once confirmed.
+Each team gets cloud GPU credits, and each participant gets LLM inference and search API credits. Details at kickoff.
 
 ## Repo layout
 
 ```
 docs/       problem background, personas, hunt rules, data card, measures reference
 harness/    federated audit harness: run your audit inside each hospital, return only summaries
-starter/    starter notebooks (coming)
+starter/    starter notes
 data/       download instructions (data itself is hosted elsewhere)
 ```
 

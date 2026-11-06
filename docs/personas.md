@@ -1,8 +1,8 @@
 # The three customers
 
-Pick one customer on Friday night and build for that person. Each is played live by a sponsor all weekend: open Q&A Friday, a 10-minute check-in Saturday morning, more on request. They also judge the demos for their persona on Sunday.
+Pick one customer on Friday night and build for that person. Each is played live by a sponsor all weekend: open Q&A Friday, a 10-minute check-in Saturday morning, more on request. They are surrogate customers, not the event judges: use them to test your work before the real judging.
 
-Usefulness to your customer is 40% of judging. If your customer says "I would never read that," believe them.
+If your customer says "I would never read that," believe them.
 
 ---
 
@@ -63,4 +63,4 @@ Usefulness to your customer is 40% of judging. If your customer says "I would ne
 
 **The rule, stated plainly:** row-level data never leaves a node. That includes data sent to an external LLM API. If your agent ships rows to a model provider, the data has left the hospital.
 
-**What good looks like:** passes [the harness](../harness/README.md) and still finds the Waldos.
+**What good looks like:** passes [the harness](../harness/README.md) and still finds the flaws.
