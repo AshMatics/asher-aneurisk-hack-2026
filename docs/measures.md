@@ -65,3 +65,10 @@ with `k` the cluster size and `rho` the intracluster correlation. Confidence int
 ## Always report a null
 
 A distance with no reference is not a finding. Compare against the same measure computed between random halves of a single hospital at the same sample size. Small samples look more different by chance.
+
+- **Negative control:** random partitions of one reference hospital, as above, to show ordinary finite-sample variation.
+- **Positive control:** plant a change yourself, such as a prevalence shift, and check that your measure sees it. A synthetic change will not reproduce every real one, so say so.
+- **Resample the right unit:** if a patient has several scans, permute or bootstrap patients, not rows. Row-wise permutation assumes independence the data may not have.
+- **Sample size:** compare at matched patient counts and show how the distance moves with sample size, rather than one unqualified number.
+- **Many comparisons:** decide your main comparisons in advance, report exploratory screening separately, and control the error rate where you run tests.
+- **Clinical relevance:** a p-value alone does not show harm. Tie a difference to model errors or clinical endpoints. A detected shift does not by itself mean the model got worse, and failing to detect one does not mean the data are IID.

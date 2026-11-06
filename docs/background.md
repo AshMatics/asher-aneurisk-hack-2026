@@ -2,6 +2,8 @@
 
 Technical background notes from the sponsors. The worked example in section 2 uses chest CT for illustration; the hackathon data is abdominal CT, and the same arithmetic applies.
 
+This page is the short version. For the careful statistical treatment, with the conditions each claim depends on and sources for each, see [technical-reference.md](technical-reference.md).
+
 ## 1. Technical background: what "IID" really assumes
 
 ### Two assumptions, not one
@@ -24,6 +26,8 @@ These are logically separate. Examples:
 | Independent, not identical | One study each from many different scanners |
 | Neither | Typical multi-site clinical data with repeat patients and scanner drift |
 
+**A mixture is not automatically non-IID.** If each new case is drawn by first picking a site at random with fixed probabilities and then drawing a case from that site, the cases are IID from the mixture, even though the sites differ. What matters is how the data were actually collected (random draws or site-by-site blocks), and whether the deployment mix of sites, scanners and patients matches the one you evaluated on.
+
 ### What happens to MLE
 
 The likelihood is usually written as a product:
@@ -34,7 +38,7 @@ L(\theta) = \prod_{i=1}^{n} p(x_i \mid \theta)
 
 The product form requires independence. The shared p and theta require identical distribution.
 
-**Independence violated.** The point estimate is often still consistent if the marginal model is right (quasi-likelihood and composite-likelihood theory), but the variance is underestimated because correlated observations are counted as independent. Confidence intervals are too narrow and p-values are too small. Standard fixes include sandwich (Huber-White) variance estimators, cluster-robust errors, GEE, and mixed-effects models.
+**Independence violated.** The point estimate can stay consistent if the marginal model is right (quasi-likelihood and composite-likelihood theory), but only in a suitable regime, such as a growing number of independent patients; correct marginals alone do not guarantee it under arbitrary dependence. The usual failure is that the variance is underestimated because correlated observations are counted as independent. Confidence intervals are too narrow and p-values are too small. Standard fixes include sandwich (Huber-White) variance estimators, cluster-robust errors, GEE, and mixed-effects models.
 
 **Identical distribution violated.** If the differences are captured by modeled covariates, this is just regression and is fine. If the shift is unmodeled, MLE converges to the best fit for the training mixture, weighted by however the sample happened to draw from each source. That bias does not shrink as n grows.
 
@@ -49,12 +53,12 @@ Bayes' theorem itself never breaks. The likelihood plugged into it does.
 
 | | Independence violated | Identical distribution violated |
 |---|---|---|
-| Symptom | Overconfidence; point estimates often okay | Biased estimates of the wrong target |
+| Symptom | Mainly overconfidence; point estimates can survive, under conditions | Biased estimates of the wrong target |
 | Detectability | Easier (repeat patients, temporal and spatial correlation) | Harder; you must hypothesize the axes of shift |
 | Fixes | GEE, mixed models, hierarchical Bayes, cluster bootstrap | Covariate modeling, importance weighting, domain adaptation; all need extra knowledge or data |
-| Does more data help? | Yes, slowly | No |
+| Does more data help? | More independent patients help; more scans per patient help little | Not by itself |
 
-**Summary:** independence violations lie about your precision. Identical-distribution violations lie about what you learned.
+**Summary:** independence violations lie about your precision. Identical-distribution violations lie about what you learned. These are tendencies, not rules: which one matters more depends on the quantity being estimated, the sampling design and the deployment target.
 
 ### What this means for neural networks and SGD
 
@@ -105,13 +109,9 @@ where n is the total number of observations, k is the cluster size, and rho is t
 
 **Patient-level generalization.** Patches from one volume share anatomy, scanner, protocol, contrast timing, and body habitus. For claims about new patients, the effective sample size is bounded by the number of patients: about 500, not 50,000. That's roughly a 100x shrinkage.
 
-**Nodule-level task.** With an average of k = 1.6 nodules per patient and an assumed within-patient nodule correlation of rho = 0.4:
+**Nodule-level task: where the formula stops working.** It is tempting to plug in an average of 1.6 nodules per patient and get a tidy n_eff for the 800 nodules. Don't. The formula assumes clusters of equal size, and here most patients have 0 or 1 nodules while a few have 5 or more. With uneven clusters, use a patient-clustered bootstrap or a model built for the design instead of an average-cluster-size correction.
 
-```math
-n_{\text{eff, nodule}} = \frac{800}{1 + 0.6 \times 0.4} = \frac{800}{1.24} \approx 645
-```
-
-Nodules are more independent than adjacent patches, but 800 still isn't 800.
+Design effects and n_eff are properties of a specific estimator under a specific design, not of a dataset. The same data can have a different n_eff for a mean, a sensitivity and an AUC.
 
 **Historical 2D comparison.** In the older framing of 100 patients x 200 slices with rho = 0.9:
 
@@ -119,11 +119,11 @@ Nodules are more independent than adjacent patches, but 800 still isn't 800.
 n_{\text{eff}} = \frac{20{,}000}{1 + 199 \times 0.9} \approx 111
 ```
 
-That's a 180x shrinkage. Since confidence-interval width scales with one over the square root of n_eff, naive intervals are about 13x too narrow.
+That's a 180x shrinkage. For a simple mean, confidence-interval width scales with one over the square root of n_eff, so naive intervals would be about 13x too narrow. That multiplier does not carry over to AUC or other metrics without a variance argument for that specific estimator; for those, use a patient-clustered bootstrap.
 
 ### Gradient signal
 
-With uniform patch sampling, most patches contain no nodule. Standard practice (hard-negative mining, balanced or lesion-centered sampling, focal loss) is an implicit admission that naive IID sampling optimizes the wrong thing for the clinical task.
+With uniform patch sampling, most patches contain no nodule. Standard practice (hard-negative mining, balanced or lesion-centered sampling, focal loss) reweights training toward what the clinical task needs. That is a task-design choice, not evidence that the data violate IID. Report the sampling weights you used, and evaluate the final system at the clinical unit and operating point you claim.
 
 ### The three-splits demonstration
 
@@ -133,7 +133,7 @@ With uniform patch sampling, most patches contain no nodule. Standard practice (
 | B. Patient-level | Nothing patient-level | Within-site anatomical patterns | ~0.82 to 0.88 |
 | C. Site-level | Nothing site-level | Only what generalizes across sites | ~0.70 to 0.80 |
 
-These AUC ranges are illustrative, not measured; teams could replace them with real numbers. Same data, same architecture, three different stories. Split C is closest to real-world performance. Many papers report something closer to Split A.
+These AUC ranges are illustrative, not measured, and the ordering is not guaranteed: a site holdout can score higher or lower than an internal test, depending on case mix, acquisition, sample size and task difficulty. Each split answers a different question (A: related data allowed in both sets; B: new patients from the same sites; C: unseen sites). The right split is the one that matches the claim. A common failure is reporting something closer to Split A while claiming what only Split C can support.
 
 ### What an honest evaluation reports
 
@@ -188,7 +188,8 @@ Autoregressive training sidesteps this by estimating conditional distributions, 
 - Embedding clouds are **anisotropic**. They sit in a narrow cone, and the top principal directions largely reflect token frequency and training dynamics, not meaning ([Mu and Viswanath, "All-but-the-Top"](https://arxiv.org/abs/1702.01417); [Gao et al., representation degeneration](https://arxiv.org/abs/1907.12009); [Ethayarajh 2019](https://arxiv.org/abs/1909.00512)).
 - This doesn't come from linear algebra alone. Training puts frequency-related variance in the top directions (gradient-count asymmetry, softmax pressure on rare tokens), and PCA faithfully surfaces whatever dominates variance.
 - Meaning lives in local neighborhoods and many mid-spectrum directions, often superposed ([monosemanticity / sparse autoencoder work](https://transformer-circuits.pub/2023/monosemantic-features/index.html)). That's why removing top components or whitening often improves semantic similarity.
-- **Parallel to imaging:** in imaging, the top variance directions are often scanner and site effects; in text, they're frequency effects. In both cases you remove the nuisance variance before measuring what you care about.
+- **Parallel to imaging:** in imaging, the top variance directions are often scanner and site effects; in text, they're often frequency effects. In both cases nuisance variance can swamp what you care about.
+- **Caution:** these results come from specific models and tasks. Do not assume the top components of every medical encoder are nuisance. Check what they track (frequency, length, site, clinical concepts) before removing them, and never remove a direction just because it explains a lot of variance.
 
 ### What can actually be measured about a corpus
 
@@ -216,7 +217,7 @@ Attention heads don't each produce logits that collapse at the output. Within ev
 ### Where calibration is actually hard
 
 1. **Token probability is not claim probability.** One meaning has many phrasings, and sequence probability depends on length and wording. [Semantic entropy (Farquhar et al., Nature 2024)](https://www.nature.com/articles/s41586-024-07421-0) clusters sampled answers by meaning and measures uncertainty over meanings.
-2. **Post-training degrades calibration.** [Larger base models are well calibrated on multiple-choice and true/false questions in the right format (Kadavath et al.)](https://arxiv.org/abs/2207.05221). The GPT-4 technical report found expected calibration error on an MMLU subset rose from 0.007 to 0.074 after RLHF ([summary](https://www.chriswirz.com/reviews/gpt-4-technical-report/index.html)).
+2. **Post-training can change calibration.** [Larger base models are well calibrated on multiple-choice and true/false questions in the right format (Kadavath et al.)](https://arxiv.org/abs/2207.05221). The GPT-4 technical report found expected calibration error on an MMLU subset rose from 0.007 to 0.074 after RLHF ([summary](https://www.chriswirz.com/reviews/gpt-4-technical-report/index.html)). Neither result is a general law: measure calibration for your model, task and population rather than assuming a direction.
 3. **Free text has no fixed outcome space.** You have to decide what is being calibrated: the report, the sentence, or the finding.
 4. **Stated confidence is a separate signal.** Hedge words like "possible" or "cannot exclude" are generated text and may not match internal uncertainty.
 
@@ -227,7 +228,7 @@ Attention heads don't each produce logits that collapse at the output. Within ev
 
 ### The link back to the hackathon
 
-Conformal guarantees require **exchangeability** between calibration and deployment data, a relaxed form of IID. A claim-level calibration done at Site A can lose its guarantee at Site B because of scanner or population differences. Calibration is only as honest as the IID assumption behind the calibration set, which is exactly the gap the audit toolkit is meant to address.
+Conformal guarantees require **exchangeability** between calibration and deployment data, a relaxed form of IID. A claim-level calibration done at Site A can lose its guarantee at Site B because of scanner or population differences. Moving sites breaks the assumption behind the guarantee; it does not prove coverage will get worse, so measure it. The guarantee is also marginal coverage on average, not correctness for every case or every subgroup, and several claims from one patient are not independent calibration cases. Calibration is only as honest as the exchangeability assumption behind the calibration set, which is exactly the gap the audit toolkit is meant to address.
 
 ---
 
@@ -254,7 +255,7 @@ Conformal guarantees require **exchangeability** between calibration and deploym
 
 - Label-error detection (confident learning) across classification, multi-label, segmentation, and detection
 - Outliers and near-duplicates
-- Underperforming groups: clusters in feature space where a model does poorly, a useful partial check for hidden stratification
+- Underperforming groups: clusters in feature space where a model does poorly, a useful partial check for hidden stratification. It also accepts your own `cluster_ids`, so you can pass sites or scanners as the groups
 - Annotator quality and active learning
 
 **Its non-IID test is ordering-based.** It builds a k-NN graph on features, then compares index gaps between feature neighbors and random pairs with a permutation test ([Cleanlab blog](https://cleanlab.ai/blog/learn/non-iid-detection/); [Snorrason and Mueller](https://huggingface.co/papers/2305.15696)). The documentation says not to shuffle first, because shuffling destroys the signal the test relies on; it also notes that shuffling doesn't fix the underlying problem ([issue type guide](https://docs.cleanlab.ai/stable/cleanlab/datalab/guide/issue_type_description.html)).
@@ -269,6 +270,8 @@ Conformal guarantees require **exchangeability** between calibration and deploym
 6. No audit of multimodal pairing
 7. No regulator- or committee-ready report format
 8. No behavioral evaluation of models under shift
+
+These are gaps in Cleanlab's documented open-source Datalab, not claims that no other tool covers them. Also, a non-significant ordering test after shuffling is not proof of IID. Whatever you build, say what it adds beyond the baselines you actually ran.
 
 **Recommended positioning:** treat Cleanlab as a first step. Run it for label errors and duplicates, then build what comes after shuffling.
 

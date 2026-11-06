@@ -12,7 +12,7 @@ Everything about the problem statement and why/how pose it lives in this repo:
 | [personas.md](personas.md) | The three customers. Pick one. |
 | [hunt-rules.md](hunt-rules.md) | The flaw hunt: what is released when, and how to post a find |
 | [data-card.md](data-card.md) | Every file and column you will receive |
-| [background.md](background.md), [measures.md](measures.md), [directions.md](directions.md) | Background reading and possible directions |
+| [background.md](background.md), [technical-reference.md](technical-reference.md), [measures.md](measures.md), [directions.md](directions.md) | Background reading and possible directions |
 
 ## 2. The data
 

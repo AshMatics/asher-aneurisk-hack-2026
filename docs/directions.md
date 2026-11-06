@@ -33,3 +33,18 @@ Teams choose their own direction. These are examples to spark ideas, not tracks.
 - They explain results so a non-ML reader can act on them.
 - They can be reproduced by someone else quickly.
 - The work would genuinely inform the authors of the model or dataset being audited.
+
+A well-supported "no problem found," or an honest account of where a metric fails, is a useful result. A dramatic failure is not required.
+
+## A checklist for what to report
+
+Not every project needs every item, but a reader should be able to find each one or see why it doesn't apply.
+
+- **Claim and target:** the intended task and population, the prediction unit (scan, patient, lesion), the evaluation unit, and the exact quantity estimated.
+- **Data structure:** patient, study and site counts; how many scans per patient; how reliable the patient IDs are; missing data; access limits.
+- **Methods:** split rules, weights, encoder, distance or kernel, tuning, the unit you resampled, and how you handled multiple comparisons.
+- **Results:** effect sizes with uncertainty, what the model actually did, and your positive and negative controls (see [measures.md](measures.md)).
+- **Limits:** axes you could not check, thin subgroups, confounded factors, missing external labels.
+- **Reproducibility:** code, versioned configuration, a data manifest or download steps, and what can legally be shared.
+
+More on each point in [technical-reference.md](technical-reference.md).

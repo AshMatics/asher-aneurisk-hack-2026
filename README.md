@@ -47,6 +47,7 @@ data/       download instructions (data itself is hosted elsewhere)
 ## Background reading
 
 - [docs/background.md](docs/background.md): what IID really assumes, effective sample size, a heterogeneity framework, prior work and gaps
+- [docs/technical-reference.md](docs/technical-reference.md): the long, careful version, with the conditions behind each claim and sources
 - [docs/measures.md](docs/measures.md): which method answers which audit question, and what published non-IID measures see and miss
 - [docs/directions.md](docs/directions.md): possible directions, mapped to the three customers
 
