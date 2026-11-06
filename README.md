@@ -51,3 +51,7 @@ Start with [docs/background.md](docs/background.md), then [docs/measures.md](doc
 ## Ownership
 
 Anything promising that comes out of the weekend, whether a research direction, a paper or a commercial idea, is yours to pursue. The work stays open, and nobody gets exclusive rights to it, sponsors included.
+
+## License
+
+Code and documentation in this repo are under the [MIT License](LICENSE). The hackathon data is not in this repo and keeps its source licenses, listed in `CREDITS.md` inside each download.
