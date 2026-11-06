@@ -27,7 +27,7 @@ Nearly every medical AI model assumes its training and test data are independent
 Abdominal CT drawn from public datasets, resampled into virtual hospitals with heterogeneity and structure we established for this exercise.
 
 - **Fast lane (default):** per-case tables, image embeddings, baseline model predictions. Under five minutes from download to first result.
-- **Deep lane (opt-in):** CT volumes and aorta masks (NIfTI) for the same cases. Some problems are only visible in the pixels.
+- **Deep lane (opt-in):** CT volumes and aorta masks (NIfTI) for the same cases. The images let you check, in the pixels, what the tables suggest.
 
 Schema: [docs/data-card.md](docs/data-card.md).
 
