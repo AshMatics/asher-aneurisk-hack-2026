@@ -31,7 +31,7 @@ These folders appear in the storage folder as each part is released, not in this
 
 **Tables (a few MB): start here.** The tables and embeddings are enough to let you get started Friday night during your 'storming and forming' stage. They are manageable size-wise and they open on any laptop.
 
-You can navigate to the data themselves via browser (you shuoldn't need to need your personal or school microsoft account: 
+You can navigate to the data themselves via browser (you shouldn't need your personal or school Microsoft account):
 - **Browser:** insert the file path into the link, right before the `?`. For example, `.../students/practice/practice.zip?se=...` downloads the practice tables.
 And, what you should really be using - even if not an engineering or CS student.. learn to love the command line. Everyone.
 - **Command line** (all files, including images): install [AzCopy](https://learn.microsoft.com/azure/storage/common/storage-use-azcopy-v10), then run
@@ -43,7 +43,7 @@ And, what you should really be using - even if not an engineering or CS student.
   Put the link in quotes. To skip the images, add `--exclude-path "practice/images"`.
 - **Python:**
 
-Via Python (Rust or other languages have similar SDKs to/from azure). You should have a virtualenv setup, or use google cloab etc.. ensure you have the azure-storage-blob pip installed: azure-storage-blob, you could "roll your own" with requests or urllib, if you have a moral objection to microsoft, but it would be a pain. BTW, other useful libraries that could be helpful throughout the weekend:adlfs + fsspec - allows for streaming of parquet from azure containr storage (blobs). Also azcopy is the os, cli tool (brew install etc).
+Via Python (Rust or other languages have similar SDKs to/from azure). You should have a virtualenv setup, or use Google Colab, etc. ensure you have the azure-storage-blob pip installed: azure-storage-blob, you could "roll your own" with requests or urllib, if you have a moral objection to microsoft, but it would be a pain. BTW, other useful libraries that could be helpful throughout the weekend: adlfs + fsspec - allows for streaming of parquet from Azure container storage (blobs). Also azcopy is the os, cli tool (brew install etc).
 
   ```python
   from azure.storage.blob import ContainerClient   # pip install azure-storage-blob
@@ -62,7 +62,7 @@ Via Python (Rust or other languages have similar SDKs to/from azure). You should
 
 Unzip into `data/` in your local clone of this repo. This is your copy so Git ignores that folder, so the data cannot be committed by accident.
 
-WHEN WE HAVE AN IDEA OF WHICH TEAMS SIGNED UP FOR THIS PROBLEM - (pleasee?), John K WILL make working folders for the teams. You should work in those repos, and then you decide when to commit, push, PR (if at all).
+WHEN WE HAVE AN IDEA OF WHICH TEAMS SIGNED UP FOR THIS PROBLEM - (please?), John K WILL make working folders for the teams. You should work in those repos, and then you decide when to commit, push, PR (if at all).
 
 **Images (large):** pull them to a cloud machine rather than your laptop.
 
@@ -79,8 +79,8 @@ Each team gets cloud GPU credits, and each participant gets LLM and search API c
 
 ## 6. Questions
 
-Ask in the event channel, or find the sponsor.mentors via the Slack and/or in person.
+Ask in the event channel, or find the sponsor mentors via the Slack and/or in person.
 
-THanks !!!
+Thanks!!!
 
 Asher Informatics and Aneurisk
