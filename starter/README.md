@@ -29,3 +29,12 @@ python harness/harness.py --data data/practice --audit harness.example_audit:aud
 See [../harness/README.md](../harness/README.md) for what the harness allows out of a hospital.
 
 For the images, any NIfTI reader works (`nibabel`, `SimpleITK`). CT values are Hounsfield units. Masks share the image grid.
+
+## The hook
+
+`hook.py` trains a small neural network to predict aortic diameter from the embeddings, then shows how a random train/test split can make it look far better than it is once patients have more than one scan. It runs on a laptop in under a minute:
+
+```bash
+pip install pandas pyarrow scikit-learn
+python starter/hook.py
+```
