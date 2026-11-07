@@ -1,0 +1,10 @@
+# Everything the harness, example audit and starter hook need, plus data download.
+# python -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
+numpy
+pandas
+pyarrow
+scikit-learn
+azure-storage-blob
+# Optional: stream parquet straight from the blob without downloading first
+adlfs
+fsspec

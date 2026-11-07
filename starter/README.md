@@ -1,6 +1,6 @@
 # Starter notes
 
-Download the practice tables first (see [../docs/getting-started.md](../docs/getting-started.md)), install the basics (`pip install pandas pyarrow numpy`), then:
+Download the practice tables first (see [../docs/getting-started.md](../docs/getting-started.md)), set up Python (`pip install -r requirements.txt`, see the same page), then:
 
 ```python
 import pandas as pd
@@ -35,6 +35,5 @@ For the images, any NIfTI reader works (`nibabel`, `SimpleITK`). CT values are H
 `hook.py` trains a small neural network to predict aortic diameter from the embeddings, then shows how a random train/test split can make it look far better than it is once patients have more than one scan. It runs on a laptop in under a minute:
 
 ```bash
-pip install pandas pyarrow scikit-learn
 python starter/hook.py
 ```
