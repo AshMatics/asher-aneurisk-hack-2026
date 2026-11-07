@@ -35,7 +35,15 @@ And, what you should really be using - even if not an engineering or CS student.
   Put the link in quotes. To skip the images, add `--exclude-path "practice/images"`.
 - **Python:**
 
-Via Python (Rust or other languages have similar SDKs to/from azure). You should have a virtualenv setup, or use Google Colab, etc. ensure you have the azure-storage-blob pip installed: azure-storage-blob, you could "roll your own" with requests or urllib, if you have a moral objection to microsoft, but it would be a pain. BTW, other useful libraries that could be helpful throughout the weekend: adlfs + fsspec - allows for streaming of parquet from Azure container storage (blobs). Also azcopy is the os, cli tool (brew install etc).
+  First set up a Python environment (3.10 or newer) from the repo root, or use Google Colab:
+
+  ```bash
+  python -m venv .venv
+  source .venv/bin/activate        # Windows: .venv\Scripts\activate
+  pip install -r requirements.txt
+  ```
+
+  That installs everything the harness and starter code need, plus `azure-storage-blob` for downloading. Rust and other languages have similar Azure SDKs. You could roll your own with `requests` if you have a moral objection to Microsoft, but it would be a pain. `adlfs` and `fsspec` (also installed) let you stream parquet straight from the blob without downloading first.
 
   ```python
   from azure.storage.blob import ContainerClient   # pip install azure-storage-blob
