@@ -1,0 +1,4 @@
+*
+!pyproject.toml
+!slicepoint_model/
+!slicepoint_model/*.py

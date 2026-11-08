@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+.pytest_cache/
+*.egg-info/
+data/
+outputs/
+.env
+*.sas
+models/
+.local/
+.dev.vars*
+
+# Preserve frontend source despite the repository-wide Python lib/ rule.
+!integration/base44/src/lib/
+!integration/base44/src/lib/**
