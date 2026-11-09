@@ -140,6 +140,103 @@ def test_default_registry_names_every_notebook_rule() -> None:
 
     subs = {c: {s.id for s in d.sub_factors} for c, d in CHECK_REGISTRY.items()}
     assert "leakage" in subs["repeats"]
-    assert {"domain_auc", "coverage", "hu_shift", "kvp_shift"} <= subs["scanning"]
+    assert {"domain_auc", "coverage", "hu_shift", "kvp_shift", "impossible_values",
+            "embedding_shortcuts"} <= subs["scanning"]
     assert {"no_answers", "specificity", "subgroups"} <= subs["accuracy"]
-    assert subs["patients"] == {"sex", "age_band", "aaa_size_class"}
+    assert subs["patients"] == {"sex", "age_band", "aaa_size_class", "labelled_diameter_shift",
+                                "predicted_diameter_shift"}
+
+
+# --------------------------------------------------------------------------- 0.2.0 additions
+
+
+def _row(**kw: Any) -> dict[str, Any]:
+    base: dict[str, Any] = {"variable": "contrast_phase", "level": "venous", "n": 46, "people": 30, "n_aaa": 7,
+                            "too_few": False, "bias_mm": 0.4, "mae_mm": 1.1, "within_tolerance": 0.9,
+                            "sens": 0.86, "sens_lo": 0.49, "sens_hi": 0.97, "sens_too_few": False}
+    base.update(kw)
+    return base
+
+
+def _strata(*rows: dict[str, Any]) -> dict[str, Any]:
+    return {"min_group_size": 15, "min_aaa_for_sensitivity": 3, "size_tolerance_mm": 3.0, "rows": list(rows)}
+
+
+def test_older_result_without_new_fields_still_validates() -> None:
+    """Additive change: a 0.1.0-contract file written before 0.2.0 has none of the new keys."""
+    res = AssessmentResult.model_validate(_result())
+    assert res.schema_version == "0.1.0"
+    assert res.site_name is None and res.thresholds is None and res.strata is None and res.cases_to_review is None
+
+
+def test_new_fields_round_trip() -> None:
+    from slicepoint_schemas import Strata
+
+    cases = {"size_tolerance_mm": 3.0, "n_scans": 1, "cases": [
+        {"case_id": "abc", "person_group": "p0", "reasons": ["missed_aneurysm", "size_error"], "priority": 1,
+         "aaa": True, "ai_aaa": False, "reference_diameter_mm": 35.0, "ai_diameter_mm": 30.5, "error_mm": -4.5}]}
+    res = AssessmentResult.model_validate(_result(
+        site_name="St. Mary's Hospital", thresholds=HACKATHON_DEFAULT_PROFILE,
+        strata=_strata(_row(), _row(level="arterial", n=10, people=6, n_aaa=0, too_few=True, bias_mm=None, mae_mm=None,
+                                    within_tolerance=None, sens=None, sens_lo=None, sens_hi=None,
+                                    sens_too_few=True)),
+        scans=[{"case_id": "abc", "person_group": "p0"}], cases_to_review=cases,
+    ))
+    assert isinstance(res.strata, Strata) and len(res.strata.rows) == 2
+    assert res.thresholds == HACKATHON_DEFAULT_PROFILE
+    assert AssessmentResult.model_validate_json(res.model_dump_json()) == res
+
+
+def test_thresholds_must_be_the_results_profile() -> None:
+    other = HACKATHON_DEFAULT_PROFILE.model_copy(update={"profile_id": "other-v1"})
+    with pytest.raises(ValidationError, match="thresholds.profile_id"):
+        AssessmentResult.model_validate(_result(thresholds=other.model_dump()))
+
+
+def test_stratum_row_rules() -> None:
+    from slicepoint_schemas import Strata, StratumRow
+
+    StratumRow.model_validate(_row())
+    with pytest.raises(ValidationError, match="too-few group has no metrics"):
+        StratumRow.model_validate(_row(n=10, people=6, n_aaa=2, too_few=True, sens=None, sens_lo=None, sens_hi=None,
+                                       sens_too_few=True))
+    with pytest.raises(ValidationError, match="also suppresses sensitivity"):
+        StratumRow.model_validate(_row(too_few=True))
+    with pytest.raises(ValidationError, match="suppressed sensitivity must be null"):
+        StratumRow.model_validate(_row(sens_too_few=True))
+    with pytest.raises(ValidationError, match="within its interval"):
+        StratumRow.model_validate(_row(sens=0.2))
+    with pytest.raises(ValidationError, match="cannot exceed n"):
+        StratumRow.model_validate(_row(people=50))
+    with pytest.raises(ValidationError, match="too_few disagrees"):
+        Strata.model_validate(_strata(_row(n=10, people=6, n_aaa=3)))
+    with pytest.raises(ValidationError, match="duplicate"):
+        Strata.model_validate(_strata(_row(), _row()))
+
+
+def test_review_case_rules() -> None:
+    from slicepoint_schemas import CasesToReview, ReviewCase, ReviewReason
+
+    ok = {"case_id": "abc", "person_group": "p0", "reasons": ["no_answer"], "priority": 2}
+    assert ReviewCase.model_validate(ok).reasons == (ReviewReason.NO_ANSWER,)
+    with pytest.raises(ValidationError, match="most urgent"):
+        ReviewCase.model_validate({**ok, "priority": 4})
+    with pytest.raises(ValidationError, match="needs both diameters"):
+        ReviewCase.model_validate({**ok, "reasons": ["size_error"], "priority": 3})
+    with pytest.raises(ValidationError, match="ai minus reference"):
+        ReviewCase.model_validate({**ok, "reference_diameter_mm": 30.0, "ai_diameter_mm": 31.0, "error_mm": -1.0})
+    with pytest.raises(ValidationError, match="present exactly when"):
+        ReviewCase.model_validate({**ok, "reference_diameter_mm": 30.0, "error_mm": 1.0})
+    with pytest.raises(ValidationError, match="more cases"):
+        CasesToReview.model_validate({"size_tolerance_mm": 3.0, "n_scans": 0, "cases": [ok]})
+    with pytest.raises(ValidationError, match="not in scans"):
+        AssessmentResult.model_validate(_result(
+            scans=[{"case_id": "zzz", "person_group": "p0"}],
+            cases_to_review={"size_tolerance_mm": 3.0, "n_scans": 1, "cases": [ok]}))
+
+
+def test_versions() -> None:
+    import slicepoint_schemas
+
+    assert slicepoint_schemas.__version__ == "0.2.0"
+    assert slicepoint_schemas.SCHEMA_VERSION == "0.1.0"  # the contract version is unchanged

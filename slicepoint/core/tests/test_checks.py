@@ -55,21 +55,22 @@ def test_every_failing_notebook_rule_names_a_sub_factor(reports: dict[str, objec
         ("hospital_c", "scanning"): {"contrast_phase", "slice_thickness_class", "hu_shift", "domain_auc"},
         ("hospital_c", "accuracy"): {"size_within_tolerance", "subgroups"},
         ("hospital_d", "scanning"): {"contrast_phase", "hu_shift", "kvp_shift"},
-        ("hospital_d", "patients"): {"sex", "age_band", "aaa_size_class"},
+        ("hospital_d", "patients"): {"sex", "age_band", "aaa_size_class", "labelled_diameter_shift",
+                                     "predicted_diameter_shift"},
+        # Milestone 2: e's patients card was "watch" with nothing named; the diameter shifts now name it.
+        ("hospital_e", "patients"): {"labelled_diameter_shift", "predicted_diameter_shift"},
         ("hospital_e", "accuracy"): {"aneurysms_caught", "subgroups", "size_within_tolerance"},
     }
     for (site, check), subs in expected.items():
         rep = reports[site]
         assert isinstance(rep, AssessmentReport)
         assert set(rep.checks[check].failing_sub_factors) == subs, (site, check)
-    # Rules outside the reviewer's list stay evidence-only (open item in README Known gaps).
-    still_unmapped = {"shift_max_aortic_diameter_mm", "shift_pred_max_diameter_mm", "implausible_values",
-                      "embedding_shortcuts"}
+    # Milestone 2 closed the last gap: no failing factor is evidence-only any more.
     for rep in reports.values():
         assert isinstance(rep, AssessmentReport)
         for r in rep.checks.values():
             unmapped = {e.value for e in r.evidence if e.key == "failing_factor_without_sub_factor"}
-            assert unmapped <= still_unmapped, (r.check_id, unmapped)
+            assert unmapped == set(), (r.check_id, unmapped)
 
 
 def test_aaa_size_class_mix_alert(reports: dict[str, object], reference: ReferenceProfile) -> None:
@@ -148,6 +149,7 @@ def test_a_sixth_check_is_one_function_plus_data(reference: ReferenceProfile) ->
 
     again = AssessmentResult.model_validate_json(rep.to_json(), context=reg.validation_context())
     assert again.verdict.results[-1].check_id == "metadata"
+    assert again.verdict.results[-1].score is None  # stripped by default, also for a sixth check
 
 
 def test_failing_check_is_recorded_not_hidden(reference: ReferenceProfile) -> None:
@@ -189,11 +191,35 @@ def test_assessment_json_round_trips(reports: dict[str, object], tmp_path: Path)
 
     rep = reports["hospital_d"]
     assert isinstance(rep, AssessmentReport)
-    text = rep.to_json()
+    text = rep.to_json(show_provisional_scores=True)
     (tmp_path / "result.json").write_text(text)
     again = AssessmentResult.model_validate_json(text)
     assert again == rep.result
+    stripped = AssessmentResult.model_validate_json(rep.to_json())
+    assert stripped == rep.export() and stripped.verdict == rep.export().verdict
     assert again.schema_version == "0.1.0" and again.generator.startswith("slicepoint-core")
     assert {s.step for s in again.steps} >= {"ingest", "embed", "load_reference", "segmentation", "verdict"}
     seg = next(s for s in again.steps if s.step == "segmentation")
     assert seg.state is StepState.SKIPPED
+
+
+def test_provisional_scores_are_stripped_from_json_by_default(reports: dict[str, object]) -> None:
+    import json
+
+    from slicepoint_core import AssessmentReport, strip_provisional_scores
+
+    rep = reports["hospital_b"]
+    assert isinstance(rep, AssessmentReport)
+    assert all(r.score is not None for r in rep.result.verdict.results)  # in memory they still exist
+    data = json.loads(rep.to_json())
+    for r in data["verdict"]["results"]:
+        assert "score" not in r and "score_method" not in r
+        keys = [e["key"] for e in r["evidence"]]
+        assert "score_basis" not in keys and not [k for k in keys if k.startswith(("score_part.", "score."))]
+    assert "provisional-v0" not in rep.to_json()
+    kept = json.loads(rep.to_json(show_provisional_scores=True))
+    assert all(r["score"] is not None and r["score_method"] == "provisional-v0" for r in kept["verdict"]["results"])
+    # the verdict and everything else are untouched
+    stripped = strip_provisional_scores(rep.result)
+    assert stripped.verdict.outcome == rep.result.verdict.outcome
+    assert stripped.model_dump(exclude={"verdict"}) == rep.result.model_dump(exclude={"verdict"})

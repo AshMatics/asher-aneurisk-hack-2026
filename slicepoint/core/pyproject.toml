@@ -11,7 +11,7 @@ requires-python = ">=3.10"
 license = { text = "MIT (pending written grant from the student team; see ADR 0001)" }
 # ADR 0001 section 9: never FastAPI, a database, a GPU or torch.
 dependencies = [
-    "slicepoint-schemas",
+    "slicepoint-schemas>=0.2.0,<0.3",
     "numpy>=1.24",
     "pandas>=2.0",
     "pyarrow>=16",
@@ -21,6 +21,11 @@ dependencies = [
 
 [project.optional-dependencies]
 test = ["pytest>=8", "mypy>=1.10", "pandas-stubs>=2.0"]
+# Runs slicepoint/notebooks/slicepoint_quickstart.ipynb headlessly in the test suite.
+notebook = ["nbclient>=0.10", "nbformat>=5.10", "ipykernel>=6.29"]
+
+[project.scripts]
+slicepoint = "slicepoint_core.cli:entry_point"
 
 [tool.uv.sources]
 slicepoint-schemas = { path = "../schemas", editable = true }
@@ -34,7 +39,10 @@ packages = ["src/slicepoint_core"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"
-markers = ["parity: compares core against the legacy notebook outputs (slow)"]
+markers = [
+    "parity: compares core against the legacy notebook outputs (slow)",
+    "notebook: executes the quickstart notebook headlessly (needs the notebook extra)",
+]
 
 [tool.mypy]
 strict = true
@@ -44,7 +52,7 @@ files = ["src", "tests"]
 
 # Targeted ignores: these packages ship no type information.
 [[tool.mypy.overrides]]
-module = ["sklearn", "sklearn.*", "scipy", "scipy.*", "pyarrow", "pyarrow.*"]
+module = ["sklearn", "sklearn.*", "scipy", "scipy.*", "pyarrow", "pyarrow.*", "nbclient", "nbclient.*", "nbformat", "nbformat.*"]
 ignore_missing_imports = true
 
 [tool.pydantic-mypy]

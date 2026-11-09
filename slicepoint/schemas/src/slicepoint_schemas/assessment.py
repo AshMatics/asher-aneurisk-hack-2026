@@ -12,6 +12,9 @@ the payload the future static viewer renders and the API serves. It bundles:
 * the performance blocks (binary AAA call, diameter agreement, Dice). Their shape is
   the POC's, so they reuse the legacy metric models and their arithmetic validators.
 * a per-scan table for the viewer, and free-text notes (the POC's ``info`` items).
+* the by-group table (:class:`Strata`) and the :class:`CasesToReview` list, computed by
+  the runner so a renderer only displays them, and the resolved
+  :class:`~slicepoint_schemas.thresholds.ThresholdProfile` the run used.
 
 Persistence and audit (who ran it, stored where) are out of scope (ADR section 8).
 """
@@ -41,6 +44,7 @@ from .common import (
 )
 from .embedding import SpaceId
 from .legacy import BinMetricsV0, DiceMetricsV0
+from .thresholds import ThresholdProfile
 from .verdict import Verdict
 
 StepId = Annotated[str, StringConstraints(pattern=r"^[a-z][a-z0-9_]{0,63}$")]
@@ -213,11 +217,164 @@ class ScanSummary(ContractModel):
     ai_aaa: StrictBool | None = None
 
 
+PersonGroup = Annotated[str, StringConstraints(pattern=r"^p\d+$")]
+ColumnName = Annotated[str, StringConstraints(pattern=r"^[a-z][a-z0-9_]{0,63}$")]
+
+
+class StratumRow(ContractModel):
+    """One group (``variable`` = ``level``) of the by-group table.
+
+    ``too_few`` (fewer than ``Strata.min_group_size`` scans) suppresses every metric.
+    ``sens_too_few`` (too few scans, or fewer than ``min_aaa_for_sensitivity``
+    aneurysms) suppresses sensitivity. Both rules count scans, not people. A missing
+    value of the variable is the level ``MISSING``.
+    """
+
+    variable: ColumnName
+    level: str = Field(min_length=1)
+    n: int = Field(ge=0)
+    people: int = Field(ge=0)
+    n_aaa: int = Field(ge=0)
+    too_few: StrictBool
+    bias_mm: float | None = None
+    mae_mm: NonNegativeFloat | None = None
+    within_tolerance: UnitInterval | None = Field(
+        default=None, description="Share of the group's paired cases within Strata.size_tolerance_mm."
+    )
+    sens: UnitInterval | None = None
+    sens_lo: UnitInterval | None = None
+    sens_hi: UnitInterval | None = None
+    sens_too_few: StrictBool
+
+    @model_validator(mode="after")
+    def _consistent(self) -> StratumRow:
+        if self.people > self.n or self.n_aaa > self.n:
+            raise ValueError(f"{self.variable}={self.level}: people and n_aaa cannot exceed n")
+        if self.too_few:
+            if not self.sens_too_few:
+                raise ValueError(f"{self.variable}={self.level}: a too-few group also suppresses sensitivity")
+            if any(v is not None for v in (self.bias_mm, self.mae_mm, self.within_tolerance)):
+                raise ValueError(f"{self.variable}={self.level}: a too-few group has no metrics")
+        if self.sens_too_few and any(v is not None for v in (self.sens, self.sens_lo, self.sens_hi)):
+            raise ValueError(f"{self.variable}={self.level}: suppressed sensitivity must be null")
+        if (self.sens is None) != (self.sens_lo is None) or (self.sens is None) != (self.sens_hi is None):
+            raise ValueError(f"{self.variable}={self.level}: sens, sens_lo and sens_hi are present together")
+        if self.sens is not None:
+            assert self.sens_lo is not None and self.sens_hi is not None
+            if not self.sens_lo - _EPS <= self.sens <= self.sens_hi + _EPS:
+                raise ValueError(f"{self.variable}={self.level}: sens must lie within its interval")
+        return self
+
+
+class Strata(ContractModel):
+    """The by-group (stratified) table, computed by the runner. The suppression rules and
+    the size tolerance it used are recorded with it, so a reader never has to guess them."""
+
+    min_group_size: int = Field(gt=0)
+    min_aaa_for_sensitivity: int = Field(gt=0)
+    size_tolerance_mm: float = Field(gt=0)
+    rows: tuple[StratumRow, ...] = ()
+
+    @model_validator(mode="after")
+    def _unique(self) -> Strata:
+        keys = [(r.variable, r.level) for r in self.rows]
+        if len(keys) != len(set(keys)):
+            raise ValueError("duplicate (variable, level) in strata rows")
+        for r in self.rows:
+            if r.too_few != (r.n < self.min_group_size):
+                raise ValueError(f"{r.variable}={r.level}: too_few disagrees with min_group_size")
+        return self
+
+
+class ReviewReason(str, Enum):
+    """Why a scan is listed for review. Priority: 1 missed or unanswered aneurysm,
+    2 no answer, 3 size error beyond the tolerance, 4 false alarm."""
+
+    MISSED_ANEURYSM = "missed_aneurysm"
+    NO_ANSWER_ON_ANEURYSM = "no_answer_on_aneurysm"
+    NO_ANSWER = "no_answer"
+    SIZE_ERROR = "size_error"
+    FALSE_ALARM = "false_alarm"
+
+    @property
+    def priority(self) -> int:
+        return _REASON_PRIORITY[self]
+
+
+_REASON_PRIORITY = {
+    ReviewReason.MISSED_ANEURYSM: 1,
+    ReviewReason.NO_ANSWER_ON_ANEURYSM: 1,
+    ReviewReason.NO_ANSWER: 2,
+    ReviewReason.SIZE_ERROR: 3,
+    ReviewReason.FALSE_ALARM: 4,
+}
+
+
+class ReviewCase(ContractModel):
+    """A scan worth a human look. ``priority`` is the most urgent of its ``reasons``;
+    ``error_mm`` is ``ai_diameter_mm - reference_diameter_mm`` when both exist."""
+
+    case_id: CaseId
+    person_group: PersonGroup
+    reasons: tuple[ReviewReason, ...] = Field(min_length=1)
+    priority: int = Field(ge=1, le=4)
+    aaa: StrictBool | None = None
+    ai_aaa: StrictBool | None = None
+    reference_diameter_mm: float | None = None
+    ai_diameter_mm: float | None = None
+    error_mm: float | None = None
+
+    @model_validator(mode="after")
+    def _consistent(self) -> ReviewCase:
+        if len(set(self.reasons)) != len(self.reasons):
+            raise ValueError(f"case {self.case_id}: duplicate reasons")
+        if self.priority != min(r.priority for r in self.reasons):
+            raise ValueError(f"case {self.case_id}: priority must be the most urgent reason's")
+        both = self.ai_diameter_mm is not None and self.reference_diameter_mm is not None
+        if both != (self.error_mm is not None):
+            raise ValueError(f"case {self.case_id}: error_mm is present exactly when both diameters are")
+        if both:
+            assert self.ai_diameter_mm is not None and self.reference_diameter_mm is not None
+            assert self.error_mm is not None
+            if abs(self.error_mm - (self.ai_diameter_mm - self.reference_diameter_mm)) > 1e-6:
+                raise ValueError(f"case {self.case_id}: error_mm must be ai minus reference diameter")
+        if ReviewReason.SIZE_ERROR in self.reasons and self.error_mm is None:
+            raise ValueError(f"case {self.case_id}: a size error needs both diameters")
+        return self
+
+
+class CasesToReview(ContractModel):
+    """Every flagged scan, most urgent first (priority, then the larger diameter error,
+    then case id). ``n_scans`` is how many scans were screened."""
+
+    size_tolerance_mm: float = Field(gt=0)
+    n_scans: int = Field(ge=0)
+    cases: tuple[ReviewCase, ...] = ()
+
+    @model_validator(mode="after")
+    def _consistent(self) -> CasesToReview:
+        ids = [c.case_id for c in self.cases]
+        if len(ids) != len(set(ids)):
+            raise ValueError("duplicate case_id in cases_to_review")
+        if len(ids) > self.n_scans:
+            raise ValueError("more cases to review than scans screened")
+        return self
+
+
 class AssessmentResult(VersionedModel):
-    """The full result of one assessment of one site against one reference."""
+    """The full result of one assessment of one site against one reference.
+
+    ``thresholds``, ``strata``, ``cases_to_review`` and ``site_name`` were added after the
+    first 0.1.0 files were written, so they are optional: an older file still validates,
+    and a reader shows "not recorded" rather than assuming defaults.
+    """
 
     result_type: Literal["slicepoint.assessment_result"] = "slicepoint.assessment_result"
     site_id: SiteId
+    site_name: str | None = Field(
+        default=None, min_length=1, max_length=200,
+        description="Human-readable site name for display, e.g. 'St. Mary's Hospital'. Never used as a key.",
+    )
     reference: ReferenceRef
     profile_id: str = Field(min_length=1)
     model_id: str = Field(min_length=1)
@@ -231,9 +388,27 @@ class AssessmentResult(VersionedModel):
     performance: PerformanceSummary
     scans: tuple[ScanSummary, ...] = ()
     notes: tuple[str, ...] = ()
+    thresholds: ThresholdProfile | None = Field(
+        default=None,
+        description="The resolved threshold profile the run used (same profile_id). Readers take group sizes, "
+                    "tolerances, markers and trigger lines from here, never from defaults.",
+    )
+    strata: Strata | None = Field(default=None, description="The by-group table; null when there are no scans.")
+    cases_to_review: CasesToReview | None = Field(
+        default=None, description="Scans flagged for a human look; null when there are no scans."
+    )
 
     @model_validator(mode="after")
     def _consistent(self) -> AssessmentResult:
+        if self.thresholds is not None and self.thresholds.profile_id != self.profile_id:
+            raise ValueError(
+                f"thresholds.profile_id {self.thresholds.profile_id!r} differs from profile_id {self.profile_id!r}"
+            )
+        if self.cases_to_review is not None and self.scans:
+            known = {s.case_id for s in self.scans}
+            unknown = [c.case_id for c in self.cases_to_review.cases if c.case_id not in known]
+            if unknown:
+                raise ValueError(f"cases_to_review lists case ids not in scans: {unknown[:5]}")
         steps = [s.step for s in self.steps]
         if len(steps) != len(set(steps)):
             raise ValueError("duplicate step ids")
@@ -263,6 +438,11 @@ class AssessmentResult(VersionedModel):
 
 __all__ = [
     "AssessmentResult",
+    "CasesToReview",
+    "ReviewCase",
+    "ReviewReason",
+    "Strata",
+    "StratumRow",
     "DiameterAgreement",
     "ToleranceRole",
     "WithinTolerance",

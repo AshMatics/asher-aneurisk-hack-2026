@@ -8,12 +8,19 @@ depends on FastAPI, a database, a GPU or torch (enforced by `tests/test_package.
 Milestone 1 ports `test_your_hospital.ipynb` (with `monitor.py`) and reproduces its
 results on the practice data. See [PARITY.md](PARITY.md).
 
+Milestone 2 adds the tier-0 shells (ADR 0001 §9) over the same code path
+(`ParquetAdapter` -> `ReferenceProfile` -> `Assessment.run()`): the `slicepoint` command
+line, a self-contained HTML report, and the quickstart notebook
+`slicepoint/notebooks/slicepoint_quickstart.ipynb`. The hospital-facing guide is
+[docs/getting-started-hospital.md](../docs/getting-started-hospital.md). A sample report on
+the practice data is [examples/hospital_b_report.html](examples/hospital_b_report.html).
+
 ## Install and test
 
 ```bash
 cd slicepoint/core
-uv venv && uv pip install -e ../schemas -e '.[test]'
-.venv/bin/python -m pytest        # includes the parity suite (needs data/practice)
+uv venv && uv pip install -e ../schemas -e '.[test,notebook]'
+.venv/bin/python -m pytest        # parity, CLI, report and notebook suites (need data/practice)
 .venv/bin/mypy                    # --strict with the pydantic plugin, src + tests
 ```
 
@@ -38,7 +45,7 @@ reference = ReferenceProfile.load("refs/hospital_a")
 
 # Candidate site: site_id is always explicit, never taken from a folder or display name.
 site = ParquetAdapter("hospital_b").load_tabular("data/practice/hospital_b")
-report = Assessment(site, reference, profile).run()
+report = Assessment(site, reference, profile, site_name="Hospital B").run()   # site_name: display only
 
 report.verdict.outcome                         # VerdictOutcome.NO_GO
 report.checks["repeats"].status                # CheckStatus.PROBLEM
@@ -46,10 +53,74 @@ report.checks["repeats"].n_effective           # 32.0 (Kish, 80 scans of 40 peop
 report.checks["repeats"].failing_sub_factors   # ('people', 'leakage')
 report.performance.diameter.within_tolerance   # profile tolerances (2 mm BA, 3 mm size)
 report.performance.aaa_missing_as_wrong.sens   # 0.857...
-open("hospital_b.assessment.json", "w").write(report.to_json())   # versioned AssessmentResult
+report.write_json("hospital_b.assessment.json")  # versioned AssessmentResult, provisional scores left out
+report.to_json(show_provisional_scores=True)     # internal review only: keeps score / score_method
+report.result.strata                           # by-group table (contract model), computed during run()
+report.result.cases_to_review                  # flagged scans, most urgent first
+report.result.thresholds                       # the resolved ThresholdProfile the run used
 
 legacy = to_slicepoint_v0(report, hospital_name="Hospital B")     # POC viewer format
+
+report.write_html("hospital_b_report.html")    # self-contained; provisional scores hidden
+report.summary()                               # {verdict, checks: [{id, status, n, n_effective, ...}], ...}
 ```
+
+## Command line
+
+```bash
+slicepoint reference build --data DIR --site-id ID --out PROFILE_DIR [--profile threshold_profile.json]
+                           # --reference-site-id is accepted as an alias of --site-id here
+slicepoint assess --data DIR --site-id ID [--site-name NAME]
+                  (--reference-profile PROFILE_DIR | --reference-dir DIR --reference-site-id ID)
+                  --out result.json [--html report.html] [--legacy-json poc.json] [--profile threshold_profile.json]
+                  [--on-inconsistency raise|drop_and_note] [--show-provisional-scores] [--json] [--debug]
+slicepoint validate FILE [--type MODEL]     # AssessmentResult, ThresholdProfile, reference.json or a legacy POC file
+slicepoint schema [MODEL] [--list]          # JSON Schema (default AssessmentResult)
+```
+
+| Exit code | Meaning |
+|---|---|
+| 0 | ran, and the verdict is GO (other subcommands: success) |
+| 3 | ran fine, and the verdict is BORDERLINE or NO-GO: needs human review |
+| 1 | usage or input error (argparse errors included; it would otherwise use 2) |
+| 2 | internal failure; `--debug` shows the traceback |
+
+Errors are one line on stderr naming the file and column (`.../features.parquet: missing
+required column 'age_band'`). With `--json`, stdout carries one JSON object: the
+`report.summarize` payload plus `ok`, `exit_code` and `outputs`, or
+`{"ok": false, "exit_code": 1, "error": "..."}`. `slicepoint --help` documents the data
+layout, the JSON shape and the exit codes so that an AI assistant can drive it.
+
+`--reference-site-id` is required with `--reference-dir` (missing: exit 1 with a one-line
+message); the reference site id is never guessed. `result.json` leaves out the provisional
+0-100 scores (`score`, `score_method` and the `score_basis` / `score_part.*` evidence)
+unless `--show-provisional-scores` is given.
+
+## HTML report
+
+`report.render_html(result, *, show_provisional_scores=False, registry=None)` returns one
+HTML document (also `AssessmentReport.to_html` / `write_html`, and `render_iframe` /
+`to_notebook_html` for notebooks). It uses only the standard library, inline CSS and
+inline SVG, and a Content-Security-Policy of `default-src 'none'`: no network request of
+any kind. Sections: verdict and one-sentence rationale; one card per check (status as a
+text label, n and effective n, failing sub-factors, findings, "What this means", "Show
+the numbers"); performance two ways with Wilson intervals, diameter agreement against the
+profile tolerances and Dice against the profile markers; results by group with "Too few"
+suppression; cases to review; notes; methods and limits; provenance with every step's
+state; the disclaimer. It honours `prefers-color-scheme` and prints the verdict and the
+five cards on page one. The renderer computes no statistics: the by-group table
+(`result.strata`), the case list (`result.cases_to_review`) and every threshold it prints
+(`result.thresholds`, the resolved `ThresholdProfile`) come from the result, so a saved
+`result.json` renders the same report. A result written before 0.2.0 lacks them and the
+report says "not recorded" instead of assuming defaults. The title shows `site_name`
+(`--site-name`) or, failing that, the site id made readable (`hospital_b` -> "Hospital B");
+subgroup names in findings read "Contrast phase: arterial (16 cases)", not
+`contrast_phase=arterial (n=16)`.
+
+Provisional scores are hidden by default (ADR open question 2), in the HTML and in
+`result.json` (`AssessmentReport.to_json` / `write_json`, `strip_provisional_scores`).
+`show_provisional_scores=True` (CLI `--show-provisional-scores`) keeps them in the JSON
+and shows them in the report with a "provisional, not validated" banner.
 
 `ParquetAdapter(site_id).load(folder)` returns the contract `CuratedDataset`, as the
 `IngestionAdapter` protocol requires. `Assessment` accepts either view.
@@ -63,9 +134,13 @@ legacy = to_slicepoint_v0(report, hospital_name="Hospital B")     # POC viewer f
 | `reference` | `ReferenceProfile` and its pydantic `ReferenceSummary`: category mixes, deduplicated numeric distributions, label facts, reference performance, kNN coverage state, provenance (dataset fingerprint, builder, profile parameters). It is tied to one `EmbeddingSpace`; `require_space` raises `IncomparableEmbeddingSpacesError` on a mismatch. |
 | `checks` | `CheckRegistry`, `CheckSpec` (descriptor + function + requirements + factor-to-sub-factor map), `CheckContext` (shared lazy analyses), and the five checks in `checks/builtin.py` |
 | `params` | Typed access to a `ThresholdProfile`. Checks read every threshold through it; a missing key raises `MissingThresholdError`. |
-| `assessment` | `Assessment(...).run()`: the sequential local runner. Each step records ok, skipped or failed. Returns an `AssessmentReport` wrapping `slicepoint_schemas.AssessmentResult`. |
+| `assessment` | `Assessment(...).run()`: the sequential local runner. Each step records ok, skipped or failed. Returns an `AssessmentReport` wrapping `slicepoint_schemas.AssessmentResult` (`to_json` / `write_json`, provisional scores stripped by default; `to_html` / `write_html`, `summary`). Also `strip_provisional_scores`. |
+| `strata` | `stratified_table` and `cases_to_review`: build the contract `Strata` and `CasesToReview` models from the per-scan table during `run()` |
 | `ports` | `ServicePort` protocol and service names (segmentation, OpenCPU, FORGE PGM, embedding). Declared only; an absent service makes its step skipped. |
 | `legacy` | `to_slicepoint_v0`: export to the POC `<hospital>_slicepoint.json` (`SlicePointFileV0`) |
+| `report` | `render_html`, `write_html`, `render_iframe`, `summarize`, display helpers (`display_site_name`, `format_n_effective`, `humanize_column`). Display only; no statistics. |
+| `cli` | The `slicepoint` console script (argparse). No analysis logic. |
+| `errors` | `InputError` (a `ValueError` that names the bad file and column) |
 
 ## How a check works
 
@@ -77,10 +152,13 @@ turns these into a `CheckResult`:
 - **status** is the worst severity (`ok` if nothing was raised). Info items become notes.
 - **failing_sub_factors** are the registry sub-factors mapped from the non-ok factors.
   Following reviewer decision 1, the default registry has sub-factors for leakage, domain
-  AUC, coverage, the HU and kVp shifts, no-answers, specificity and subgroups. A non-ok
-  factor with no sub-factor is listed in the evidence as
-  `failing_factor_without_sub_factor`. Today those are the labelled and predicted
-  diameter distribution shifts, impossible values and embedding shortcuts.
+  AUC, coverage, the HU and kVp shifts, no-answers, specificity and subgroups. Milestone 2
+  added the last four (`labelled_diameter_shift` and `predicted_diameter_shift` under
+  patients; `impossible_values` and `embedding_shortcuts` under scanning), so every
+  notebook rule now names a sub-factor. A non-ok factor with no sub-factor would still be
+  listed in the evidence as `failing_factor_without_sub_factor`; none remains. One visible
+  effect: hospital_e's patients card was "watch" with nothing named and now names both
+  diameter shifts.
 - **evidence** has one entry per finding plus its numbers. Optional parts that could not
   run are listed as `not_evaluated` (for example scan content when there are no
   embeddings).
@@ -136,15 +214,13 @@ environment, and the POC's own output for hospital_c differed in the second deci
   suppression rule. This is pending the reviewer's score/ESS decision.
 - **Not ported:** the shape analysis (pykarambola; off by default in the notebook), the
   notebook's third leakage split ("by listed patient_id", which no rule uses), the
-  continuous R² probes (cell 26, never used in a rule), figures, and the HTML report.
+  continuous R² probes (cell 26, never used in a rule), figures, and the notebook's own HTML report (replaced by
+  `slicepoint_core.report`, milestone 2).
 - **Coverage is magnitude-blind.** The notebook's coverage uses cosine kNN in PCA space,
   so scans displaced radially from the reference still count as covered
   (`test_coverage_is_blind_to_magnitude`). It stays as is for parity (reviewer decision
   2). A magnitude or reconstruction-error test is planned with the embedding-service work
   (a VAE-style data-space marker, ADR section 3).
-- **A few factors have no sub-factor:** the labelled and predicted diameter distribution
-  shifts (patients), impossible values and embedding shortcuts (scanning). They appear
-  only in the evidence.
 - **Ingestion is strict by default.** A case missing from one table, or a duplicate case
   id, raises. `on_inconsistency="drop_and_note"` reproduces the notebook instead:
   duplicates keep their first row; cases missing from features, labels or embeddings are
@@ -157,4 +233,11 @@ environment, and the POC's own output for hospital_c differed in the second deci
   rather than mislabel them.
 - **Ports are declarations.** Segmentation, OpenCPU, FORGE PGM and the embedding encoder
   have no client yet; their steps report skipped.
-- No CLI, API, persistence or HTML report in this milestone.
+- No API, persistence or static viewer yet. The CLI, HTML report and notebook are tier 0.
+- **Strata and cases are report-side.** The stratified table and the cases-to-review list
+  are computed when rendering, from `result.scans`; they are not fields of
+  `AssessmentResult`, so the future static viewer would have to recompute them.
+- **Ingestion errors name the file and column.** `ParquetAdapter` checks the column set
+  before validating rows and raises `InputError` (a `ValueError`).
+- **A failing check logs one warning line**; the traceback is logged at DEBUG (the CLI's
+  `--debug`) instead of being printed.

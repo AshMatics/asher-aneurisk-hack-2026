@@ -1,5 +1,49 @@
 {
   "$defs": {
+    "AaaRules": {
+      "additionalProperties": false,
+      "description": "AAA-specific decision rules. Other imaging AI would carry a different block; the\nchecks themselves generalize.",
+      "properties": {
+        "bland_altman_tolerance_mm": {
+          "exclusiveMinimum": 0,
+          "title": "Bland Altman Tolerance Mm",
+          "type": "number"
+        },
+        "decision_line_mm": {
+          "description": "AAA if max diameter >= this.",
+          "exclusiveMinimum": 0,
+          "title": "Decision Line Mm",
+          "type": "number"
+        },
+        "large_aneurysm_line_mm": {
+          "description": "Boundary of the >=55mm class.",
+          "exclusiveMinimum": 0,
+          "title": "Large Aneurysm Line Mm",
+          "type": "number"
+        },
+        "nearby_window_mm": {
+          "description": "'Near the decision line' window (+/-).",
+          "exclusiveMinimum": 0,
+          "title": "Nearby Window Mm",
+          "type": "number"
+        },
+        "size_tolerance_mm": {
+          "description": "Size-within-tolerance cutoff.",
+          "exclusiveMinimum": 0,
+          "title": "Size Tolerance Mm",
+          "type": "number"
+        }
+      },
+      "required": [
+        "decision_line_mm",
+        "large_aneurysm_line_mm",
+        "nearby_window_mm",
+        "size_tolerance_mm",
+        "bland_altman_tolerance_mm"
+      ],
+      "title": "AaaRules",
+      "type": "object"
+    },
     "AaaSizeClass": {
       "description": "AAA size class as recorded by the hospital.\n\nIt follows the hospital's convention, not the diameter: the 30-54mm class has a\nminimum observed diameter of 25.74 mm (hospital e).",
       "enum": [
@@ -178,6 +222,36 @@
         "g_mean"
       ],
       "title": "BinMetricsV0",
+      "type": "object"
+    },
+    "CasesToReview": {
+      "additionalProperties": false,
+      "description": "Every flagged scan, most urgent first (priority, then the larger diameter error,\nthen case id). ``n_scans`` is how many scans were screened.",
+      "properties": {
+        "cases": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ReviewCase"
+          },
+          "title": "Cases",
+          "type": "array"
+        },
+        "n_scans": {
+          "minimum": 0,
+          "title": "N Scans",
+          "type": "integer"
+        },
+        "size_tolerance_mm": {
+          "exclusiveMinimum": 0,
+          "title": "Size Tolerance Mm",
+          "type": "number"
+        }
+      },
+      "required": [
+        "size_tolerance_mm",
+        "n_scans"
+      ],
+      "title": "CasesToReview",
       "type": "object"
     },
     "CheckResult": {
@@ -492,6 +566,30 @@
       "title": "DiameterAgreement",
       "type": "object"
     },
+    "DiceMarkers": {
+      "additionalProperties": false,
+      "description": "UI markers on the Dice chart.",
+      "properties": {
+        "lower": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Lower",
+          "type": "number"
+        },
+        "upper": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Upper",
+          "type": "number"
+        }
+      },
+      "required": [
+        "lower",
+        "upper"
+      ],
+      "title": "DiceMarkers",
+      "type": "object"
+    },
     "DiceMetricsV0": {
       "additionalProperties": false,
       "description": "Per-dataset Dice summary. Key names contain a dot, hence the aliases.",
@@ -643,6 +741,45 @@
       "title": "PerformanceSummary",
       "type": "object"
     },
+    "Provenance": {
+      "additionalProperties": false,
+      "properties": {
+        "author": {
+          "minLength": 1,
+          "title": "Author",
+          "type": "string"
+        },
+        "date": {
+          "format": "date",
+          "title": "Date",
+          "type": "string"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes"
+        },
+        "source": {
+          "minLength": 1,
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source",
+        "author",
+        "date"
+      ],
+      "title": "Provenance",
+      "type": "object"
+    },
     "ReferenceRef": {
       "additionalProperties": false,
       "description": "Which reference profile the site was compared against.",
@@ -697,6 +834,118 @@
       ],
       "title": "ReferenceRef",
       "type": "object"
+    },
+    "ReviewCase": {
+      "additionalProperties": false,
+      "description": "A scan worth a human look. ``priority`` is the most urgent of its ``reasons``;\n``error_mm`` is ``ai_diameter_mm - reference_diameter_mm`` when both exist.",
+      "properties": {
+        "aaa": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Aaa"
+        },
+        "ai_aaa": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ai Aaa"
+        },
+        "ai_diameter_mm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ai Diameter Mm"
+        },
+        "case_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^\\S(?:.*\\S)?$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "error_mm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error Mm"
+        },
+        "person_group": {
+          "pattern": "^p\\d+$",
+          "title": "Person Group",
+          "type": "string"
+        },
+        "priority": {
+          "maximum": 4,
+          "minimum": 1,
+          "title": "Priority",
+          "type": "integer"
+        },
+        "reasons": {
+          "items": {
+            "$ref": "#/$defs/ReviewReason"
+          },
+          "minItems": 1,
+          "title": "Reasons",
+          "type": "array"
+        },
+        "reference_diameter_mm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reference Diameter Mm"
+        }
+      },
+      "required": [
+        "case_id",
+        "person_group",
+        "reasons",
+        "priority"
+      ],
+      "title": "ReviewCase",
+      "type": "object"
+    },
+    "ReviewReason": {
+      "description": "Why a scan is listed for review. Priority: 1 missed or unanswered aneurysm,\n2 no answer, 3 size error beyond the tolerance, 4 false alarm.",
+      "enum": [
+        "missed_aneurysm",
+        "no_answer_on_aneurysm",
+        "no_answer",
+        "size_error",
+        "false_alarm"
+      ],
+      "title": "ReviewReason",
+      "type": "string"
     },
     "ScanSummary": {
       "additionalProperties": false,
@@ -909,6 +1158,279 @@
       "title": "StepState",
       "type": "string"
     },
+    "Strata": {
+      "additionalProperties": false,
+      "description": "The by-group (stratified) table, computed by the runner. The suppression rules and\nthe size tolerance it used are recorded with it, so a reader never has to guess them.",
+      "properties": {
+        "min_aaa_for_sensitivity": {
+          "exclusiveMinimum": 0,
+          "title": "Min Aaa For Sensitivity",
+          "type": "integer"
+        },
+        "min_group_size": {
+          "exclusiveMinimum": 0,
+          "title": "Min Group Size",
+          "type": "integer"
+        },
+        "rows": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/StratumRow"
+          },
+          "title": "Rows",
+          "type": "array"
+        },
+        "size_tolerance_mm": {
+          "exclusiveMinimum": 0,
+          "title": "Size Tolerance Mm",
+          "type": "number"
+        }
+      },
+      "required": [
+        "min_group_size",
+        "min_aaa_for_sensitivity",
+        "size_tolerance_mm"
+      ],
+      "title": "Strata",
+      "type": "object"
+    },
+    "StratumRow": {
+      "additionalProperties": false,
+      "description": "One group (``variable`` = ``level``) of the by-group table.\n\n``too_few`` (fewer than ``Strata.min_group_size`` scans) suppresses every metric.\n``sens_too_few`` (too few scans, or fewer than ``min_aaa_for_sensitivity``\naneurysms) suppresses sensitivity. Both rules count scans, not people. A missing\nvalue of the variable is the level ``MISSING``.",
+      "properties": {
+        "bias_mm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bias Mm"
+        },
+        "level": {
+          "minLength": 1,
+          "title": "Level",
+          "type": "string"
+        },
+        "mae_mm": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mae Mm"
+        },
+        "n": {
+          "minimum": 0,
+          "title": "N",
+          "type": "integer"
+        },
+        "n_aaa": {
+          "minimum": 0,
+          "title": "N Aaa",
+          "type": "integer"
+        },
+        "people": {
+          "minimum": 0,
+          "title": "People",
+          "type": "integer"
+        },
+        "sens": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sens"
+        },
+        "sens_hi": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sens Hi"
+        },
+        "sens_lo": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sens Lo"
+        },
+        "sens_too_few": {
+          "title": "Sens Too Few",
+          "type": "boolean"
+        },
+        "too_few": {
+          "title": "Too Few",
+          "type": "boolean"
+        },
+        "variable": {
+          "pattern": "^[a-z][a-z0-9_]{0,63}$",
+          "title": "Variable",
+          "type": "string"
+        },
+        "within_tolerance": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Share of the group's paired cases within Strata.size_tolerance_mm.",
+          "title": "Within Tolerance"
+        }
+      },
+      "required": [
+        "variable",
+        "level",
+        "n",
+        "people",
+        "n_aaa",
+        "too_few",
+        "sens_too_few"
+      ],
+      "title": "StratumRow",
+      "type": "object"
+    },
+    "ThresholdProfile": {
+      "additionalProperties": false,
+      "description": "All configurable numbers for one model (and optionally one site).\n\n``check_targets`` keys are the checks this profile expects; a verdict treats any of\nthem that did not run as *not evaluated*. ``value_sources`` maps a dotted field path\n(``aaa.decision_line_mm``, ``triggers.No-answer rate``) to a citation.",
+      "properties": {
+        "aaa": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AaaRules"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "check_targets": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "minProperties": 1,
+          "title": "Check Targets",
+          "type": "object"
+        },
+        "dice_markers": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DiceMarkers"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "min_group_size": {
+          "description": "Minimum subgroup n for subgroup flags.",
+          "exclusiveMinimum": 0,
+          "title": "Min Group Size",
+          "type": "integer"
+        },
+        "model_id": {
+          "minLength": 1,
+          "title": "Model Id",
+          "type": "string"
+        },
+        "parameters": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "description": "Named numbers that are not yellow/red lines: similarity cut-offs, multipliers, grid bounds, plausible ranges, seeds. Keys are snake_case, no dots.",
+          "title": "Parameters",
+          "type": "object"
+        },
+        "profile_id": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+          "title": "Profile Id",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "schema_version": {
+          "const": "0.1.0",
+          "default": "0.1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "site_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Site Id"
+        },
+        "triggers": {
+          "additionalProperties": {
+            "$ref": "#/$defs/TriggerThreshold"
+          },
+          "title": "Triggers",
+          "type": "object"
+        },
+        "value_sources": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Value Sources",
+          "type": "object"
+        }
+      },
+      "required": [
+        "profile_id",
+        "model_id",
+        "provenance",
+        "min_group_size",
+        "check_targets"
+      ],
+      "title": "ThresholdProfile",
+      "type": "object"
+    },
     "ToleranceRole": {
       "enum": [
         "bland_altman",
@@ -916,6 +1438,73 @@
       ],
       "title": "ToleranceRole",
       "type": "string"
+    },
+    "TriggerKind": {
+      "description": "Display unit of a trigger value (history.csv ``kind``).",
+      "enum": [
+        "pct",
+        "pp",
+        "sd",
+        "mm",
+        "num2"
+      ],
+      "title": "TriggerKind",
+      "type": "string"
+    },
+    "TriggerThreshold": {
+      "additionalProperties": false,
+      "description": "A yellow/red threshold pair with a direction.\n\nOrdering must agree with ``worse``: for ``high`` red > yellow, for ``low`` red < yellow.\nComparisons are strict by default, as in ``monitor.evaluate``; ``inclusive=True`` makes\nthem ``>=`` / ``<=`` (the notebook uses that for domain AUC and the cutoff shift).\n\nEither line may be absent, but not both. The notebook has red-only rules (repeats: any\nnear-duplicate share above 1% is red, with no yellow band) and yellow-only rules\n(specificity below 0.90 is at most a watch).",
+      "properties": {
+        "inclusive": {
+          "default": false,
+          "description": "Compare with >= / <= instead of the strict > / <.",
+          "title": "Inclusive",
+          "type": "boolean"
+        },
+        "kind": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TriggerKind"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "red": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Red"
+        },
+        "worse": {
+          "$ref": "#/$defs/Worse"
+        },
+        "yellow": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Yellow"
+        }
+      },
+      "required": [
+        "yellow",
+        "red",
+        "worse"
+      ],
+      "title": "TriggerThreshold",
+      "type": "object"
     },
     "Verdict": {
       "additionalProperties": false,
@@ -1087,11 +1676,32 @@
       ],
       "title": "WithinTolerance",
       "type": "object"
+    },
+    "Worse": {
+      "description": "Which direction of a trigger value is bad.",
+      "enum": [
+        "high",
+        "low"
+      ],
+      "title": "Worse",
+      "type": "string"
     }
   },
   "additionalProperties": false,
-  "description": "The full result of one assessment of one site against one reference.",
+  "description": "The full result of one assessment of one site against one reference.\n\n``thresholds``, ``strata``, ``cases_to_review`` and ``site_name`` were added after the\nfirst 0.1.0 files were written, so they are optional: an older file still validates,\nand a reader shows \"not recorded\" rather than assuming defaults.",
   "properties": {
+    "cases_to_review": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CasesToReview"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Scans flagged for a human look; null when there are no scans."
+    },
     "checks": {
       "items": {
         "$ref": "#/$defs/CheckRun"
@@ -1186,12 +1796,51 @@
       "title": "Site Id",
       "type": "string"
     },
+    "site_name": {
+      "anyOf": [
+        {
+          "maxLength": 200,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Human-readable site name for display, e.g. 'St. Mary's Hospital'. Never used as a key.",
+      "title": "Site Name"
+    },
     "steps": {
       "items": {
         "$ref": "#/$defs/StepRecord"
       },
       "title": "Steps",
       "type": "array"
+    },
+    "strata": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Strata"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "The by-group table; null when there are no scans."
+    },
+    "thresholds": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ThresholdProfile"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "The resolved threshold profile the run used (same profile_id). Readers take group sizes, tolerances, markers and trigger lines from here, never from defaults."
     },
     "verdict": {
       "$ref": "#/$defs/Verdict"

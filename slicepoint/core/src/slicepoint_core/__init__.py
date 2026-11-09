@@ -11,24 +11,30 @@ assessment runner. No FastAPI, database, GPU or torch.
     site = ParquetAdapter("hospital_b").load_tabular("data/practice/hospital_b")
     report = Assessment(site, ref, HACKATHON_DEFAULT_PROFILE).run()
     print(report.verdict.outcome, report.to_json())
+    report.write_html("report.html")      # self-contained; provisional scores hidden
+
+Command line: ``slicepoint --help`` (see :mod:`slicepoint_core.cli`).
 """
 
 from __future__ import annotations
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
-from . import stats  # noqa: E402
-from .assessment import Assessment, AssessmentReport  # noqa: E402
+from . import report, stats  # noqa: E402
+from .assessment import Assessment, AssessmentReport, strip_provisional_scores  # noqa: E402
+from .errors import InputError  # noqa: E402
 from .checks import CheckRegistry, CheckSpec, Requirement, default_registry  # noqa: E402
 from .ingestion import ParquetAdapter, TabularDataset  # noqa: E402
 from .legacy import to_slicepoint_v0  # noqa: E402
 from .reference import ReferenceProfile, ReferenceSummary  # noqa: E402
+from .report import render_html, write_html  # noqa: E402
 
 __all__ = [
     "Assessment",
     "AssessmentReport",
     "CheckRegistry",
     "CheckSpec",
+    "InputError",
     "ParquetAdapter",
     "ReferenceProfile",
     "ReferenceSummary",
@@ -36,6 +42,10 @@ __all__ = [
     "TabularDataset",
     "__version__",
     "default_registry",
+    "render_html",
+    "report",
     "stats",
+    "strip_provisional_scores",
     "to_slicepoint_v0",
+    "write_html",
 ]
