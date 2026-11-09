@@ -1,0 +1,343 @@
+{
+  "$defs": {
+    "CheckResult": {
+      "additionalProperties": false,
+      "description": "The outcome of one check for one assessment.\n\n* ``status`` is primary.\n* ``score`` (0-100) is optional; when present it must name ``score_method`` so a reader\n  knows which formula produced it. No formula is agreed yet (ADR open question 2).\n* ``n`` is required: the number of cases (scans) this check actually used, so thin\n  evidence is visible. New checks must report their own per-check ``n`` (for example\n  the cases with labels, or the AAA-positive cases for sensitivity). Only the legacy\n  converter falls back to the file's scan count, because the POC never recorded it.\n* ``n_effective`` (optional) is the effective sample size and must name\n  ``n_effective_method`` (e.g. ``kish_design_effect_per_person``, ``cluster_icc``),\n  mirroring score/score_method; ``0 < n_effective <= n``. Rationale: repeat scans of the\n  same person (hospital_b has 80 scans from 40 real people) and clustering within a\n  site are correlated, so they carry less information than ``n`` independent cases.\n  That matters for Wilson intervals and for the \"too few to judge\" suppression, which\n  should use the effective size, not the raw scan count.\n* ``subjects`` (optional) is the number of distinct people behind the ``n`` cases, and\n  ``subjects <= n``.\n* ``failing_sub_factors`` must be sub-factors of the registered check, and must be empty\n  when the status is ``ok``.",
+      "properties": {
+        "check_id": {
+          "pattern": "^[a-z][a-z0-9_]{0,63}$",
+          "title": "Check Id",
+          "type": "string"
+        },
+        "evidence": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "failing_sub_factors": {
+          "default": [],
+          "items": {
+            "pattern": "^[a-z][a-z0-9_]{0,63}$",
+            "type": "string"
+          },
+          "title": "Failing Sub Factors",
+          "type": "array"
+        },
+        "n": {
+          "description": "Cases this check actually used (per-check, not per-file).",
+          "minimum": 0,
+          "title": "N",
+          "type": "integer"
+        },
+        "n_effective": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Effective sample size; requires n_effective_method.",
+          "title": "N Effective"
+        },
+        "n_effective_method": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "N Effective Method"
+        },
+        "score": {
+          "anyOf": [
+            {
+              "maximum": 100,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Score"
+        },
+        "score_method": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Score Method"
+        },
+        "source": {
+          "default": "computed",
+          "enum": [
+            "computed",
+            "legacy_v0"
+          ],
+          "title": "Source",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/CheckStatus"
+        },
+        "subjects": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Distinct people behind n.",
+          "title": "Subjects"
+        },
+        "summary": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Summary"
+        }
+      },
+      "required": [
+        "check_id",
+        "status",
+        "n"
+      ],
+      "title": "CheckResult",
+      "type": "object"
+    },
+    "CheckStatus": {
+      "description": "Categorical outcome of one check. Ordered ok < watch < problem.",
+      "enum": [
+        "ok",
+        "watch",
+        "problem"
+      ],
+      "title": "CheckStatus",
+      "type": "string"
+    },
+    "Evidence": {
+      "additionalProperties": false,
+      "description": "One named piece of evidence behind a result (e.g. ``tvd = 0.40``).",
+      "properties": {
+        "key": {
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        },
+        "text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Value"
+        }
+      },
+      "required": [
+        "key"
+      ],
+      "title": "Evidence",
+      "type": "object"
+    },
+    "VerdictOutcome": {
+      "enum": [
+        "go",
+        "no_go",
+        "borderline"
+      ],
+      "title": "VerdictOutcome",
+      "type": "string"
+    },
+    "VerdictOverride": {
+      "additionalProperties": false,
+      "description": "A human decision that replaces the derived outcome.\n\nOverriding to ``go`` while checks are ``problem`` or not evaluated is allowed, but only\nthrough this record, so the departure from the rule is always attributed and justified.",
+      "properties": {
+        "at": {
+          "description": "When, with a timezone.",
+          "format": "date-time",
+          "title": "At",
+          "type": "string"
+        },
+        "by": {
+          "description": "Who made the decision (person or committee identifier).",
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "By",
+          "type": "string"
+        },
+        "note": {
+          "description": "Required justification, at least 20 characters after trimming whitespace.",
+          "title": "Note",
+          "type": "string"
+        },
+        "outcome": {
+          "$ref": "#/$defs/VerdictOutcome",
+          "description": "The final outcome, replacing the derived one."
+        }
+      },
+      "required": [
+        "outcome",
+        "by",
+        "at",
+        "note"
+      ],
+      "title": "VerdictOverride",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "A verdict with its rationale and the results it rests on.\n\nValidated invariants (hold for any verdict, including a human override):\n\n* ``go`` requires at least one result, every included result ``ok`` and nothing in\n  ``not_evaluated``.\n* ``no_go`` requires at least one ``problem``.\n* check ids are unique and ``not_evaluated`` does not overlap the results.\n\nThese apply to the derived ``outcome``. ``override`` (optional) carries a human\ndecision. It must differ from the derived outcome, and :attr:`final_outcome` returns it.",
+  "properties": {
+    "model_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Model Id"
+    },
+    "not_evaluated": {
+      "default": [],
+      "description": "Checks the profile expects that produced no result.",
+      "items": {
+        "pattern": "^[a-z][a-z0-9_]{0,63}$",
+        "type": "string"
+      },
+      "title": "Not Evaluated",
+      "type": "array"
+    },
+    "outcome": {
+      "$ref": "#/$defs/VerdictOutcome"
+    },
+    "override": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/VerdictOverride"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "profile_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Profile Id"
+    },
+    "rationale": {
+      "minLength": 1,
+      "title": "Rationale",
+      "type": "string"
+    },
+    "results": {
+      "items": {
+        "$ref": "#/$defs/CheckResult"
+      },
+      "title": "Results",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "0.1.0",
+      "default": "0.1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "site_id": {
+      "anyOf": [
+        {
+          "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Site Id"
+    }
+  },
+  "required": [
+    "outcome",
+    "rationale",
+    "results"
+  ],
+  "title": "Verdict",
+  "type": "object"
+}

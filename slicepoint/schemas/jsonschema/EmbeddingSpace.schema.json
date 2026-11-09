@@ -1,0 +1,90 @@
+{
+  "$defs": {
+    "Modality": {
+      "description": "Input modality of an embedding space.",
+      "enum": [
+        "CT",
+        "MR",
+        "report_text",
+        "other"
+      ],
+      "title": "Modality",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "A versioned embedding space.\n\n``encoder_version`` and ``preprocessing_hash`` are optional because the hackathon\nspace does not know them; a production space should set both.",
+  "properties": {
+    "description": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Description"
+    },
+    "dim": {
+      "exclusiveMinimum": 0,
+      "title": "Dim",
+      "type": "integer"
+    },
+    "encoder_name": {
+      "minLength": 1,
+      "title": "Encoder Name",
+      "type": "string"
+    },
+    "encoder_version": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Encoder release/weights version. None means unknown.",
+      "title": "Encoder Version"
+    },
+    "modality": {
+      "$ref": "#/$defs/Modality"
+    },
+    "preprocessing_hash": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "sha256 of the preprocessing definition (resampling, windowing, tokenisation). None means unknown.",
+      "title": "Preprocessing Hash"
+    },
+    "schema_version": {
+      "const": "0.1.0",
+      "default": "0.1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "space_id": {
+      "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+      "title": "Space Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "space_id",
+    "encoder_name",
+    "modality",
+    "dim"
+  ],
+  "title": "EmbeddingSpace",
+  "type": "object"
+}

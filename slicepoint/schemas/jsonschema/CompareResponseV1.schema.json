@@ -1,0 +1,370 @@
+{
+  "$defs": {
+    "AgreementAssessmentV1": {
+      "additionalProperties": false,
+      "properties": {
+        "clinical_correctness_established": {
+          "const": false,
+          "title": "Clinical Correctness Established",
+          "type": "boolean"
+        },
+        "dice_percent": {
+          "maximum": 100.0,
+          "minimum": 0.0,
+          "title": "Dice Percent",
+          "type": "number"
+        },
+        "interpretation": {
+          "title": "Interpretation",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "review_priority": {
+          "enum": [
+            "high",
+            "low",
+            "medium"
+          ],
+          "title": "Review Priority",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "empty_mask_review",
+            "high_agreement",
+            "review_with_caution",
+            "low_agreement"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "thresholds": {
+          "$ref": "#/$defs/AgreementThresholdsV1"
+        }
+      },
+      "required": [
+        "status",
+        "review_priority",
+        "message",
+        "dice_percent",
+        "clinical_correctness_established",
+        "interpretation",
+        "thresholds"
+      ],
+      "title": "AgreementAssessmentV1",
+      "type": "object"
+    },
+    "AgreementThresholdsV1": {
+      "additionalProperties": false,
+      "properties": {
+        "high_agreement": {
+          "title": "High Agreement",
+          "type": "string"
+        },
+        "low_agreement": {
+          "title": "Low Agreement",
+          "type": "string"
+        },
+        "review_with_caution": {
+          "title": "Review With Caution",
+          "type": "string"
+        }
+      },
+      "required": [
+        "high_agreement",
+        "review_with_caution",
+        "low_agreement"
+      ],
+      "title": "AgreementThresholdsV1",
+      "type": "object"
+    },
+    "CompareMetricsV1": {
+      "additionalProperties": false,
+      "properties": {
+        "dice": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Dice",
+          "type": "number"
+        },
+        "empty_prediction": {
+          "title": "Empty Prediction",
+          "type": "boolean"
+        },
+        "empty_reference": {
+          "title": "Empty Reference",
+          "type": "boolean"
+        },
+        "hd95_mm": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Hd95 Mm"
+        },
+        "hd95_status": {
+          "enum": [
+            "ok",
+            "both_empty",
+            "empty_mask",
+            "sheared_grid"
+          ],
+          "title": "Hd95 Status",
+          "type": "string"
+        },
+        "iou": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Iou",
+          "type": "number"
+        },
+        "prediction_volume_ml": {
+          "minimum": 0.0,
+          "title": "Prediction Volume Ml",
+          "type": "number"
+        },
+        "reference_volume_ml": {
+          "minimum": 0.0,
+          "title": "Reference Volume Ml",
+          "type": "number"
+        }
+      },
+      "required": [
+        "dice",
+        "iou",
+        "prediction_volume_ml",
+        "reference_volume_ml",
+        "hd95_mm",
+        "empty_prediction",
+        "empty_reference",
+        "hd95_status"
+      ],
+      "title": "CompareMetricsV1",
+      "type": "object"
+    },
+    "DisplayV1": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_slice_index": {
+          "minimum": 0,
+          "title": "Canonical Slice Index",
+          "type": "integer"
+        },
+        "ct_window_hu": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Ct Window Hu",
+          "type": "array"
+        },
+        "plane": {
+          "const": "axial",
+          "title": "Plane",
+          "type": "string"
+        },
+        "score_dimension": {
+          "const": "3D",
+          "title": "Score Dimension",
+          "type": "string"
+        },
+        "selection": {
+          "title": "Selection",
+          "type": "string"
+        }
+      },
+      "required": [
+        "plane",
+        "canonical_slice_index",
+        "selection",
+        "ct_window_hu",
+        "score_dimension"
+      ],
+      "title": "DisplayV1",
+      "type": "object"
+    },
+    "ImageV1": {
+      "additionalProperties": false,
+      "properties": {
+        "data_url": {
+          "pattern": "^data:image/png;base64,",
+          "title": "Data Url",
+          "type": "string"
+        },
+        "media_type": {
+          "const": "image/png",
+          "title": "Media Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "media_type",
+        "data_url"
+      ],
+      "title": "ImageV1",
+      "type": "object"
+    },
+    "ModelProvenanceV1": {
+      "additionalProperties": false,
+      "properties": {
+        "device": {
+          "title": "Device",
+          "type": "string"
+        },
+        "elapsed_seconds": {
+          "minimum": 0.0,
+          "title": "Elapsed Seconds",
+          "type": "number"
+        },
+        "fast": {
+          "title": "Fast",
+          "type": "boolean"
+        },
+        "input_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Sha256",
+          "type": "string"
+        },
+        "mask_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Mask Sha256",
+          "type": "string"
+        },
+        "model": {
+          "const": "TotalSegmentator",
+          "title": "Model",
+          "type": "string"
+        },
+        "roi": {
+          "const": "aorta",
+          "title": "Roi",
+          "type": "string"
+        },
+        "task": {
+          "const": "total",
+          "title": "Task",
+          "type": "string"
+        },
+        "version": {
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "model",
+        "version",
+        "task",
+        "roi",
+        "fast",
+        "device",
+        "elapsed_seconds",
+        "input_sha256",
+        "mask_sha256"
+      ],
+      "title": "ModelProvenanceV1",
+      "type": "object"
+    },
+    "PredictedMaskV1": {
+      "additionalProperties": false,
+      "properties": {
+        "base64": {
+          "title": "Base64",
+          "type": "string"
+        },
+        "filename": {
+          "title": "Filename",
+          "type": "string"
+        },
+        "media_type": {
+          "const": "application/gzip",
+          "title": "Media Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "media_type",
+        "filename",
+        "base64"
+      ],
+      "title": "PredictedMaskV1",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "JSON body of ``POST /v1/compare`` (``response_format=json``).\n\nAgreement status follows ``presentation.agreement_assessment``: empty mask ->\nempty_mask_review, Dice > 0.9 high, >= 0.7 review_with_caution, else low. Agreement is\nnot clinical correctness (``clinical_correctness_established`` is always false).",
+  "properties": {
+    "assessment": {
+      "$ref": "#/$defs/AgreementAssessmentV1"
+    },
+    "comparison_type": {
+      "const": "model_vs_vendor_mask_agreement",
+      "title": "Comparison Type",
+      "type": "string"
+    },
+    "display": {
+      "$ref": "#/$defs/DisplayV1"
+    },
+    "image": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ImageV1"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "limitation": {
+      "title": "Limitation",
+      "type": "string"
+    },
+    "metrics": {
+      "$ref": "#/$defs/CompareMetricsV1"
+    },
+    "model": {
+      "$ref": "#/$defs/ModelProvenanceV1"
+    },
+    "predicted_mask": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PredictedMaskV1"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "comparison_type",
+    "metrics",
+    "assessment",
+    "model",
+    "display",
+    "limitation"
+  ],
+  "title": "CompareResponseV1",
+  "type": "object"
+}

@@ -1,0 +1,577 @@
+{
+  "$defs": {
+    "AaaSizeClass": {
+      "description": "AAA size class as recorded by the hospital.\n\nIt follows the hospital's convention, not the diameter: the 30-54mm class has a\nminimum observed diameter of 25.74 mm (hospital e).",
+      "enum": [
+        "none",
+        "30-54mm",
+        ">=55mm"
+      ],
+      "title": "AaaSizeClass",
+      "type": "string"
+    },
+    "CaseEmbedding": {
+      "additionalProperties": false,
+      "description": "One case's vector. Its length is checked against the space by :class:`EmbeddingSet`.",
+      "properties": {
+        "case_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^\\S(?:.*\\S)?$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "vector": {
+          "items": {
+            "type": "number"
+          },
+          "minItems": 1,
+          "title": "Vector",
+          "type": "array"
+        }
+      },
+      "required": [
+        "case_id",
+        "vector"
+      ],
+      "title": "CaseEmbedding",
+      "type": "object"
+    },
+    "ContrastPhase": {
+      "enum": [
+        "arterial",
+        "venous",
+        "non-contrast"
+      ],
+      "title": "ContrastPhase",
+      "type": "string"
+    },
+    "DatasetManifest": {
+      "additionalProperties": false,
+      "description": "Mirror of ``data/practice/manifest.json``.\n\n``schema_version`` here is the *data release's* version string, not this package's.",
+      "properties": {
+        "files": {
+          "items": {
+            "$ref": "#/$defs/ManifestFile"
+          },
+          "title": "Files",
+          "type": "array"
+        },
+        "hospitals": {
+          "patternProperties": {
+            "^[a-z0-9][a-z0-9_-]{0,63}$": {
+              "additionalProperties": {
+                "type": "integer"
+              },
+              "propertyNames": {
+                "$ref": "#/$defs/TableName"
+              },
+              "type": "object"
+            }
+          },
+          "title": "Hospitals",
+          "type": "object"
+        },
+        "release_key_fingerprint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Release Key Fingerprint"
+        },
+        "release_set": {
+          "title": "Release Set",
+          "type": "string"
+        },
+        "schema_version": {
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "release_set",
+        "files",
+        "hospitals"
+      ],
+      "title": "DatasetManifest",
+      "type": "object"
+    },
+    "EmbeddingSet": {
+      "additionalProperties": false,
+      "description": "All embeddings of a dataset, tagged with the space they claim to come from.",
+      "properties": {
+        "embeddings": {
+          "items": {
+            "$ref": "#/$defs/CaseEmbedding"
+          },
+          "title": "Embeddings",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "0.1.0",
+          "default": "0.1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "space": {
+          "$ref": "#/$defs/EmbeddingSpace"
+        }
+      },
+      "required": [
+        "space",
+        "embeddings"
+      ],
+      "title": "EmbeddingSet",
+      "type": "object"
+    },
+    "EmbeddingSpace": {
+      "additionalProperties": false,
+      "description": "A versioned embedding space.\n\n``encoder_version`` and ``preprocessing_hash`` are optional because the hackathon\nspace does not know them; a production space should set both.",
+      "properties": {
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "dim": {
+          "exclusiveMinimum": 0,
+          "title": "Dim",
+          "type": "integer"
+        },
+        "encoder_name": {
+          "minLength": 1,
+          "title": "Encoder Name",
+          "type": "string"
+        },
+        "encoder_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Encoder release/weights version. None means unknown.",
+          "title": "Encoder Version"
+        },
+        "modality": {
+          "$ref": "#/$defs/Modality"
+        },
+        "preprocessing_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "sha256 of the preprocessing definition (resampling, windowing, tokenisation). None means unknown.",
+          "title": "Preprocessing Hash"
+        },
+        "schema_version": {
+          "const": "0.1.0",
+          "default": "0.1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "space_id": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+          "title": "Space Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "space_id",
+        "encoder_name",
+        "modality",
+        "dim"
+      ],
+      "title": "EmbeddingSpace",
+      "type": "object"
+    },
+    "FeatureRow": {
+      "additionalProperties": false,
+      "description": "One row of ``features.parquet`` (17 columns).\n\n``case_id``, ``patient_id``, ``sex`` and ``scanner_vendor`` are open for new sources:\nopaque ids, and value lists that accept unknown strings (known ones normalised). The\nlegacy V0 models keep the closed POC enums and the hex id patterns.",
+      "properties": {
+        "age_band": {
+          "pattern": "^\\d0-\\d9$",
+          "title": "Age Band",
+          "type": "string"
+        },
+        "aorta_hu_mean": {
+          "description": "Mean HU within the segmented aorta.",
+          "title": "Aorta Hu Mean",
+          "type": "number"
+        },
+        "aorta_hu_sd": {
+          "title": "Aorta Hu Sd",
+          "type": "number"
+        },
+        "case_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^\\S(?:.*\\S)?$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "contrast_phase": {
+          "$ref": "#/$defs/ContrastPhase"
+        },
+        "kvp": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Tube voltage. Null exactly where vendor is null.",
+          "title": "Kvp"
+        },
+        "organ_volumes_kidney_left": {
+          "description": "mL. Zeros occur.",
+          "title": "Organ Volumes Kidney Left",
+          "type": "number"
+        },
+        "organ_volumes_kidney_right": {
+          "description": "mL. Zeros occur.",
+          "title": "Organ Volumes Kidney Right",
+          "type": "number"
+        },
+        "organ_volumes_liver": {
+          "description": "mL. Zeros occur.",
+          "title": "Organ Volumes Liver",
+          "type": "number"
+        },
+        "organ_volumes_spleen": {
+          "description": "mL. Zeros occur.",
+          "title": "Organ Volumes Spleen",
+          "type": "number"
+        },
+        "patient_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^\\S(?:.*\\S)?$",
+          "title": "Patient Id",
+          "type": "string"
+        },
+        "protocol_name": {
+          "title": "Protocol Name",
+          "type": "string"
+        },
+        "scanner_vendor": {
+          "anyOf": [
+            {
+              "description": "Open set, lowercased. Known: siemens, philips, ge; others (e.g. canon) are accepted.",
+              "examples": [
+                "siemens",
+                "philips",
+                "ge"
+              ],
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^\\S(?:.*\\S)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Missing for a few cases (9 of 420).",
+          "title": "Scanner Vendor"
+        },
+        "sex": {
+          "description": "Open set. Known: M, F (normalised to upper case); other strings are kept.",
+          "examples": [
+            "M",
+            "F"
+          ],
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^\\S(?:.*\\S)?$",
+          "title": "Sex",
+          "type": "string"
+        },
+        "slice_thickness_class": {
+          "$ref": "#/$defs/SliceThicknessClass"
+        },
+        "slice_thickness_mm": {
+          "title": "Slice Thickness Mm",
+          "type": "number"
+        },
+        "study_description": {
+          "title": "Study Description",
+          "type": "string"
+        }
+      },
+      "required": [
+        "case_id",
+        "patient_id",
+        "age_band",
+        "sex",
+        "scanner_vendor",
+        "contrast_phase",
+        "slice_thickness_mm",
+        "slice_thickness_class",
+        "kvp",
+        "study_description",
+        "protocol_name",
+        "aorta_hu_mean",
+        "aorta_hu_sd",
+        "organ_volumes_liver",
+        "organ_volumes_spleen",
+        "organ_volumes_kidney_left",
+        "organ_volumes_kidney_right"
+      ],
+      "title": "FeatureRow",
+      "type": "object"
+    },
+    "LabelRow": {
+      "additionalProperties": false,
+      "description": "One row of ``labels.parquet``. ``aaa`` follows the hospital's convention, which is\nnot always ``diameter >= 30`` (hospital e has 5 counter-examples).",
+      "properties": {
+        "aaa": {
+          "title": "Aaa",
+          "type": "boolean"
+        },
+        "aaa_size_class": {
+          "$ref": "#/$defs/AaaSizeClass"
+        },
+        "case_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^\\S(?:.*\\S)?$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "max_aortic_diameter_mm": {
+          "description": "Primary label (continuous).",
+          "title": "Max Aortic Diameter Mm",
+          "type": "number"
+        }
+      },
+      "required": [
+        "case_id",
+        "max_aortic_diameter_mm",
+        "aaa",
+        "aaa_size_class"
+      ],
+      "title": "LabelRow",
+      "type": "object"
+    },
+    "ManifestFile": {
+      "additionalProperties": false,
+      "properties": {
+        "bytes": {
+          "minimum": 0,
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "path": {
+          "description": "Relative to the release root.",
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "rows": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Row count for tabular files. Absent for non-tabular entries (the practice manifest lists tutorial_keys/*.json without rows).",
+          "title": "Rows"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "bytes",
+        "sha256"
+      ],
+      "title": "ManifestFile",
+      "type": "object"
+    },
+    "Modality": {
+      "description": "Input modality of an embedding space.",
+      "enum": [
+        "CT",
+        "MR",
+        "report_text",
+        "other"
+      ],
+      "title": "Modality",
+      "type": "string"
+    },
+    "PredictionRow": {
+      "additionalProperties": false,
+      "description": "One row of ``predictions.parquet``.\n\n``pred_max_diameter_mm`` and ``pred_aaa`` are null together (6 rows: b=4, c=1, e=1):\nnull means \"the model gave no answer\", never \"normal\". On non-null rows the data has\n``pred_aaa == (pred_max_diameter_mm >= 30)``; that is the model's convention and is\nnot enforced here.",
+      "properties": {
+        "case_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^\\S(?:.*\\S)?$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "pred_aaa": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Pred Aaa"
+        },
+        "pred_aorta_dice": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Pred Aorta Dice",
+          "type": "number"
+        },
+        "pred_max_diameter_mm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Pred Max Diameter Mm"
+        }
+      },
+      "required": [
+        "case_id",
+        "pred_aorta_dice",
+        "pred_max_diameter_mm",
+        "pred_aaa"
+      ],
+      "title": "PredictionRow",
+      "type": "object"
+    },
+    "SliceThicknessClass": {
+      "description": "Thickness class. In the data the mapping from ``slice_thickness_mm`` is exact:\nthin < 2 mm (0.6-1.5 observed), standard 2.0-3.75, thick 5.0. The schema does not\nenforce that mapping, because detecting inconsistent metadata is the analysis' job.",
+      "enum": [
+        "thin",
+        "standard",
+        "thick"
+      ],
+      "title": "SliceThicknessClass",
+      "type": "string"
+    },
+    "TableName": {
+      "enum": [
+        "features",
+        "labels",
+        "predictions",
+        "embeddings"
+      ],
+      "title": "TableName",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "The ingestion surface: everything the analysis core may read for one site.\n\n``labels`` is optional (a go-live month can arrive without confirmed answers).\n``embeddings`` is optional because producing embeddings is an analysis-core service\nin the rebuild; precomputed sets are accepted when tagged with their space.",
+  "properties": {
+    "embeddings": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/EmbeddingSet"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "features": {
+      "items": {
+        "$ref": "#/$defs/FeatureRow"
+      },
+      "title": "Features",
+      "type": "array"
+    },
+    "labels": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/LabelRow"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Labels"
+    },
+    "manifest": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DatasetManifest"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "predictions": {
+      "items": {
+        "$ref": "#/$defs/PredictionRow"
+      },
+      "title": "Predictions",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "0.1.0",
+      "default": "0.1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "site_id": {
+      "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+      "title": "Site Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "site_id",
+    "features",
+    "predictions"
+  ],
+  "title": "CuratedDataset",
+  "type": "object"
+}

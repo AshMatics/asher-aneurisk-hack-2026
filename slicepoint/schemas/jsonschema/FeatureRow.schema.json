@@ -1,0 +1,159 @@
+{
+  "$defs": {
+    "ContrastPhase": {
+      "enum": [
+        "arterial",
+        "venous",
+        "non-contrast"
+      ],
+      "title": "ContrastPhase",
+      "type": "string"
+    },
+    "SliceThicknessClass": {
+      "description": "Thickness class. In the data the mapping from ``slice_thickness_mm`` is exact:\nthin < 2 mm (0.6-1.5 observed), standard 2.0-3.75, thick 5.0. The schema does not\nenforce that mapping, because detecting inconsistent metadata is the analysis' job.",
+      "enum": [
+        "thin",
+        "standard",
+        "thick"
+      ],
+      "title": "SliceThicknessClass",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "One row of ``features.parquet`` (17 columns).\n\n``case_id``, ``patient_id``, ``sex`` and ``scanner_vendor`` are open for new sources:\nopaque ids, and value lists that accept unknown strings (known ones normalised). The\nlegacy V0 models keep the closed POC enums and the hex id patterns.",
+  "properties": {
+    "age_band": {
+      "pattern": "^\\d0-\\d9$",
+      "title": "Age Band",
+      "type": "string"
+    },
+    "aorta_hu_mean": {
+      "description": "Mean HU within the segmented aorta.",
+      "title": "Aorta Hu Mean",
+      "type": "number"
+    },
+    "aorta_hu_sd": {
+      "title": "Aorta Hu Sd",
+      "type": "number"
+    },
+    "case_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^\\S(?:.*\\S)?$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "contrast_phase": {
+      "$ref": "#/$defs/ContrastPhase"
+    },
+    "kvp": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Tube voltage. Null exactly where vendor is null.",
+      "title": "Kvp"
+    },
+    "organ_volumes_kidney_left": {
+      "description": "mL. Zeros occur.",
+      "title": "Organ Volumes Kidney Left",
+      "type": "number"
+    },
+    "organ_volumes_kidney_right": {
+      "description": "mL. Zeros occur.",
+      "title": "Organ Volumes Kidney Right",
+      "type": "number"
+    },
+    "organ_volumes_liver": {
+      "description": "mL. Zeros occur.",
+      "title": "Organ Volumes Liver",
+      "type": "number"
+    },
+    "organ_volumes_spleen": {
+      "description": "mL. Zeros occur.",
+      "title": "Organ Volumes Spleen",
+      "type": "number"
+    },
+    "patient_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^\\S(?:.*\\S)?$",
+      "title": "Patient Id",
+      "type": "string"
+    },
+    "protocol_name": {
+      "title": "Protocol Name",
+      "type": "string"
+    },
+    "scanner_vendor": {
+      "anyOf": [
+        {
+          "description": "Open set, lowercased. Known: siemens, philips, ge; others (e.g. canon) are accepted.",
+          "examples": [
+            "siemens",
+            "philips",
+            "ge"
+          ],
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^\\S(?:.*\\S)?$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Missing for a few cases (9 of 420).",
+      "title": "Scanner Vendor"
+    },
+    "sex": {
+      "description": "Open set. Known: M, F (normalised to upper case); other strings are kept.",
+      "examples": [
+        "M",
+        "F"
+      ],
+      "maxLength": 64,
+      "minLength": 1,
+      "pattern": "^\\S(?:.*\\S)?$",
+      "title": "Sex",
+      "type": "string"
+    },
+    "slice_thickness_class": {
+      "$ref": "#/$defs/SliceThicknessClass"
+    },
+    "slice_thickness_mm": {
+      "title": "Slice Thickness Mm",
+      "type": "number"
+    },
+    "study_description": {
+      "title": "Study Description",
+      "type": "string"
+    }
+  },
+  "required": [
+    "case_id",
+    "patient_id",
+    "age_band",
+    "sex",
+    "scanner_vendor",
+    "contrast_phase",
+    "slice_thickness_mm",
+    "slice_thickness_class",
+    "kvp",
+    "study_description",
+    "protocol_name",
+    "aorta_hu_mean",
+    "aorta_hu_sd",
+    "organ_volumes_liver",
+    "organ_volumes_spleen",
+    "organ_volumes_kidney_left",
+    "organ_volumes_kidney_right"
+  ],
+  "title": "FeatureRow",
+  "type": "object"
+}

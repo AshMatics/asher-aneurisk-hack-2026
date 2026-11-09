@@ -1,0 +1,49 @@
+{
+  "additionalProperties": false,
+  "description": "One row of ``predictions.parquet``.\n\n``pred_max_diameter_mm`` and ``pred_aaa`` are null together (6 rows: b=4, c=1, e=1):\nnull means \"the model gave no answer\", never \"normal\". On non-null rows the data has\n``pred_aaa == (pred_max_diameter_mm >= 30)``; that is the model's convention and is\nnot enforced here.",
+  "properties": {
+    "case_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^\\S(?:.*\\S)?$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "pred_aaa": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Pred Aaa"
+    },
+    "pred_aorta_dice": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Pred Aorta Dice",
+      "type": "number"
+    },
+    "pred_max_diameter_mm": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Pred Max Diameter Mm"
+    }
+  },
+  "required": [
+    "case_id",
+    "pred_aorta_dice",
+    "pred_max_diameter_mm",
+    "pred_aaa"
+  ],
+  "title": "PredictionRow",
+  "type": "object"
+}

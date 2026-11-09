@@ -1,0 +1,130 @@
+{
+  "$defs": {
+    "MonthV0": {
+      "additionalProperties": false,
+      "properties": {
+        "green": {
+          "minimum": 0,
+          "title": "Green",
+          "type": "integer"
+        },
+        "labels": {
+          "description": "True if the month had any confirmed labels.",
+          "title": "Labels",
+          "type": "boolean"
+        },
+        "month": {
+          "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+          "title": "Month",
+          "type": "string"
+        },
+        "n_scans": {
+          "minimum": 0,
+          "title": "N Scans",
+          "type": "integer"
+        },
+        "red": {
+          "minimum": 0,
+          "title": "Red",
+          "type": "integer"
+        },
+        "red_triggers": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Red Triggers",
+          "type": "array"
+        },
+        "verdict": {
+          "enum": [
+            "Review needed",
+            "Proceed with care",
+            "Comparable to validation"
+          ],
+          "title": "Verdict",
+          "type": "string"
+        },
+        "yellow": {
+          "minimum": 0,
+          "title": "Yellow",
+          "type": "integer"
+        },
+        "yellow_triggers": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Yellow Triggers",
+          "type": "array"
+        }
+      },
+      "required": [
+        "month",
+        "n_scans",
+        "labels",
+        "red",
+        "yellow",
+        "green",
+        "verdict",
+        "red_triggers",
+        "yellow_triggers"
+      ],
+      "title": "MonthV0",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "``<hospital>_monthly_summary.json``. ``hospital`` is the raw HOSPITAL_NAME\n(e.g. ``demo_hospital``), unlike slicepoint.json's title-cased name.",
+  "properties": {
+    "first_month_with_a_red_alert": {
+      "anyOf": [
+        {
+          "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "First Month With A Red Alert"
+    },
+    "history_file": {
+      "title": "History File",
+      "type": "string"
+    },
+    "hospital": {
+      "title": "Hospital",
+      "type": "string"
+    },
+    "months": {
+      "items": {
+        "$ref": "#/$defs/MonthV0"
+      },
+      "title": "Months",
+      "type": "array"
+    },
+    "reference": {
+      "title": "Reference",
+      "type": "string"
+    },
+    "scenario": {
+      "enum": [
+        "stable",
+        "drift",
+        "no_answer",
+        "real data"
+      ],
+      "title": "Scenario",
+      "type": "string"
+    }
+  },
+  "required": [
+    "hospital",
+    "reference",
+    "scenario",
+    "first_month_with_a_red_alert",
+    "history_file",
+    "months"
+  ],
+  "title": "MonthlySummaryV0",
+  "type": "object"
+}
