@@ -18,6 +18,7 @@ from typing import Any
 from pydantic import VERSION as PYDANTIC_VERSION
 from pydantic import BaseModel
 
+from .assessment import AssessmentResult
 from .checks import CheckDescriptor, CheckRegistry, CheckResult
 from .embedding import EmbeddingComparisonRequest, EmbeddingSet, EmbeddingSpace
 from .ingestion import CuratedDataset, DatasetManifest, FeatureRow, LabelRow, PredictionRow
@@ -40,6 +41,7 @@ TOP_LEVEL_MODELS: Mapping[str, type[BaseModel]] = {
     "CheckRegistry": CheckRegistry,
     "CheckResult": CheckResult,
     "Verdict": Verdict,
+    "AssessmentResult": AssessmentResult,
     # legacy POC payloads
     "SlicePointFileV0": SlicePointFileV0,
     "MonthlySummaryV0": MonthlySummaryV0,

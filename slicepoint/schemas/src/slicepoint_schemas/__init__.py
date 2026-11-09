@@ -6,6 +6,17 @@ See ``slicepoint/docs/adr/0001-slicepoint-rebuild-architecture.md`` and
 
 from __future__ import annotations
 
+from .assessment import (
+    AssessmentResult,
+    CheckRun,
+    CheckRunState,
+    DiameterAgreement,
+    PerformanceSummary,
+    ReferenceRef,
+    ScanSummary,
+    StepRecord,
+    StepState,
+)
 from .checks import (
     CHECK_REGISTRY,
     CHECK_REGISTRY_CONTEXT_KEY,
@@ -41,6 +52,15 @@ from .verdict import Verdict, VerdictOutcome, VerdictOverride, derive_verdict
 __version__ = "0.1.0"
 
 __all__ = [
+    "AssessmentResult",
+    "CheckRun",
+    "CheckRunState",
+    "DiameterAgreement",
+    "PerformanceSummary",
+    "ReferenceRef",
+    "ScanSummary",
+    "StepRecord",
+    "StepState",
     "CHECK_REGISTRY",
     "CHECK_REGISTRY_CONTEXT_KEY",
     "DEFAULT_CHECK_REGISTRY",

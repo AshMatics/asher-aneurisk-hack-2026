@@ -121,8 +121,14 @@
     },
     "TriggerThreshold": {
       "additionalProperties": false,
-      "description": "A yellow/red threshold pair with a direction.\n\nOrdering must agree with ``worse``: for ``high`` red > yellow, for ``low`` red < yellow.\nComparisons are strict, as in ``monitor.evaluate``.",
+      "description": "A yellow/red threshold pair with a direction.\n\nOrdering must agree with ``worse``: for ``high`` red > yellow, for ``low`` red < yellow.\nComparisons are strict by default, as in ``monitor.evaluate``; ``inclusive=True`` makes\nthem ``>=`` / ``<=`` (the notebook uses that for domain AUC and the cutoff shift).\n\nEither line may be absent, but not both. The notebook has red-only rules (repeats: any\nnear-duplicate share above 1% is red, with no yellow band) and yellow-only rules\n(specificity below 0.90 is at most a watch).",
       "properties": {
+        "inclusive": {
+          "default": false,
+          "description": "Compare with >= / <= instead of the strict > / <.",
+          "title": "Inclusive",
+          "type": "boolean"
+        },
         "kind": {
           "anyOf": [
             {
@@ -135,15 +141,29 @@
           "default": null
         },
         "red": {
-          "title": "Red",
-          "type": "number"
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Red"
         },
         "worse": {
           "$ref": "#/$defs/Worse"
         },
         "yellow": {
-          "title": "Yellow",
-          "type": "number"
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Yellow"
         }
       },
       "required": [
@@ -207,6 +227,14 @@
       "minLength": 1,
       "title": "Model Id",
       "type": "string"
+    },
+    "parameters": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "description": "Named numbers that are not yellow/red lines: similarity cut-offs, multipliers, grid bounds, plausible ranges, seeds. Keys are snake_case, no dots.",
+      "title": "Parameters",
+      "type": "object"
     },
     "profile_id": {
       "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
