@@ -47,11 +47,14 @@ from .models import (
     ReferenceBuildRequest,
     ReferenceInfo,
     ReferenceList,
+    SessionCreate,
+    SessionInfo,
 )
 from .pipeline import INTERNAL_ERROR, JobContext, initial_steps, load_dataset, run_job, scrub, user_message
 from .references import ReferenceExists, ReferenceStore
-from .security import SecurityMiddleware
+from .security import CSRF_HEADER, SESSION_PATH, AuthState, SecurityMiddleware
 from .settings import Settings
+from .ui import add_ui_routes, is_ui_path
 
 _log = logging.getLogger(__name__)
 
@@ -64,8 +67,13 @@ RequestedBy = Annotated[str | None, Header(alias=USER_HEADER, description="Who i
 
 _ERRORS: dict[int | str, dict[str, Any]] = {
     400: {"model": ErrorDetail, "description": "Bad dataset name or reference"},
-    401: {"model": ErrorDetail, "description": "Missing or wrong bearer token"},
+    401: {"model": ErrorDetail, "description": "Missing or wrong bearer token or session cookie"},
+    403: {"model": ErrorDetail, "description": f"Cookie-authenticated unsafe request without {CSRF_HEADER}: 1"},
 }
+
+REPORT_CSP = ("default-src 'none'; style-src 'unsafe-inline'; img-src data:; "
+              "frame-ancestors 'none'; base-uri 'none'; form-action 'none'")
+"""The report's own meta CSP, repeated as a header (it has no script and needs no network)."""
 
 
 def _requested_by(value: str | None) -> str:
@@ -96,15 +104,19 @@ def create_app(settings: Settings, *, services: Mapping[str, ServicePort] | None
     app = FastAPI(
         title="SlicePoint API",
         version=__version__,
-        description="Job-based SlicePoint assessments over slicepoint-core. All routes except /healthz need "
-                    "`Authorization: Bearer <token>`.",
+        description="Job-based SlicePoint assessments over slicepoint-core. All routes except /healthz and "
+                    "/v1/session need `Authorization: Bearer <token>` or the browser session cookie from "
+                    f"`POST /v1/session` (cookie requests with unsafe methods also need `{CSRF_HEADER}: 1`).",
         docs_url="/docs" if settings.enable_docs else None,
         redoc_url=None,
         openapi_url="/openapi.json" if settings.enable_docs else None,
         lifespan=lifespan,
     )
-    app.add_middleware(SecurityMiddleware, token=settings.token.get_secret_value(),
-                       max_body_bytes=settings.max_body_bytes)
+    auth = AuthState(settings.token.get_secret_value(), session_ttl_seconds=settings.session_ttl_seconds,
+                     cookie_secure=settings.cookie_secure)
+    app.state.auth = auth
+    app.add_middleware(SecurityMiddleware, auth=auth, max_body_bytes=settings.max_body_bytes,
+                       is_ui_path=is_ui_path if settings.ui_dir is not None else None)
 
     @app.exception_handler(RequestValidationError)
     async def _validation(_: Request, exc: RequestValidationError) -> JSONResponse:
@@ -135,6 +147,46 @@ def create_app(settings: Settings, *, services: Mapping[str, ServicePort] | None
     def datasets() -> DatasetList:
         """Dataset folders under the server's data root (folders holding features.parquet). Names only."""
         return DatasetList(datasets=list_datasets(data_root))
+
+    # ------------------------------------------------------------------ browser session
+
+    no_auth: dict[str, Any] = {"security": []}
+
+    @app.get(SESSION_PATH, response_model=SessionInfo, tags=["session"], openapi_extra=no_auth)
+    def get_session(request: Request) -> SessionInfo:
+        """Whether this browser holds a live session cookie. Open; ignores the Authorization header."""
+        expires = auth.sessions.expires_at(request.cookies.get(auth.cookie_name))
+        return SessionInfo(signed_in=expires is not None, expires_at=expires)
+
+    @app.post(SESSION_PATH, response_model=SessionInfo, tags=["session"], openapi_extra=no_auth,
+              responses={401: {"model": ErrorDetail, "description": "Wrong token"},
+                         403: {"model": ErrorDetail, "description": f"Missing {CSRF_HEADER}: 1"},
+                         413: {"model": ErrorDetail, "description": "Body over 1 KiB"},
+                         429: {"model": ErrorDetail, "description": "Too many failed attempts"}})
+    def create_session(body: SessionCreate, request: Request, response: Response) -> SessionInfo:
+        """Exchange the service token for an HttpOnly session cookie (browser sign-in).
+
+        The cookie holds a random session id, never the token. Wrong tokens count towards
+        the same per-address limit as bad bearer tokens."""
+        if not auth.token_ok(body.token):
+            peer = request.client.host if request.client else "unknown"
+            if not auth.limiter.register_failure(peer):
+                raise HTTPException(429, "Too many authentication attempts", headers={"Retry-After": "60"})
+            raise HTTPException(401, "Invalid token")
+        sid, expires = auth.sessions.create()
+        response.set_cookie(auth.cookie_name, sid, max_age=settings.session_ttl_seconds, path="/",
+                            secure=settings.cookie_secure, httponly=True, samesite="strict")
+        return SessionInfo(signed_in=True, expires_at=expires)
+
+    @app.delete(SESSION_PATH, status_code=204, tags=["session"], openapi_extra=no_auth,
+                responses={403: {"model": ErrorDetail, "description": f"Missing {CSRF_HEADER}: 1"}})
+    def delete_session(request: Request) -> Response:
+        """Sign out: forget the session and clear the cookie."""
+        auth.sessions.delete(request.cookies.get(auth.cookie_name))
+        response = Response(status_code=204)
+        response.delete_cookie(auth.cookie_name, path="/", secure=settings.cookie_secure, httponly=True,
+                               samesite="strict")
+        return response
 
     # ------------------------------------------------------------------ references
 
@@ -257,18 +309,23 @@ def create_app(settings: Settings, *, services: Mapping[str, ServicePort] | None
              responses={**_ERRORS, 404: {"model": ErrorDetail}, 409: {"model": ErrorDetail}})
     def get_report(job_id: JobId) -> HTMLResponse:
         """The self-contained HTML report."""
-        return HTMLResponse(_artifact(job_id, REPORT_FILE))
+        return HTMLResponse(_artifact(job_id, REPORT_FILE), headers={"Content-Security-Policy": REPORT_CSP})
 
     def openapi() -> dict[str, Any]:
         if app.openapi_schema is None:
             schema = get_openapi(title=app.title, version=app.version, description=app.description,
                                  routes=app.routes)
             schema.setdefault("components", {})["securitySchemes"] = {
-                "bearer": {"type": "http", "scheme": "bearer"}}
-            schema["security"] = [{"bearer": []}]
+                "bearer": {"type": "http", "scheme": "bearer"},
+                "session": {"type": "apiKey", "in": "cookie", "name": auth.cookie_name,
+                            "description": f"Browser session from POST {SESSION_PATH}. Unsafe methods also "
+                                           f"need the header {CSRF_HEADER}: 1."}}
+            schema["security"] = [{"bearer": []}, {"session": []}]
             schema["paths"]["/healthz"]["get"]["security"] = []
             app.openapi_schema = schema
         return app.openapi_schema
 
     app.openapi = openapi  # type: ignore[method-assign]
+    if settings.ui_dir is not None:
+        add_ui_routes(app, settings.ui_dir)
     return app

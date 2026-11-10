@@ -1,5 +1,19 @@
 # slicepoint-viewer
 
+One React codebase, two builds:
+
+| Build | Command | Output | Talks to |
+|---|---|---|---|
+| **Static** (ADR 0001 §9, tier 0/1) | `pnpm build` | `dist/slicepoint-viewer.html`, one file | nothing: CSP `default-src 'none'`, no network code compiled in |
+| **Live** (tier 2) | `pnpm build:live` | `dist-live/` (`index.html` + `assets/`) | the slicepoint-api service that serves it, same origin only |
+
+The static file is what a hospital opens next to patient data, so it must be provably
+offline. The live build exists to start and follow jobs on a SlicePoint service, so it has
+to make requests; it is kept out of the static file entirely rather than switched off at
+runtime (see "Two builds" below).
+
+## The static viewer
+
 The static SlicePoint viewer (ADR 0001 §9, tier 0/1). It opens a `result.json` written by
 `slicepoint assess` and shows the verdict, the five health checks with their evidence,
 performance, results by group, cases to review, notes, methods and limits, the thresholds
@@ -35,6 +49,56 @@ the `result.json` and the viewer file together, or use the self-contained HTML r
 A site with IT support (tier 1) can serve `dist/index.html` (the same file) from any
 static web server. No server-side code is needed.
 
+## The live viewer
+
+Served by slicepoint-api at `/` when `SLICEPOINT_UI_DIR` points at `dist-live/` (see
+`slicepoint/api/README.md`). It adds, on top of the same result screen:
+
+- **Sign in**: paste the service token once. The page posts it to `POST /v1/session`,
+  clears the field and never stores it (no localStorage, no sessionStorage). The browser
+  then holds only an HttpOnly session cookie the page cannot read. **Sign out** ends the
+  session on the server.
+- **Assessments**: every job with its site, dataset, state, verdict and created time. The
+  list refreshes itself while any job is queued or running. "Finished" means the pipeline
+  ran, not that the site passed.
+- **Start an assessment**: site dataset (from `GET /v1/datasets`), site id, optional site
+  name, and either a stored reference (from `GET /v1/references`) or a reference dataset
+  with its reference site id. Site ids are typed, never guessed from folder names.
+  Provisional scores are off by default and labelled unratified.
+- **Steps**: per-step progress (waiting, running, done, failed, skipped) with messages,
+  polled until the job ends. A skipped step has its own glyph, words and dashed outline:
+  it did not run and is not a pass.
+- **Open result**: loads `/v1/assessments/{id}/result` and runs it through the same
+  `viewmodel/load.ts` validation as a file opened in the static viewer, then shows it in
+  the same `ResultScreen`. **HTML report** opens `/v1/assessments/{id}/report.html` in a
+  new tab (the cookie works for GET).
+
+Not in M5: building references, uploads, a database.
+
+Every request sends `X-SlicePoint-CSRF: 1` and `credentials: "same-origin"`; the API
+requires the header for cookie-authenticated unsafe methods. The API serves the page with
+`default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:;
+connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'`.
+
+## Two builds
+
+- `index.html` -> `src/main.tsx` (static) and `live.html` -> `src/live/main.tsx` (live)
+  are separate entries chosen by Vite's mode (`vite.config.ts`). The static entry never
+  imports `src/live`, so the API client is not in its bundle at all.
+- eslint forbids importing `src/live` from anywhere else, and allows `fetch` only in
+  `src/live/client.ts`.
+- `scripts/check-build.mjs` fails the static build if the bundle contains a network API
+  (`fetch(`, XHR, WebSocket, EventSource, `sendBeacon`) or a live-mode marker (`/v1/`, the
+  CSRF header name, `credentials: "same-origin"`, the client's option names).
+- `scripts/check-live.mjs` renames `live.html` to `index.html` and fails if the live page
+  has an inline script or style, an inline event handler, anything outside `/assets/`, a
+  network API other than `fetch`, an `Authorization`/`Bearer` header or `sessionStorage`.
+- `src/live/api.generated.ts` holds the API types, generated with `openapi-typescript`
+  from `slicepoint/api/openapi.json` (plus the site-id pattern the form checks).
+  `pnpm gen:api` regenerates it; `pnpm check:api` (part of `verify` and `build:live`)
+  fails if it is stale. Regenerate `openapi.json` first after an API change:
+  `uv run --directory api slicepoint-api-openapi`.
+
 ## Develop
 
 Node 22 and pnpm 9.
@@ -46,7 +110,16 @@ pnpm dev                 # Vite dev server; open http://localhost:5173/?sample=h
 pnpm test                # vitest: view-models, every fixture against the schema, React Testing Library
 pnpm typecheck           # tsc --noEmit (strict)
 pnpm lint                # eslint, no warnings allowed
-pnpm verify              # all of the above plus the build
+pnpm verify              # contract + API type checks, typecheck, lint, tests, both builds
+```
+
+Live mode against a local API (in `slicepoint/`, with the API running on 127.0.0.1:8100
+and `SLICEPOINT_COOKIE_SECURE=0`, because the dev server is plain http):
+
+```bash
+pnpm dev:live            # Vite on http://localhost:5173, proxies /v1 to the API
+SLICEPOINT_API_URL=http://127.0.0.1:9000 pnpm dev:live   # another API address
+pnpm build:live          # dist-live/; serve with SLICEPOINT_UI_DIR=$PWD/dist-live
 ```
 
 `?sample=<id>` opens one of the bundled samples (`hospital_b`, `hospital_a_override`,
@@ -114,10 +187,12 @@ When it loads a file, the viewer:
 
 | Path | What it holds |
 |---|---|
+| `src/live/` | Live build only: `client.ts` (the one fetch wrapper), `viewmodel.ts` (plain TS: job and step labels, form validation), `LiveApp.tsx`, `SignIn.tsx`, `Jobs.tsx`, `StartAssessment.tsx`, `api.generated.ts` |
+| `src/components/ResultScreen.tsx` | The result header, provisional-score gate and tabs, shared by both builds |
 | `src/viewmodel/` | Plain TypeScript, no React (enforced by eslint), so a Vue shell can reuse it (ADR 0001 §7). `load.ts` (parse and validate), `verdict.ts`, `checks.ts` (generic check cards, evidence drill-down, score gating), `performance.ts`, `strata.ts`, `cases.ts` (sorting and filtering), `about.ts` (methods, limits, thresholds, provenance), `labels.ts` and `format.ts` (the `report.py` label map and humanizer, effective-n formatting), `registry.ts` (display copy for the five built-in checks) |
 | `src/components/` | React views over the view-models: hand-written shadcn-style primitives, tabs and SVG charts |
 | `src/fixtures/` | Bundled samples; regenerate with `scripts/make-fixtures.sh` (needs the synced uv workspace in `slicepoint/` and `data/practice`) |
-| `scripts/` | `gen-contract.mjs`, `check-build.mjs`, `make-fixtures.sh` |
+| `scripts/` | `gen-contract.mjs`, `gen-api.mjs`, `check-build.mjs`, `check-live.mjs`, `sync-core.mjs`, `make-fixtures.sh` |
 
 Check cards are rendered from whatever is in `result.checks`. A check the viewer has no
 copy for still gets a card, with its id and sub-factor ids made readable. The titles of

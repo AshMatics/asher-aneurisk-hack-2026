@@ -11,7 +11,7 @@ import pytest
 from pydantic import ValidationError
 
 from conftest import AUTH, TOKEN, make_client
-from slicepoint_api.security import BAD_AUTH_PER_MINUTE, SecurityMiddleware
+from slicepoint_api.security import BAD_AUTH_PER_MINUTE, AuthState, SecurityMiddleware
 from slicepoint_api.settings import Settings, SettingsError
 
 
@@ -63,7 +63,7 @@ def test_middleware_never_calls_receive_without_a_token() -> None:
     async def send(message: MutableMapping[str, Any]) -> None:
         sent.append(message)
 
-    mw = SecurityMiddleware(app, token=TOKEN, max_body_bytes=100)
+    mw = SecurityMiddleware(app, auth=AuthState(TOKEN), max_body_bytes=100)
     scope = {"type": "http", "method": "POST", "path": "/v1/assessments", "headers": [], "client": ("1.2.3.4", 1)}
     asyncio.run(mw(scope, receive, send))
     assert called == []

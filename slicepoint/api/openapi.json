@@ -2128,6 +2128,51 @@
         "title": "ScanSummary",
         "type": "object"
       },
+      "SessionCreate": {
+        "additionalProperties": false,
+        "description": "The service token, exchanged once for a browser session cookie.",
+        "properties": {
+          "token": {
+            "description": "The service token. Never stored by the page.",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token"
+        ],
+        "title": "SessionCreate",
+        "type": "object"
+      },
+      "SessionInfo": {
+        "additionalProperties": false,
+        "properties": {
+          "expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When the session cookie stops working.",
+            "title": "Expires At"
+          },
+          "signed_in": {
+            "title": "Signed In",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "signed_in"
+        ],
+        "title": "SessionInfo",
+        "type": "object"
+      },
       "SliceThicknessClass": {
         "description": "Thickness class. In the data the mapping from ``slice_thickness_mm`` is exact:\nthin < 2 mm (0.6-1.5 observed), standard 2.0-3.75, thick 5.0. The schema does not\nenforce that mapping, because detecting inconsistent metadata is the analysis' job.",
         "enum": [
@@ -2770,11 +2815,17 @@
       "bearer": {
         "scheme": "bearer",
         "type": "http"
+      },
+      "session": {
+        "description": "Browser session from POST /v1/session. Unsafe methods also need the header X-SlicePoint-CSRF: 1.",
+        "in": "cookie",
+        "name": "__Host-slicepoint-session",
+        "type": "apiKey"
       }
     }
   },
   "info": {
-    "description": "Job-based SlicePoint assessments over slicepoint-core. All routes except /healthz need `Authorization: Bearer <token>`.",
+    "description": "Job-based SlicePoint assessments over slicepoint-core. All routes except /healthz and /v1/session need `Authorization: Bearer <token>` or the browser session cookie from `POST /v1/session` (cookie requests with unsafe methods also need `X-SlicePoint-CSRF: 1`).",
     "title": "SlicePoint API",
     "version": "0.1.0"
   },
@@ -2836,7 +2887,17 @@
                 }
               }
             },
-            "description": "Missing or wrong bearer token"
+            "description": "Missing or wrong bearer token or session cookie"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Cookie-authenticated unsafe request without X-SlicePoint-CSRF: 1"
           }
         },
         "summary": "List Assessments",
@@ -2906,7 +2967,17 @@
                 }
               }
             },
-            "description": "Missing or wrong bearer token"
+            "description": "Missing or wrong bearer token or session cookie"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Cookie-authenticated unsafe request without X-SlicePoint-CSRF: 1"
           },
           "404": {
             "content": {
@@ -2992,7 +3063,17 @@
                 }
               }
             },
-            "description": "Missing or wrong bearer token"
+            "description": "Missing or wrong bearer token or session cookie"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Cookie-authenticated unsafe request without X-SlicePoint-CSRF: 1"
           },
           "404": {
             "content": {
@@ -3068,7 +3149,17 @@
                 }
               }
             },
-            "description": "Missing or wrong bearer token"
+            "description": "Missing or wrong bearer token or session cookie"
+          },
+          "403": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Cookie-authenticated unsafe request without X-SlicePoint-CSRF: 1"
           },
           "404": {
             "content": {
@@ -3154,7 +3245,17 @@
                 }
               }
             },
-            "description": "Missing or wrong bearer token"
+            "description": "Missing or wrong bearer token or session cookie"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Cookie-authenticated unsafe request without X-SlicePoint-CSRF: 1"
           },
           "404": {
             "content": {
@@ -3230,7 +3331,17 @@
                 }
               }
             },
-            "description": "Missing or wrong bearer token"
+            "description": "Missing or wrong bearer token or session cookie"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Cookie-authenticated unsafe request without X-SlicePoint-CSRF: 1"
           }
         },
         "summary": "Checks",
@@ -3272,7 +3383,17 @@
                 }
               }
             },
-            "description": "Missing or wrong bearer token"
+            "description": "Missing or wrong bearer token or session cookie"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Cookie-authenticated unsafe request without X-SlicePoint-CSRF: 1"
           }
         },
         "summary": "Datasets",
@@ -3313,7 +3434,17 @@
                 }
               }
             },
-            "description": "Missing or wrong bearer token"
+            "description": "Missing or wrong bearer token or session cookie"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Cookie-authenticated unsafe request without X-SlicePoint-CSRF: 1"
           }
         },
         "summary": "List References",
@@ -3383,7 +3514,17 @@
                 }
               }
             },
-            "description": "Missing or wrong bearer token"
+            "description": "Missing or wrong bearer token or session cookie"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Cookie-authenticated unsafe request without X-SlicePoint-CSRF: 1"
           },
           "409": {
             "content": {
@@ -3451,7 +3592,17 @@
                 }
               }
             },
-            "description": "Missing or wrong bearer token"
+            "description": "Missing or wrong bearer token or session cookie"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Cookie-authenticated unsafe request without X-SlicePoint-CSRF: 1"
           },
           "404": {
             "content": {
@@ -3479,11 +3630,142 @@
           "references"
         ]
       }
+    },
+    "/v1/session": {
+      "delete": {
+        "description": "Sign out: forget the session and clear the cookie.",
+        "operationId": "delete_session_v1_session_delete",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Missing X-SlicePoint-CSRF: 1"
+          }
+        },
+        "security": [],
+        "summary": "Delete Session",
+        "tags": [
+          "session"
+        ]
+      },
+      "get": {
+        "description": "Whether this browser holds a live session cookie. Open; ignores the Authorization header.",
+        "operationId": "get_session_v1_session_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionInfo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [],
+        "summary": "Get Session",
+        "tags": [
+          "session"
+        ]
+      },
+      "post": {
+        "description": "Exchange the service token for an HttpOnly session cookie (browser sign-in).\n\nThe cookie holds a random session id, never the token. Wrong tokens count towards\nthe same per-address limit as bad bearer tokens.",
+        "operationId": "create_session_v1_session_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionInfo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Wrong token"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Missing X-SlicePoint-CSRF: 1"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Body over 1 KiB"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Too many failed attempts"
+          }
+        },
+        "security": [],
+        "summary": "Create Session",
+        "tags": [
+          "session"
+        ]
+      }
     }
   },
   "security": [
     {
       "bearer": []
+    },
+    {
+      "session": []
     }
   ]
 }
