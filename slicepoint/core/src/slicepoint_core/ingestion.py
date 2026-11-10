@@ -63,6 +63,8 @@ from slicepoint_schemas.ingestion import (
     ReportTextAdapter,
 )
 
+from .errors import InputError
+
 Source = str | PathLike[str]
 
 FEATURE_COLUMNS: tuple[str, ...] = tuple(FeatureRow.model_fields)
@@ -219,13 +221,42 @@ def _finish_frame(frame: pd.DataFrame) -> pd.DataFrame:
     return result
 
 
-def _validated_records(rows: list[dict[str, Any]], model: type[BaseModel], table: str) -> list[dict[str, Any]]:
+def _check_columns(columns: list[str], model: type[BaseModel], path: Path) -> None:
+    """One clear message for a missing or unexpected column, before any row is validated."""
+    required = [name for name, f in model.model_fields.items() if f.is_required()]
+    missing = [c for c in required if c not in columns]
+    if missing:
+        raise InputError(
+            f"{path}: missing required column {missing[0]!r}"
+            + (f" (and {len(missing) - 1} more: {', '.join(missing[1:4])})" if len(missing) > 1 else ""),
+            path=path, column=missing[0],
+        )
+    extra = [c for c in columns if c not in model.model_fields]
+    if extra:
+        raise InputError(
+            f"{path}: unexpected column {extra[0]!r}"
+            + (f" (and {len(extra) - 1} more)" if len(extra) > 1 else "")
+            + f"; expected only {', '.join(model.model_fields)}",
+            path=path, column=extra[0],
+        )
+
+
+def _validated_records(rows: list[dict[str, Any]], model: type[BaseModel], path: Path) -> list[dict[str, Any]]:
     out = []
     for i, row in enumerate(rows):
         try:
             out.append(model.model_validate(row).model_dump(mode="json"))
         except ValidationError as exc:
-            raise ValueError(f"{table}.parquet row {i} failed validation: {exc}") from exc
+            errs = exc.errors()
+            first = errs[0]
+            column = ".".join(str(x) for x in first["loc"]) or None
+            got = first.get("input")
+            got_text = "" if isinstance(got, dict) else f" (got {got!r})"
+            more = f" (+{len(errs) - 1} more problem(s) in this row)" if len(errs) > 1 else ""
+            raise InputError(
+                f"{path} row {i} (case_id {row.get('case_id')!r}), column {column!r}: {first['msg']}{got_text}{more}",
+                path=path, column=column,
+            ) from exc
     return out
 
 
@@ -274,29 +305,32 @@ class ParquetAdapter:
     def load_tabular(self, source: Source) -> TabularDataset:
         """The analysis view, validated as described in the module docstring."""
         folder = Path(source)
+        if not folder.exists():
+            raise FileNotFoundError(f"{folder}: folder not found (expected features.parquet, predictions.parquet, ...)")
         if not folder.is_dir():
-            raise FileNotFoundError(f"{folder} is not a directory")
+            raise FileNotFoundError(f"{folder}: not a folder (expected a folder holding features.parquet, ...)")
 
-        def read(table: str, required: bool) -> list[dict[str, Any]] | None:
+        def read(table: str, model: type[BaseModel], required: bool) -> list[dict[str, Any]] | None:
             path = folder / f"{table}.parquet"
             if not path.exists():
                 if required:
-                    raise FileNotFoundError(f"{self.site_id}: missing {path}")
+                    raise FileNotFoundError(f"{path}: required file not found (site {self.site_id})")
                 return None
-            rows: list[dict[str, Any]] = pq.read_table(path).to_pylist()
-            return rows
+            try:
+                arrow = pq.read_table(path)
+            except Exception as exc:  # noqa: BLE001 - pyarrow raises several types for a bad file
+                raise InputError(f"{path}: not a readable parquet file ({type(exc).__name__})", path=path) from exc
+            _check_columns(list(arrow.column_names), model, path)
+            return _validated_records(arrow.to_pylist(), model, path)
 
-        feats_raw = read("features", True)
-        preds_raw = read("predictions", True)
-        labels_raw = read("labels", False)
-        assert feats_raw is not None and preds_raw is not None
+        feats = read("features", FeatureRow, True)
+        preds = read("predictions", PredictionRow, True)
+        labels = read("labels", LabelRow, False)
+        assert feats is not None and preds is not None
 
-        tables: dict[str, list[dict[str, Any]]] = {
-            "features": _validated_records(feats_raw, FeatureRow, "features"),
-            "predictions": _validated_records(preds_raw, PredictionRow, "predictions"),
-        }
-        if labels_raw is not None:
-            tables["labels"] = _validated_records(labels_raw, LabelRow, "labels")
+        tables: dict[str, list[dict[str, Any]]] = {"features": feats, "predictions": preds}
+        if labels is not None:
+            tables["labels"] = labels
 
         emb_path = folder / "embeddings.parquet"
         emb_ids: list[str] | None = None
@@ -317,7 +351,7 @@ class ParquetAdapter:
 
         notes: list[str] = []
         if self.on_inconsistency == "raise":
-            _check_join(raw_ids, raw_ids["features"])
+            _check_join(raw_ids, raw_ids["features"], folder)
             order = raw_ids["features"]
         else:
             order, notes = _drop_inconsistent(raw_ids)
@@ -355,35 +389,47 @@ class ParquetAdapter:
         )
 
     def _read_embeddings(self, path: Path) -> tuple[list[str], npt.NDArray[np.floating]]:
-        table = pq.read_table(path)
+        try:
+            table = pq.read_table(path)
+        except Exception as exc:  # noqa: BLE001 - pyarrow raises several types for a bad file
+            raise InputError(f"{path}: not a readable parquet file ({type(exc).__name__})", path=path) from exc
         expected = ["case_id", *(f"{self.embedding_prefix}{i}" for i in range(self.space.dim))]
         names = list(table.column_names)
         if set(names) != set(expected) or len(names) != len(expected):
             missing = sorted(set(expected) - set(names))[:5]
             extra = sorted(set(names) - set(expected))[:5]
-            raise ValueError(
+            raise InputError(
                 f"{path}: columns do not match space {self.space.space_id} (dim {self.space.dim}); "
-                f"missing={missing} extra={extra}"
+                f"missing={missing} extra={extra}",
+                path=path, column=(missing or extra or [None])[0],
             )
         ids = [str(x) for x in table.column("case_id").to_pylist()]
         cols = [table.column(c).to_numpy() for c in expected[1:]]
         matrix = np.column_stack(cols) if cols else np.empty((len(ids), 0))
         if not np.issubdtype(matrix.dtype, np.floating):
-            raise ValueError(f"{path}: embedding values must be floating point, got {matrix.dtype}")
+            raise InputError(f"{path}: embedding values must be floating point, got {matrix.dtype}", path=path)
         if not np.isfinite(matrix).all():
-            raise ValueError(f"{path}: embeddings contain NaN or inf")
+            raise InputError(f"{path}: embeddings contain NaN or inf", path=path)
         return ids, matrix
 
 
-def _check_join(tables: Mapping[str, list[str] | None], order: list[str]) -> None:
+def _check_join(tables: Mapping[str, list[str] | None], order: list[str], folder: Path | None = None) -> None:
     reference = set(order)
+    hint = " (or load with on_inconsistency='drop_and_note' to drop and record them)"
     for name, ids in tables.items():
         if ids is None:
             continue
+        path = folder / f"{name}.parquet" if folder is not None else None
+        where = f"{path}: " if path is not None else ""
         if len(set(ids)) != len(ids):
-            raise ValueError(f"{name}: case_id is not unique")
+            raise InputError(f"{where}{name}: case_id is not unique{hint}", path=path, column="case_id")
         if set(ids) != reference:
-            raise ValueError(f"{name}: case_id set differs from features")
+            n_missing, n_extra = len(reference - set(ids)), len(set(ids) - reference)
+            raise InputError(
+                f"{where}{name}: case_id set differs from features "
+                f"({n_missing} missing, {n_extra} not in features){hint}",
+                path=path, column="case_id",
+            )
 
 
 def _drop_inconsistent(raw_ids: Mapping[str, list[str]]) -> tuple[list[str], list[str]]:

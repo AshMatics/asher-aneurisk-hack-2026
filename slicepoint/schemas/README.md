@@ -20,7 +20,7 @@ ingestion surface  ──►  analysis core  ──►  API (FastAPI /v1)  ─�
 | `thresholds` | `TriggerThreshold` (ordering checked against `worse`; either line may be absent; optional `inclusive` comparison), `ThresholdProfile` with named `parameters` and per-value provenance, and `HACKATHON_DEFAULT_PROFILE` |
 | `checks` | `CheckStatus`, `CheckDescriptor`, `CheckRegistry` (the 5 POC checks), and `CheckResult` (status first; `score` needs a `score_method`; per-check `n` is required; optional `n_effective` needs an `n_effective_method`; optional `subjects`) |
 | `verdict` | `Verdict` (consistency validated on the derived outcome), `VerdictOverride` (attributed, justified human decision) with `final_outcome`, and `derive_verdict(results, profile, registry=None)` |
-| `assessment` | `AssessmentResult`, the versioned top-level result of one assessment (steps run as ok/skipped/failed, one `CheckRun` per registered check, the `Verdict`, `PerformanceSummary`, per-scan `ScanSummary`, notes). This is what `slicepoint-core` returns and what the static viewer and the API will render. |
+| `assessment` | `AssessmentResult`, the versioned top-level result of one assessment (steps run as ok/skipped/failed, one `CheckRun` per registered check, the `Verdict`, `PerformanceSummary`, per-scan `ScanSummary`, notes). Added in 0.2.0, all optional so older 0.1.0-contract files still validate: `site_name` (display only), `thresholds` (the resolved `ThresholdProfile` the run used; its `profile_id` must equal the result's), `strata` (`Strata` of `StratumRow`, with the suppression rules and size tolerance it used) and `cases_to_review` (`CasesToReview` of `ReviewCase` with `ReviewReason` codes and a checked priority). Producers compute these; a renderer only displays them. This is what `slicepoint-core` returns and what the static viewer and the API will render. |
 | `legacy` | `SlicePointFileV0`, `MonthlySummaryV0`, `DiceSummaryV0`, `CompareResponseV1`, plus converters to the new models |
 | `export` | JSON Schema for every top-level model, written to `jsonschema/` |
 
@@ -54,6 +54,9 @@ ingestion surface  ──►  analysis core  ──►  API (FastAPI /v1)  ─�
     - scanning: `domain_auc`, `coverage`, `hu_shift`, `kvp_shift`;
     - accuracy: `no_answers`, `specificity`, `subgroups`.
   - A new trigger, `AAA size class mix` (0.15 / 0.30), is new vs the POC.
+  - slicepoint-core milestone 2 added the remaining four so no rule is evidence-only:
+    patients `labelled_diameter_shift` and `predicted_diameter_shift`; scanning
+    `impossible_values` and `embedding_shortcuts`.
   - `AssessmentResult.performance.diameter` is the profile-driven `DiameterAgreement`
     (`within_tolerance` entries carry their `tolerance_mm` and role). `DiameterMetricsV0`
     remains for legacy files.

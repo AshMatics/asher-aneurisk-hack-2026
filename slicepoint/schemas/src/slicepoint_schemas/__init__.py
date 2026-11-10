@@ -8,14 +8,19 @@ from __future__ import annotations
 
 from .assessment import (
     AssessmentResult,
+    CasesToReview,
     CheckRun,
     CheckRunState,
     DiameterAgreement,
     PerformanceSummary,
     ReferenceRef,
+    ReviewCase,
+    ReviewReason,
     ScanSummary,
     StepRecord,
     StepState,
+    Strata,
+    StratumRow,
 )
 from .checks import (
     CHECK_REGISTRY,
@@ -49,18 +54,23 @@ from .legacy import CompareResponseV1, DiceSummaryV0, MonthlySummaryV0, SlicePoi
 from .thresholds import HACKATHON_DEFAULT_PROFILE, ThresholdProfile, TriggerThreshold
 from .verdict import Verdict, VerdictOutcome, VerdictOverride, derive_verdict
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "AssessmentResult",
+    "CasesToReview",
     "CheckRun",
     "CheckRunState",
     "DiameterAgreement",
     "PerformanceSummary",
     "ReferenceRef",
+    "ReviewCase",
+    "ReviewReason",
     "ScanSummary",
     "StepRecord",
     "StepState",
+    "Strata",
+    "StratumRow",
     "CHECK_REGISTRY",
     "CHECK_REGISTRY_CONTEXT_KEY",
     "DEFAULT_CHECK_REGISTRY",

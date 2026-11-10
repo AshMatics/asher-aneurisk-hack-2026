@@ -163,6 +163,8 @@ DEFAULT_CHECK_REGISTRY = CheckRegistry(
                 _sf("coverage", "Scans outside the reference's coverage"),
                 _sf("hu_shift", "Aorta brightness (HU) shift"),
                 _sf("kvp_shift", "Tube voltage (kVp) shift"),
+                _sf("impossible_values", "Impossible values (diameter, HU, kVp, slice, organ volume)"),
+                _sf("embedding_shortcuts", "Embeddings encode scanner/protocol more than the aneurysm"),
             ),
             legacy_check_key="scanning",
         ),
@@ -179,6 +181,8 @@ DEFAULT_CHECK_REGISTRY = CheckRegistry(
                 _sf("sex", "Sex"),
                 _sf("age_band", "Age"),
                 _sf("aaa_size_class", "AAA size class"),
+                _sf("labelled_diameter_shift", "Labelled aorta diameter distribution shift"),
+                _sf("predicted_diameter_shift", "Model-measured aorta diameter distribution shift"),
             ),
             legacy_check_key="patients",
         ),
@@ -222,7 +226,10 @@ DEFAULT_CHECK_REGISTRY = CheckRegistry(
 for ``labels`` are INFERRED from the feeding notebook logic (the spec lists none). The
 sub-factors after the spec's three per card (leakage, domain_auc, coverage, hu_shift,
 kvp_shift, no_answers, specificity, subgroups) were added by reviewer decision
-2026-11-09 so every notebook rule has a named sub-factor. The spec's card shows "the
+2026-11-09 so every notebook rule has a named sub-factor; the last four
+(impossible_values, embedding_shortcuts, labelled_diameter_shift,
+predicted_diameter_shift) followed in slicepoint-core milestone 2, so no notebook rule
+is left evidence-only. The spec's card shows "the
 lowest of" its first three; the UI keeps that rule."""
 
 CHECK_REGISTRY: Mapping[str, CheckDescriptor] = DEFAULT_CHECK_REGISTRY.as_mapping()

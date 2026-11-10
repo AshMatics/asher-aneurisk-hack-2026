@@ -411,7 +411,7 @@ def check_labels(ctx: CheckContext) -> CheckOutput:
 # --------------------------------------------------------------------------- accuracy
 
 
-_SUBGROUPS = ("contrast_phase", "slice_thickness_class", "sex", "age_band", "scanner_vendor")
+SUBGROUP_COLUMNS: tuple[str, ...] = ("contrast_phase", "slice_thickness_class", "sex", "age_band", "scanner_vendor")
 
 
 def check_accuracy(ctx: CheckContext) -> CheckOutput:
@@ -545,7 +545,7 @@ def _subgroups(ctx: CheckContext, findings: list[Finding], out: CheckOutput) -> 
     na_line = p.trigger("No-answer rate").red
     sens_red = p.trigger("Aneurysms the model caught").red
     rows = []
-    for col in [c for c in _SUBGROUPS if c in df]:
+    for col in [c for c in SUBGROUP_COLUMNS if c in df]:
         key = df[col].astype(object).where(df[col].notna(), "MISSING").astype(str)
         for lvl in sorted(key.unique()):
             g = df[key == lvl]
@@ -628,10 +628,12 @@ def default_registry() -> CheckRegistry:
               {"tvd_scanner_vendor": "scanner_vendor", "tvd_contrast_phase": "contrast_phase",
                "tvd_slice_thickness_class": "slice_thickness_class", "shift_slice_thickness_mm": "slice_thickness_class",
                "scan_content_auc": "domain_auc", "scan_content_coverage": "coverage",
-               "shift_aorta_hu_mean": "hu_shift", "shift_kvp": "kvp_shift"}),
+               "shift_aorta_hu_mean": "hu_shift", "shift_kvp": "kvp_shift",
+               "implausible_values": "impossible_values", "embedding_shortcuts": "embedding_shortcuts"}),
         _spec("patients", check_patients, set(),
               {"tvd_sex": "sex", "tvd_age_band": "age_band", "tvd_aaa_size_class": "aaa_size_class",
-               "prevalence": "aaa_size_class"}),
+               "prevalence": "aaa_size_class", "shift_max_aortic_diameter_mm": "labelled_diameter_shift",
+               "shift_pred_max_diameter_mm": "predicted_diameter_shift"}),
         _spec("labels", check_labels, {Requirement.LABELS},
               {"rule_conflicts": "rule_conflicts", "size_class_mismatch": "rule_conflicts",
                "cutoff_shift": "cutoff_alignment"}),
@@ -645,6 +647,7 @@ def default_registry() -> CheckRegistry:
 
 
 __all__ = [
+    "SUBGROUP_COLUMNS",
     "CheckSkipped",
     "check_accuracy",
     "check_labels",
