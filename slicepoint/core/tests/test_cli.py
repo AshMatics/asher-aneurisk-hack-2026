@@ -14,7 +14,7 @@ import pytest
 from slicepoint_schemas import HACKATHON_DEFAULT_PROFILE, AssessmentResult
 
 from conftest import LEGACY_DIR, PRACTICE_DIR, needs_data
-from slicepoint_core import Assessment, ParquetAdapter, ReferenceProfile, cli, strip_provisional_scores
+from slicepoint_core import Assessment, ParquetAdapter, ReferenceProfile, cli, strip_provisional_scores, viewer_path
 
 CLI = [sys.executable, "-m", "slicepoint_core.cli"]
 
@@ -66,7 +66,8 @@ def test_usage_error_is_exit_1_not_2() -> None:
 def test_assess_json_summary_and_outputs(ref_dir: Path, tmp_path: Path) -> None:
     out, html, legacy = tmp_path / "out" / "result.json", tmp_path / "out" / "report.html", tmp_path / "poc.json"
     proc = run("assess", "--data", PRACTICE_DIR / "hospital_b", "--site-id", "hospital_b",
-               "--reference-profile", ref_dir, "--out", out, "--html", html, "--legacy-json", legacy, "--json")
+               "--reference-profile", ref_dir, "--out", out, "--html", html, "--legacy-json", legacy, "--viewer",
+               "--json")
     assert proc.returncode == cli.EXIT_REVIEW, proc.stderr
     s: dict[str, Any] = json.loads(proc.stdout)
     assert s["ok"] is True and s["exit_code"] == 3 and s["verdict"] == "no_go" and s["site_id"] == "hospital_b"
@@ -77,7 +78,9 @@ def test_assess_json_summary_and_outputs(ref_dir: Path, tmp_path: Path) -> None:
     repeats = s["checks"][0]
     assert repeats == {"id": "repeats", "title": "Different people", "status": "problem", "n": 80,
                        "n_effective": 32.0, "failing_sub_factors": ["people", "leakage"]}
-    assert s["outputs"] == {"result": str(out), "html": str(html), "legacy_json": str(legacy)}
+    viewer = out.parent / "slicepoint-viewer.html"
+    assert s["outputs"] == {"result": str(out), "html": str(html), "legacy_json": str(legacy), "viewer": str(viewer)}
+    assert viewer.read_bytes() == viewer_path().read_bytes()
     assert s["skipped_steps"] == ["segmentation"] and s["failed_steps"] == []
     result = AssessmentResult.model_validate_json(out.read_text(encoding="utf-8"))
     assert result.verdict.outcome.value == "no_go"

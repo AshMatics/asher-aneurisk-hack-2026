@@ -75,9 +75,12 @@ which:
 
 ### Distribution
 
-The built `dist/slicepoint-viewer.html` is not committed. It is attached to each GitHub
-release, so a hospital downloads one file and never needs Node. A planned
-`slicepoint assess --viewer` flag will copy it next to `result.json`.
+`dist/` is not committed. `pnpm build:core` builds the viewer and copies it into
+slicepoint-core (`core/src/slicepoint_core/_viewer/`, which is committed), so
+`slicepoint assess --viewer` writes it next to `result.json` and a hospital never needs
+Node. Run it whenever the viewer or `AssessmentResult.schema.json` changes; core's
+`tests/test_viewer.py` fails on a stale copy. The same file can also be attached to
+GitHub releases.
 
 ## The contract
 
