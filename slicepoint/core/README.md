@@ -134,6 +134,12 @@ file against `AssessmentResult.schema.json` and refuses other `schema_version`s.
 computes no statistics and makes no network requests. See
 [../viewer/README.md](../viewer/README.md).
 
+A built copy ships inside this package (`slicepoint_core/_viewer/`), so
+`slicepoint assess ... --viewer` writes `slicepoint-viewer.html` next to `result.json`;
+from Python, `copy_viewer(folder)`. `_viewer/viewer.json` records the contract the copy
+reads, and `tests/test_viewer.py` fails if `AssessmentResult.schema.json` changes without
+the copy being rebuilt: run `pnpm build:core` in `slicepoint/viewer`.
+
 ## Layout
 
 | Module | What it holds |

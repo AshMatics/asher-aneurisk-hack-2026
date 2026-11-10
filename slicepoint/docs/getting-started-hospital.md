@@ -114,8 +114,9 @@ decision and is not medical advice.
 
 `slicepoint-viewer.html` is one file that opens a `result.json` in your browser. It has
 the same content as the report, and you can open each check's evidence and sort and
-filter the cases to review. Build it once with `pnpm build` in `slicepoint/viewer` (see
-its README), or ask whoever set SlicePoint up for a copy. Then:
+filter the cases to review. It comes with SlicePoint: add `--viewer` to `slicepoint assess`
+and the file is written next to `result.json` (from a notebook, `copy_viewer(folder)`). You
+do not need Node or anything else. Then:
 
 1. Double-click `slicepoint-viewer.html`. It works offline, with no server and no
    installation.

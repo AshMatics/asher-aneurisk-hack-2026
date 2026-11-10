@@ -62,7 +62,7 @@ _ASSESS_EPILOG = f"""\
 examples:
   # reference saved earlier with `slicepoint reference build`
   slicepoint assess --data data/practice/hospital_b --site-id hospital_b --site-name "Hospital B" \\
-      --reference-profile refs/hospital_a --out out/result.json --html out/report.html
+      --reference-profile refs/hospital_a --out out/result.json --html out/report.html --viewer
   # build the reference on the fly from its data folder, machine-readable summary on stdout
   slicepoint assess --data data/practice/hospital_b --site-id hospital_b \\
       --reference-dir data/practice/hospital_a --reference-site-id hospital_a --out out/result.json --json
@@ -71,7 +71,8 @@ examples:
   {{"ok": true, "exit_code": 3, "site_id": "...", "verdict": "no_go", "not_evaluated": [...],
    "checks": [{{"id": "repeats", "title": "...", "status": "problem", "n": 80, "n_effective": 32.0,
                "failing_sub_factors": ["people", "leakage"]}}, ...],
-   "outputs": {{"result": "out/result.json", "html": "out/report.html", "legacy_json": null}}}}
+   "outputs": {{"result": "out/result.json", "html": "out/report.html", "legacy_json": null,
+               "viewer": "out/slicepoint-viewer.html"}}}}
   A check that did not run has status "skipped" or "failed" and a "reason"; it never counts as ok.
   On an error: {{"ok": false, "exit_code": 1, "error": "<one line>"}}.
 
@@ -267,7 +268,7 @@ def _cmd_assess(args: argparse.Namespace) -> int:
 
     report = assessment.run()
     result = report.result
-    outputs: dict[str, str | None] = {"result": None, "html": None, "legacy_json": None}
+    outputs: dict[str, str | None] = {"result": None, "html": None, "legacy_json": None, "viewer": None}
     outputs["result"] = str(_input_guard(
         lambda: report.write_json(args.out, show_provisional_scores=args.show_provisional_scores)))
     if args.html:
@@ -286,6 +287,10 @@ def _cmd_assess(args: argparse.Namespace) -> int:
 
         _input_guard(write_legacy)
         outputs["legacy_json"] = str(path)
+    if args.viewer:
+        from .viewer import copy_viewer
+
+        outputs["viewer"] = str(_input_guard(lambda: copy_viewer(Path(args.out).parent)))
 
     code = EXIT_GO if result.verdict.final_outcome is VerdictOutcome.GO else EXIT_REVIEW
     s = _summary(result, show_scores=args.show_provisional_scores, outputs=outputs, exit_code=code)
@@ -436,6 +441,9 @@ def build_parser() -> argparse.ArgumentParser:
                    help="also write the POC viewer's <hospital>_slicepoint.json")
     a.add_argument("--hospital-name", metavar="NAME", default=None,
                    help="display name for --legacy-json (default: --site-name, else the site id)")
+    a.add_argument("--viewer", action="store_true",
+                   help="also write the interactive viewer (slicepoint-viewer.html) next to --out; open it "
+                        "in a browser and drop result.json onto it (it makes no network requests)")
     a.add_argument("--show-provisional-scores", action="store_true",
                    help="keep the unvalidated 0-100 scores in result.json and show them in the report and summary "
                         "(left out by default; ADR 0001: not for hospitals until ratified)")

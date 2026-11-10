@@ -28,6 +28,7 @@ from .ingestion import ParquetAdapter, TabularDataset  # noqa: E402
 from .legacy import to_slicepoint_v0  # noqa: E402
 from .reference import ReferenceProfile, ReferenceSummary  # noqa: E402
 from .report import render_html, write_html  # noqa: E402
+from .viewer import copy_viewer, viewer_info, viewer_path  # noqa: E402
 
 __all__ = [
     "Assessment",
@@ -40,6 +41,7 @@ __all__ = [
     "ReferenceSummary",
     "Requirement",
     "TabularDataset",
+    "copy_viewer",
     "__version__",
     "default_registry",
     "render_html",
@@ -47,5 +49,7 @@ __all__ = [
     "stats",
     "strip_provisional_scores",
     "to_slicepoint_v0",
+    "viewer_info",
+    "viewer_path",
     "write_html",
 ]
