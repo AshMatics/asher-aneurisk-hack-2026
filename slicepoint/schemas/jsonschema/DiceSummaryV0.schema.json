@@ -1,0 +1,45 @@
+{
+  "additionalProperties": true,
+  "description": "**INFERRED** contract for ``<hospital>_dice.json``.\n\nNo writer exists in the repo; the segmentation notebook that produced it was never\ncommitted. The POC spec (p.24) says it carries mean Dice, with median and share below\n0.90 optional and \"missing in the demo\". Unknown extra keys are tolerated, and both\n``share_below_0_90`` and ``share_below_0.90`` spellings are accepted.",
+  "properties": {
+    "average": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Average",
+      "type": "number"
+    },
+    "median": {
+      "anyOf": [
+        {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Median"
+    },
+    "share_below_0_90": {
+      "anyOf": [
+        {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Share Below 0 90"
+    }
+  },
+  "required": [
+    "average"
+  ],
+  "title": "DiceSummaryV0",
+  "type": "object"
+}

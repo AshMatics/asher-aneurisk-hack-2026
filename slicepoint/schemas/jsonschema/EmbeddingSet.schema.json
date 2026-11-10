@@ -1,0 +1,145 @@
+{
+  "$defs": {
+    "CaseEmbedding": {
+      "additionalProperties": false,
+      "description": "One case's vector. Its length is checked against the space by :class:`EmbeddingSet`.",
+      "properties": {
+        "case_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^\\S(?:.*\\S)?$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "vector": {
+          "items": {
+            "type": "number"
+          },
+          "minItems": 1,
+          "title": "Vector",
+          "type": "array"
+        }
+      },
+      "required": [
+        "case_id",
+        "vector"
+      ],
+      "title": "CaseEmbedding",
+      "type": "object"
+    },
+    "EmbeddingSpace": {
+      "additionalProperties": false,
+      "description": "A versioned embedding space.\n\n``encoder_version`` and ``preprocessing_hash`` are optional because the hackathon\nspace does not know them; a production space should set both.",
+      "properties": {
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "dim": {
+          "exclusiveMinimum": 0,
+          "title": "Dim",
+          "type": "integer"
+        },
+        "encoder_name": {
+          "minLength": 1,
+          "title": "Encoder Name",
+          "type": "string"
+        },
+        "encoder_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Encoder release/weights version. None means unknown.",
+          "title": "Encoder Version"
+        },
+        "modality": {
+          "$ref": "#/$defs/Modality"
+        },
+        "preprocessing_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "sha256 of the preprocessing definition (resampling, windowing, tokenisation). None means unknown.",
+          "title": "Preprocessing Hash"
+        },
+        "schema_version": {
+          "const": "0.1.0",
+          "default": "0.1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "space_id": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+          "title": "Space Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "space_id",
+        "encoder_name",
+        "modality",
+        "dim"
+      ],
+      "title": "EmbeddingSpace",
+      "type": "object"
+    },
+    "Modality": {
+      "description": "Input modality of an embedding space.",
+      "enum": [
+        "CT",
+        "MR",
+        "report_text",
+        "other"
+      ],
+      "title": "Modality",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "All embeddings of a dataset, tagged with the space they claim to come from.",
+  "properties": {
+    "embeddings": {
+      "items": {
+        "$ref": "#/$defs/CaseEmbedding"
+      },
+      "title": "Embeddings",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "0.1.0",
+      "default": "0.1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "space": {
+      "$ref": "#/$defs/EmbeddingSpace"
+    }
+  },
+  "required": [
+    "space",
+    "embeddings"
+  ],
+  "title": "EmbeddingSet",
+  "type": "object"
+}

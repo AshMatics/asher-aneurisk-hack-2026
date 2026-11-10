@@ -1,0 +1,110 @@
+{
+  "$defs": {
+    "ManifestFile": {
+      "additionalProperties": false,
+      "properties": {
+        "bytes": {
+          "minimum": 0,
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "path": {
+          "description": "Relative to the release root.",
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "rows": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Row count for tabular files. Absent for non-tabular entries (the practice manifest lists tutorial_keys/*.json without rows).",
+          "title": "Rows"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "bytes",
+        "sha256"
+      ],
+      "title": "ManifestFile",
+      "type": "object"
+    },
+    "TableName": {
+      "enum": [
+        "features",
+        "labels",
+        "predictions",
+        "embeddings"
+      ],
+      "title": "TableName",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Mirror of ``data/practice/manifest.json``.\n\n``schema_version`` here is the *data release's* version string, not this package's.",
+  "properties": {
+    "files": {
+      "items": {
+        "$ref": "#/$defs/ManifestFile"
+      },
+      "title": "Files",
+      "type": "array"
+    },
+    "hospitals": {
+      "patternProperties": {
+        "^[a-z0-9][a-z0-9_-]{0,63}$": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/TableName"
+          },
+          "type": "object"
+        }
+      },
+      "title": "Hospitals",
+      "type": "object"
+    },
+    "release_key_fingerprint": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Release Key Fingerprint"
+    },
+    "release_set": {
+      "title": "Release Set",
+      "type": "string"
+    },
+    "schema_version": {
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "release_set",
+    "files",
+    "hospitals"
+  ],
+  "title": "DatasetManifest",
+  "type": "object"
+}

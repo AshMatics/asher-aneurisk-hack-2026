@@ -1,0 +1,45 @@
+{
+  "$defs": {
+    "AaaSizeClass": {
+      "description": "AAA size class as recorded by the hospital.\n\nIt follows the hospital's convention, not the diameter: the 30-54mm class has a\nminimum observed diameter of 25.74 mm (hospital e).",
+      "enum": [
+        "none",
+        "30-54mm",
+        ">=55mm"
+      ],
+      "title": "AaaSizeClass",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "One row of ``labels.parquet``. ``aaa`` follows the hospital's convention, which is\nnot always ``diameter >= 30`` (hospital e has 5 counter-examples).",
+  "properties": {
+    "aaa": {
+      "title": "Aaa",
+      "type": "boolean"
+    },
+    "aaa_size_class": {
+      "$ref": "#/$defs/AaaSizeClass"
+    },
+    "case_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^\\S(?:.*\\S)?$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "max_aortic_diameter_mm": {
+      "description": "Primary label (continuous).",
+      "title": "Max Aortic Diameter Mm",
+      "type": "number"
+    }
+  },
+  "required": [
+    "case_id",
+    "max_aortic_diameter_mm",
+    "aaa",
+    "aaa_size_class"
+  ],
+  "title": "LabelRow",
+  "type": "object"
+}

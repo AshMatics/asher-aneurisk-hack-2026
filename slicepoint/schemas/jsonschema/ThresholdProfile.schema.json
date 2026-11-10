@@ -1,0 +1,262 @@
+{
+  "$defs": {
+    "AaaRules": {
+      "additionalProperties": false,
+      "description": "AAA-specific decision rules. Other imaging AI would carry a different block; the\nchecks themselves generalize.",
+      "properties": {
+        "bland_altman_tolerance_mm": {
+          "exclusiveMinimum": 0,
+          "title": "Bland Altman Tolerance Mm",
+          "type": "number"
+        },
+        "decision_line_mm": {
+          "description": "AAA if max diameter >= this.",
+          "exclusiveMinimum": 0,
+          "title": "Decision Line Mm",
+          "type": "number"
+        },
+        "large_aneurysm_line_mm": {
+          "description": "Boundary of the >=55mm class.",
+          "exclusiveMinimum": 0,
+          "title": "Large Aneurysm Line Mm",
+          "type": "number"
+        },
+        "nearby_window_mm": {
+          "description": "'Near the decision line' window (+/-).",
+          "exclusiveMinimum": 0,
+          "title": "Nearby Window Mm",
+          "type": "number"
+        },
+        "size_tolerance_mm": {
+          "description": "Size-within-tolerance cutoff.",
+          "exclusiveMinimum": 0,
+          "title": "Size Tolerance Mm",
+          "type": "number"
+        }
+      },
+      "required": [
+        "decision_line_mm",
+        "large_aneurysm_line_mm",
+        "nearby_window_mm",
+        "size_tolerance_mm",
+        "bland_altman_tolerance_mm"
+      ],
+      "title": "AaaRules",
+      "type": "object"
+    },
+    "DiceMarkers": {
+      "additionalProperties": false,
+      "description": "UI markers on the Dice chart.",
+      "properties": {
+        "lower": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Lower",
+          "type": "number"
+        },
+        "upper": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Upper",
+          "type": "number"
+        }
+      },
+      "required": [
+        "lower",
+        "upper"
+      ],
+      "title": "DiceMarkers",
+      "type": "object"
+    },
+    "Provenance": {
+      "additionalProperties": false,
+      "properties": {
+        "author": {
+          "minLength": 1,
+          "title": "Author",
+          "type": "string"
+        },
+        "date": {
+          "format": "date",
+          "title": "Date",
+          "type": "string"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes"
+        },
+        "source": {
+          "minLength": 1,
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source",
+        "author",
+        "date"
+      ],
+      "title": "Provenance",
+      "type": "object"
+    },
+    "TriggerKind": {
+      "description": "Display unit of a trigger value (history.csv ``kind``).",
+      "enum": [
+        "pct",
+        "pp",
+        "sd",
+        "mm",
+        "num2"
+      ],
+      "title": "TriggerKind",
+      "type": "string"
+    },
+    "TriggerThreshold": {
+      "additionalProperties": false,
+      "description": "A yellow/red threshold pair with a direction.\n\nOrdering must agree with ``worse``: for ``high`` red > yellow, for ``low`` red < yellow.\nComparisons are strict, as in ``monitor.evaluate``.",
+      "properties": {
+        "kind": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TriggerKind"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "red": {
+          "title": "Red",
+          "type": "number"
+        },
+        "worse": {
+          "$ref": "#/$defs/Worse"
+        },
+        "yellow": {
+          "title": "Yellow",
+          "type": "number"
+        }
+      },
+      "required": [
+        "yellow",
+        "red",
+        "worse"
+      ],
+      "title": "TriggerThreshold",
+      "type": "object"
+    },
+    "Worse": {
+      "description": "Which direction of a trigger value is bad.",
+      "enum": [
+        "high",
+        "low"
+      ],
+      "title": "Worse",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "All configurable numbers for one model (and optionally one site).\n\n``check_targets`` keys are the checks this profile expects; a verdict treats any of\nthem that did not run as *not evaluated*. ``value_sources`` maps a dotted field path\n(``aaa.decision_line_mm``, ``triggers.No-answer rate``) to a citation.",
+  "properties": {
+    "aaa": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/AaaRules"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "check_targets": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "minProperties": 1,
+      "title": "Check Targets",
+      "type": "object"
+    },
+    "dice_markers": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DiceMarkers"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "min_group_size": {
+      "description": "Minimum subgroup n for subgroup flags.",
+      "exclusiveMinimum": 0,
+      "title": "Min Group Size",
+      "type": "integer"
+    },
+    "model_id": {
+      "minLength": 1,
+      "title": "Model Id",
+      "type": "string"
+    },
+    "profile_id": {
+      "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+      "title": "Profile Id",
+      "type": "string"
+    },
+    "provenance": {
+      "$ref": "#/$defs/Provenance"
+    },
+    "schema_version": {
+      "const": "0.1.0",
+      "default": "0.1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "site_id": {
+      "anyOf": [
+        {
+          "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Site Id"
+    },
+    "triggers": {
+      "additionalProperties": {
+        "$ref": "#/$defs/TriggerThreshold"
+      },
+      "title": "Triggers",
+      "type": "object"
+    },
+    "value_sources": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Value Sources",
+      "type": "object"
+    }
+  },
+  "required": [
+    "profile_id",
+    "model_id",
+    "provenance",
+    "min_group_size",
+    "check_targets"
+  ],
+  "title": "ThresholdProfile",
+  "type": "object"
+}

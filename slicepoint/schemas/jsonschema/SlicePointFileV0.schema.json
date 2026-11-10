@@ -1,0 +1,684 @@
+{
+  "$defs": {
+    "AaaSizeClass": {
+      "description": "AAA size class as recorded by the hospital.\n\nIt follows the hospital's convention, not the diameter: the 30-54mm class has a\nminimum observed diameter of 25.74 mm (hospital e).",
+      "enum": [
+        "none",
+        "30-54mm",
+        ">=55mm"
+      ],
+      "title": "AaaSizeClass",
+      "type": "string"
+    },
+    "BinMetricsV0": {
+      "additionalProperties": false,
+      "description": "Binary AAA-call metrics (``bin_metrics``, ipynb:835).\n\nCount arithmetic is exact by construction in the notebook and is enforced:\n``tp+fn == n_aaa``, ``tn+fp == n_not_aaa``, ``n_aaa+n_not_aaa == n``, and every no-answer\nis counted as wrong, so ``n_no_answer <= fn+fp``. Rates are null exactly when their\ndenominator is 0, and ``*_lo <= point <= *_hi`` (95% Wilson).",
+      "properties": {
+        "bal_acc": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Bal Acc"
+        },
+        "fn": {
+          "minimum": 0,
+          "title": "Fn",
+          "type": "integer"
+        },
+        "fp": {
+          "minimum": 0,
+          "title": "Fp",
+          "type": "integer"
+        },
+        "g_mean": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "G Mean"
+        },
+        "n": {
+          "minimum": 0,
+          "title": "N",
+          "type": "integer"
+        },
+        "n_aaa": {
+          "minimum": 0,
+          "title": "N Aaa",
+          "type": "integer"
+        },
+        "n_no_answer": {
+          "minimum": 0,
+          "title": "N No Answer",
+          "type": "integer"
+        },
+        "n_not_aaa": {
+          "minimum": 0,
+          "title": "N Not Aaa",
+          "type": "integer"
+        },
+        "sens": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Sens"
+        },
+        "sens_hi": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Sens Hi"
+        },
+        "sens_lo": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Sens Lo"
+        },
+        "spec": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Spec"
+        },
+        "spec_hi": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Spec Hi"
+        },
+        "spec_lo": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Spec Lo"
+        },
+        "tn": {
+          "minimum": 0,
+          "title": "Tn",
+          "type": "integer"
+        },
+        "tp": {
+          "minimum": 0,
+          "title": "Tp",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "n",
+        "n_aaa",
+        "n_not_aaa",
+        "tp",
+        "fn",
+        "tn",
+        "fp",
+        "n_no_answer",
+        "sens",
+        "sens_lo",
+        "sens_hi",
+        "spec",
+        "spec_lo",
+        "spec_hi",
+        "bal_acc",
+        "g_mean"
+      ],
+      "title": "BinMetricsV0",
+      "type": "object"
+    },
+    "ContrastPhase": {
+      "enum": [
+        "arterial",
+        "venous",
+        "non-contrast"
+      ],
+      "title": "ContrastPhase",
+      "type": "string"
+    },
+    "DiameterMetricsV0": {
+      "additionalProperties": false,
+      "description": "Diameter agreement (``diam_metrics``). If ``n < 3`` every float is null.",
+      "properties": {
+        "bias": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Bias"
+        },
+        "loa_high": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Loa High"
+        },
+        "loa_low": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Loa Low"
+        },
+        "mae": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Mae"
+        },
+        "n": {
+          "minimum": 0,
+          "title": "N",
+          "type": "integer"
+        },
+        "rmse": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Rmse"
+        },
+        "spearman": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": -1.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Spearman"
+        },
+        "within_2mm": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Within 2Mm"
+        },
+        "within_3mm": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Within 3Mm"
+        }
+      },
+      "required": [
+        "n",
+        "mae",
+        "rmse",
+        "bias",
+        "loa_low",
+        "loa_high",
+        "within_2mm",
+        "within_3mm",
+        "spearman"
+      ],
+      "title": "DiameterMetricsV0",
+      "type": "object"
+    },
+    "DiceBlockV0": {
+      "additionalProperties": false,
+      "properties": {
+        "average": {
+          "description": "Rounded to 3 dp.",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Average",
+          "type": "number"
+        },
+        "note": {
+          "enum": [
+            "Baseline model Dice.",
+            "Our team's segmentation."
+          ],
+          "title": "Note",
+          "type": "string"
+        }
+      },
+      "required": [
+        "average",
+        "note"
+      ],
+      "title": "DiceBlockV0",
+      "type": "object"
+    },
+    "DiceMetricsV0": {
+      "additionalProperties": false,
+      "description": "Per-dataset Dice summary. Key names contain a dot, hence the aliases.",
+      "properties": {
+        "mean": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Mean",
+          "type": "number"
+        },
+        "median": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Median",
+          "type": "number"
+        },
+        "share_below_0.85": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Share Below 0.85",
+          "type": "number"
+        },
+        "share_below_0.90": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Share Below 0.90",
+          "type": "number"
+        }
+      },
+      "required": [
+        "median",
+        "mean",
+        "share_below_0.90",
+        "share_below_0.85"
+      ],
+      "title": "DiceMetricsV0",
+      "type": "object"
+    },
+    "EmptyObject": {
+      "additionalProperties": false,
+      "description": "``{}``: written when there is no ``pred_aorta_dice`` column.",
+      "properties": {},
+      "title": "EmptyObject",
+      "type": "object"
+    },
+    "FindingV0": {
+      "additionalProperties": false,
+      "description": "One check's finding: the worst status among the notebook findings mapped to it.",
+      "properties": {
+        "check": {
+          "enum": [
+            "repeats",
+            "scanning",
+            "labels",
+            "accuracy",
+            "patients"
+          ],
+          "title": "Check",
+          "type": "string"
+        },
+        "sentence": {
+          "minLength": 1,
+          "title": "Sentence",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "OK",
+            "Watch",
+            "Problem"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "check",
+        "status",
+        "sentence"
+      ],
+      "title": "FindingV0",
+      "type": "object"
+    },
+    "PerformanceV0": {
+      "additionalProperties": false,
+      "properties": {
+        "aaa_missing_as_wrong": {
+          "$ref": "#/$defs/BinMetricsV0"
+        },
+        "aaa_when_answered": {
+          "$ref": "#/$defs/BinMetricsV0"
+        },
+        "diameter": {
+          "$ref": "#/$defs/DiameterMetricsV0"
+        },
+        "dice": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DiceMetricsV0"
+            },
+            {
+              "$ref": "#/$defs/EmptyObject"
+            }
+          ],
+          "title": "Dice"
+        }
+      },
+      "required": [
+        "aaa_missing_as_wrong",
+        "aaa_when_answered",
+        "diameter",
+        "dice"
+      ],
+      "title": "PerformanceV0",
+      "type": "object"
+    },
+    "ScanV0": {
+      "additionalProperties": false,
+      "description": "One scan row. Every value except ``id``/``personGroup`` may be null.\n\n``personGroup`` is a connected-component label over (same patient_id OR embedding\ncosine > 0.95), not a patient id. ``id`` is the first 8 characters of ``case_id``;\nthe exporter checks uniqueness but does not enforce it, and neither do we.",
+      "properties": {
+        "aaa": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Aaa"
+        },
+        "aaa_size_class": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AaaSizeClass"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "age_band": {
+          "anyOf": [
+            {
+              "pattern": "^\\d0-\\d9$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Age Band"
+        },
+        "aiAaa": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "null = the AI gave no answer",
+          "title": "Aiaaa"
+        },
+        "aiDiameterMm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Aidiametermm"
+        },
+        "contrast_phase": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ContrastPhase"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "id": {
+          "pattern": "^[0-9a-f]{8}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "personGroup": {
+          "pattern": "^p\\d+$",
+          "title": "Persongroup",
+          "type": "string"
+        },
+        "referenceDiameterMm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Referencediametermm"
+        },
+        "scanner_vendor": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ScannerVendor"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sex": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sex"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "slice_thickness_class": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SliceThicknessClass"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "personGroup",
+        "sex",
+        "age_band",
+        "scanner_vendor",
+        "contrast_phase",
+        "slice_thickness_class",
+        "aaa_size_class",
+        "aaa",
+        "referenceDiameterMm",
+        "aiDiameterMm",
+        "aiAaa"
+      ],
+      "title": "ScanV0",
+      "type": "object"
+    },
+    "ScannerVendor": {
+      "description": "Observed vendors only (siemens 355, philips 40, ge 16; 9 nulls). Closed for v0;\nexpect to extend (e.g. canon) once real sources arrive.",
+      "enum": [
+        "siemens",
+        "philips",
+        "ge"
+      ],
+      "title": "ScannerVendor",
+      "type": "string"
+    },
+    "Sex": {
+      "description": "Observed values only (M 252, F 168). No unknown/other category in the data.",
+      "enum": [
+        "M",
+        "F"
+      ],
+      "title": "Sex",
+      "type": "string"
+    },
+    "SliceThicknessClass": {
+      "description": "Thickness class. In the data the mapping from ``slice_thickness_mm`` is exact:\nthin < 2 mm (0.6-1.5 observed), standard 2.0-3.75, thick 5.0. The schema does not\nenforce that mapping, because detecting inconsistent metadata is the analysis' job.",
+      "enum": [
+        "thin",
+        "standard",
+        "thick"
+      ],
+      "title": "SliceThicknessClass",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "``<hospital>_slicepoint.json`` as uploaded to the Base44 POC.",
+  "properties": {
+    "dice": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DiceBlockV0"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "fileType": {
+      "const": "hospital_data",
+      "title": "Filetype",
+      "type": "string"
+    },
+    "findings": {
+      "items": {
+        "$ref": "#/$defs/FindingV0"
+      },
+      "maxItems": 5,
+      "title": "Findings",
+      "type": "array"
+    },
+    "hospitalName": {
+      "minLength": 1,
+      "title": "Hospitalname",
+      "type": "string"
+    },
+    "notes": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Notes",
+      "type": "array"
+    },
+    "performance": {
+      "$ref": "#/$defs/PerformanceV0"
+    },
+    "scans": {
+      "items": {
+        "$ref": "#/$defs/ScanV0"
+      },
+      "minItems": 1,
+      "title": "Scans",
+      "type": "array"
+    }
+  },
+  "required": [
+    "fileType",
+    "hospitalName",
+    "scans",
+    "findings",
+    "notes",
+    "performance"
+  ],
+  "title": "SlicePointFileV0",
+  "type": "object"
+}

@@ -1,0 +1,108 @@
+{
+  "$defs": {
+    "Audience": {
+      "description": "Who a check card is written for. INFERRED from ADR 0001 section 7 (decision\ncommittee, clinicians, analysts); the POC has no such field.",
+      "enum": [
+        "committee",
+        "clinician",
+        "analyst"
+      ],
+      "title": "Audience",
+      "type": "string"
+    },
+    "SubFactor": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z][a-z0-9_]{0,63}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "title": {
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title"
+      ],
+      "title": "SubFactor",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "What a check is, independent of any result. The UI renders cards from this.",
+  "properties": {
+    "audience": {
+      "default": [
+        "committee"
+      ],
+      "items": {
+        "$ref": "#/$defs/Audience"
+      },
+      "title": "Audience",
+      "type": "array"
+    },
+    "definition": {
+      "minLength": 1,
+      "title": "Definition",
+      "type": "string"
+    },
+    "id": {
+      "pattern": "^[a-z][a-z0-9_]{0,63}$",
+      "title": "Id",
+      "type": "string"
+    },
+    "legacy_check_key": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "The `check` value used in POC slicepoint.json findings.",
+      "title": "Legacy Check Key"
+    },
+    "sub_factors": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/SubFactor"
+      },
+      "title": "Sub Factors",
+      "type": "array"
+    },
+    "target": {
+      "anyOf": [
+        {
+          "maximum": 100,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Default target score from the POC spec.",
+      "title": "Target"
+    },
+    "title": {
+      "description": "UI title.",
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "title",
+    "definition"
+  ],
+  "title": "CheckDescriptor",
+  "type": "object"
+}
