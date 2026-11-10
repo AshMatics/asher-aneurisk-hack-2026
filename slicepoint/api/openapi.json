@@ -1,0 +1,3489 @@
+{
+  "components": {
+    "schemas": {
+      "AaaRules": {
+        "additionalProperties": false,
+        "description": "AAA-specific decision rules. Other imaging AI would carry a different block; the\nchecks themselves generalize.",
+        "properties": {
+          "bland_altman_tolerance_mm": {
+            "exclusiveMinimum": 0.0,
+            "title": "Bland Altman Tolerance Mm",
+            "type": "number"
+          },
+          "decision_line_mm": {
+            "description": "AAA if max diameter >= this.",
+            "exclusiveMinimum": 0.0,
+            "title": "Decision Line Mm",
+            "type": "number"
+          },
+          "large_aneurysm_line_mm": {
+            "description": "Boundary of the >=55mm class.",
+            "exclusiveMinimum": 0.0,
+            "title": "Large Aneurysm Line Mm",
+            "type": "number"
+          },
+          "nearby_window_mm": {
+            "description": "'Near the decision line' window (+/-).",
+            "exclusiveMinimum": 0.0,
+            "title": "Nearby Window Mm",
+            "type": "number"
+          },
+          "size_tolerance_mm": {
+            "description": "Size-within-tolerance cutoff.",
+            "exclusiveMinimum": 0.0,
+            "title": "Size Tolerance Mm",
+            "type": "number"
+          }
+        },
+        "required": [
+          "decision_line_mm",
+          "large_aneurysm_line_mm",
+          "nearby_window_mm",
+          "size_tolerance_mm",
+          "bland_altman_tolerance_mm"
+        ],
+        "title": "AaaRules",
+        "type": "object"
+      },
+      "AaaSizeClass": {
+        "description": "AAA size class as recorded by the hospital.\n\nIt follows the hospital's convention, not the diameter: the 30-54mm class has a\nminimum observed diameter of 25.74 mm (hospital e).",
+        "enum": [
+          "none",
+          "30-54mm",
+          ">=55mm"
+        ],
+        "title": "AaaSizeClass",
+        "type": "string"
+      },
+      "AssessmentRequest": {
+        "additionalProperties": false,
+        "description": "One site against one reference.\n\nGive either ``reference_id`` (a stored reference, see ``POST /v1/references``) or\n``reference_dataset`` together with ``reference_site_id``.",
+        "properties": {
+          "dataset": {
+            "description": "Dataset folder, relative to the server's data root (e.g. hospital_b).",
+            "examples": [
+              "hospital_b"
+            ],
+            "maxLength": 400,
+            "title": "Dataset",
+            "type": "string"
+          },
+          "on_inconsistency": {
+            "default": "raise",
+            "enum": [
+              "raise",
+              "drop_and_note"
+            ],
+            "title": "On Inconsistency",
+            "type": "string"
+          },
+          "profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ThresholdProfile"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Threshold profile (default hackathon-default-v0)."
+          },
+          "reference_dataset": {
+            "anyOf": [
+              {
+                "description": "Dataset folder, relative to the server's data root (e.g. hospital_b).",
+                "examples": [
+                  "hospital_b"
+                ],
+                "maxLength": 400,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Dataset"
+          },
+          "reference_id": {
+            "anyOf": [
+              {
+                "pattern": "^[a-z0-9][a-z0-9_-]{0,79}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Id"
+          },
+          "reference_site_id": {
+            "anyOf": [
+              {
+                "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Site Id"
+          },
+          "show_provisional_scores": {
+            "default": false,
+            "description": "Keep the unvalidated provisional-v0 0-100 scores in the result and report (ADR 0001 OQ 2).",
+            "title": "Show Provisional Scores",
+            "type": "boolean"
+          },
+          "site_id": {
+            "description": "Stable id of the site being assessed. Required; never guessed.",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "title": "Site Id",
+            "type": "string"
+          },
+          "site_name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Display name for the report only.",
+            "title": "Site Name"
+          }
+        },
+        "required": [
+          "dataset",
+          "site_id"
+        ],
+        "title": "AssessmentRequest",
+        "type": "object"
+      },
+      "AssessmentResult": {
+        "additionalProperties": false,
+        "description": "The full result of one assessment of one site against one reference.\n\n``thresholds``, ``strata``, ``cases_to_review`` and ``site_name`` were added after the\nfirst 0.1.0 files were written, so they are optional: an older file still validates,\nand a reader shows \"not recorded\" rather than assuming defaults.",
+        "properties": {
+          "cases_to_review": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CasesToReview"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Scans flagged for a human look; null when there are no scans."
+          },
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/CheckRun"
+            },
+            "minItems": 1,
+            "title": "Checks",
+            "type": "array"
+          },
+          "dataset_fingerprint": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset Fingerprint"
+          },
+          "embedding_space_id": {
+            "anyOf": [
+              {
+                "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Embedding Space Id"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "generator": {
+            "description": "Producer and version, e.g. slicepoint-core 0.1.0.",
+            "minLength": 1,
+            "title": "Generator",
+            "type": "string"
+          },
+          "model_id": {
+            "minLength": 1,
+            "title": "Model Id",
+            "type": "string"
+          },
+          "notes": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "performance": {
+            "$ref": "#/components/schemas/PerformanceSummary"
+          },
+          "profile_id": {
+            "minLength": 1,
+            "title": "Profile Id",
+            "type": "string"
+          },
+          "reference": {
+            "$ref": "#/components/schemas/ReferenceRef"
+          },
+          "result_type": {
+            "const": "slicepoint.assessment_result",
+            "default": "slicepoint.assessment_result",
+            "title": "Result Type",
+            "type": "string"
+          },
+          "scans": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ScanSummary"
+            },
+            "title": "Scans",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": "0.1.0",
+            "default": "0.1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "site_id": {
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "title": "Site Id",
+            "type": "string"
+          },
+          "site_name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Human-readable site name for display, e.g. 'St. Mary's Hospital'. Never used as a key.",
+            "title": "Site Name"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/StepRecord"
+            },
+            "title": "Steps",
+            "type": "array"
+          },
+          "strata": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Strata"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The by-group table; null when there are no scans."
+          },
+          "thresholds": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ThresholdProfile"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The resolved threshold profile the run used (same profile_id). Readers take group sizes, tolerances, markers and trigger lines from here, never from defaults."
+          },
+          "verdict": {
+            "$ref": "#/components/schemas/Verdict"
+          }
+        },
+        "required": [
+          "site_id",
+          "reference",
+          "profile_id",
+          "model_id",
+          "generated_at",
+          "generator",
+          "steps",
+          "checks",
+          "verdict",
+          "performance"
+        ],
+        "title": "AssessmentResult",
+        "type": "object"
+      },
+      "Audience": {
+        "description": "Who a check card is written for. INFERRED from ADR 0001 section 7 (decision\ncommittee, clinicians, analysts); the POC has no such field.",
+        "enum": [
+          "committee",
+          "clinician",
+          "analyst"
+        ],
+        "title": "Audience",
+        "type": "string"
+      },
+      "BinMetricsV0": {
+        "additionalProperties": false,
+        "description": "Binary AAA-call metrics (``bin_metrics``, ipynb:835).\n\nCount arithmetic is exact by construction in the notebook and is enforced:\n``tp+fn == n_aaa``, ``tn+fp == n_not_aaa``, ``n_aaa+n_not_aaa == n``, and every no-answer\nis counted as wrong, so ``n_no_answer <= fn+fp``. Rates are null exactly when their\ndenominator is 0, and ``*_lo <= point <= *_hi`` (95% Wilson).",
+        "properties": {
+          "bal_acc": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bal Acc"
+          },
+          "fn": {
+            "minimum": 0.0,
+            "title": "Fn",
+            "type": "integer"
+          },
+          "fp": {
+            "minimum": 0.0,
+            "title": "Fp",
+            "type": "integer"
+          },
+          "g_mean": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "G Mean"
+          },
+          "n": {
+            "minimum": 0.0,
+            "title": "N",
+            "type": "integer"
+          },
+          "n_aaa": {
+            "minimum": 0.0,
+            "title": "N Aaa",
+            "type": "integer"
+          },
+          "n_no_answer": {
+            "minimum": 0.0,
+            "title": "N No Answer",
+            "type": "integer"
+          },
+          "n_not_aaa": {
+            "minimum": 0.0,
+            "title": "N Not Aaa",
+            "type": "integer"
+          },
+          "sens": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sens"
+          },
+          "sens_hi": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sens Hi"
+          },
+          "sens_lo": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sens Lo"
+          },
+          "spec": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spec"
+          },
+          "spec_hi": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spec Hi"
+          },
+          "spec_lo": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spec Lo"
+          },
+          "tn": {
+            "minimum": 0.0,
+            "title": "Tn",
+            "type": "integer"
+          },
+          "tp": {
+            "minimum": 0.0,
+            "title": "Tp",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "n",
+          "n_aaa",
+          "n_not_aaa",
+          "tp",
+          "fn",
+          "tn",
+          "fp",
+          "n_no_answer",
+          "sens",
+          "sens_lo",
+          "sens_hi",
+          "spec",
+          "spec_lo",
+          "spec_hi",
+          "bal_acc",
+          "g_mean"
+        ],
+        "title": "BinMetricsV0",
+        "type": "object"
+      },
+      "CasesToReview": {
+        "additionalProperties": false,
+        "description": "Every flagged scan, most urgent first (priority, then the larger diameter error,\nthen case id). ``n_scans`` is how many scans were screened.",
+        "properties": {
+          "cases": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ReviewCase"
+            },
+            "title": "Cases",
+            "type": "array"
+          },
+          "n_scans": {
+            "minimum": 0.0,
+            "title": "N Scans",
+            "type": "integer"
+          },
+          "size_tolerance_mm": {
+            "exclusiveMinimum": 0.0,
+            "title": "Size Tolerance Mm",
+            "type": "number"
+          }
+        },
+        "required": [
+          "size_tolerance_mm",
+          "n_scans"
+        ],
+        "title": "CasesToReview",
+        "type": "object"
+      },
+      "CheckDescriptor": {
+        "additionalProperties": false,
+        "description": "What a check is, independent of any result. The UI renders cards from this.",
+        "properties": {
+          "audience": {
+            "default": [
+              "committee"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/Audience"
+            },
+            "title": "Audience",
+            "type": "array"
+          },
+          "definition": {
+            "minLength": 1,
+            "title": "Definition",
+            "type": "string"
+          },
+          "id": {
+            "pattern": "^[a-z][a-z0-9_]{0,63}$",
+            "title": "Id",
+            "type": "string"
+          },
+          "legacy_check_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The `check` value used in POC slicepoint.json findings.",
+            "title": "Legacy Check Key"
+          },
+          "sub_factors": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/SubFactor"
+            },
+            "title": "Sub Factors",
+            "type": "array"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Default target score from the POC spec.",
+            "title": "Target"
+          },
+          "title": {
+            "description": "UI title.",
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "definition"
+        ],
+        "title": "CheckDescriptor",
+        "type": "object"
+      },
+      "CheckResult": {
+        "additionalProperties": false,
+        "description": "The outcome of one check for one assessment.\n\n* ``status`` is primary.\n* ``score`` (0-100) is optional; when present it must name ``score_method`` so a reader\n  knows which formula produced it. No formula is agreed yet (ADR open question 2).\n* ``n`` is required: the number of cases (scans) this check actually used, so thin\n  evidence is visible. New checks must report their own per-check ``n`` (for example\n  the cases with labels, or the AAA-positive cases for sensitivity). Only the legacy\n  converter falls back to the file's scan count, because the POC never recorded it.\n* ``n_effective`` (optional) is the effective sample size and must name\n  ``n_effective_method`` (e.g. ``kish_design_effect_per_person``, ``cluster_icc``),\n  mirroring score/score_method; ``0 < n_effective <= n``. Rationale: repeat scans of the\n  same person (hospital_b has 80 scans from 40 real people) and clustering within a\n  site are correlated, so they carry less information than ``n`` independent cases.\n  That matters for Wilson intervals and for the \"too few to judge\" suppression, which\n  should use the effective size, not the raw scan count.\n* ``subjects`` (optional) is the number of distinct people behind the ``n`` cases, and\n  ``subjects <= n``.\n* ``failing_sub_factors`` must be sub-factors of the registered check, and must be empty\n  when the status is ``ok``.",
+        "properties": {
+          "check_id": {
+            "pattern": "^[a-z][a-z0-9_]{0,63}$",
+            "title": "Check Id",
+            "type": "string"
+          },
+          "evidence": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Evidence"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "failing_sub_factors": {
+            "default": [],
+            "items": {
+              "pattern": "^[a-z][a-z0-9_]{0,63}$",
+              "type": "string"
+            },
+            "title": "Failing Sub Factors",
+            "type": "array"
+          },
+          "n": {
+            "description": "Cases this check actually used (per-check, not per-file).",
+            "minimum": 0.0,
+            "title": "N",
+            "type": "integer"
+          },
+          "n_effective": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Effective sample size; requires n_effective_method.",
+            "title": "N Effective"
+          },
+          "n_effective_method": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N Effective Method"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "score_method": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score Method"
+          },
+          "source": {
+            "default": "computed",
+            "enum": [
+              "computed",
+              "legacy_v0"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CheckStatus"
+          },
+          "subjects": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Distinct people behind n.",
+            "title": "Subjects"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          }
+        },
+        "required": [
+          "check_id",
+          "status",
+          "n"
+        ],
+        "title": "CheckResult",
+        "type": "object"
+      },
+      "CheckRun": {
+        "additionalProperties": false,
+        "description": "Whether a registered check ran. ``skipped`` means its required inputs were missing\n(for example no labels or no embeddings); ``failed`` means it raised. Neither is ok.",
+        "properties": {
+          "check_id": {
+            "pattern": "^[a-z][a-z0-9_]{0,63}$",
+            "title": "Check Id",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "state": {
+            "$ref": "#/components/schemas/CheckRunState"
+          }
+        },
+        "required": [
+          "check_id",
+          "state"
+        ],
+        "title": "CheckRun",
+        "type": "object"
+      },
+      "CheckRunState": {
+        "enum": [
+          "evaluated",
+          "skipped",
+          "failed"
+        ],
+        "title": "CheckRunState",
+        "type": "string"
+      },
+      "CheckStatus": {
+        "description": "Categorical outcome of one check. Ordered ok < watch < problem.",
+        "enum": [
+          "ok",
+          "watch",
+          "problem"
+        ],
+        "title": "CheckStatus",
+        "type": "string"
+      },
+      "ContrastPhase": {
+        "enum": [
+          "arterial",
+          "venous",
+          "non-contrast"
+        ],
+        "title": "ContrastPhase",
+        "type": "string"
+      },
+      "DatasetList": {
+        "additionalProperties": false,
+        "properties": {
+          "datasets": {
+            "description": "Dataset folders under the data root (names only).",
+            "items": {
+              "type": "string"
+            },
+            "title": "Datasets",
+            "type": "array"
+          }
+        },
+        "required": [
+          "datasets"
+        ],
+        "title": "DatasetList",
+        "type": "object"
+      },
+      "DiameterAgreement": {
+        "additionalProperties": false,
+        "description": "Bland-Altman style agreement of the model's diameter with the reference label.\n\n``error = predicted - reference``. ``sd`` is the **population** SD of the error and\nthe 95% limits of agreement are ``bias +/- 1.96 sd``. Every float is null when\n``n < min_n`` (3 in the POC). Tolerances are profile-driven, unlike the legacy\n``DiameterMetricsV0`` whose ``within_2mm`` / ``within_3mm`` names fix them.",
+        "properties": {
+          "bias": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bias"
+          },
+          "loa_high": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loa High"
+          },
+          "loa_low": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loa Low"
+          },
+          "mae": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mae"
+          },
+          "min_n": {
+            "default": 3,
+            "minimum": 1.0,
+            "title": "Min N",
+            "type": "integer"
+          },
+          "n": {
+            "minimum": 0.0,
+            "title": "N",
+            "type": "integer"
+          },
+          "rmse": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rmse"
+          },
+          "sd": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sd"
+          },
+          "spearman": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": -1.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spearman"
+          },
+          "within_tolerance": {
+            "items": {
+              "$ref": "#/components/schemas/WithinTolerance"
+            },
+            "title": "Within Tolerance",
+            "type": "array"
+          }
+        },
+        "required": [
+          "n",
+          "mae",
+          "rmse",
+          "bias",
+          "sd",
+          "loa_low",
+          "loa_high",
+          "within_tolerance",
+          "spearman"
+        ],
+        "title": "DiameterAgreement",
+        "type": "object"
+      },
+      "DiceMarkers": {
+        "additionalProperties": false,
+        "description": "UI markers on the Dice chart.",
+        "properties": {
+          "lower": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Lower",
+            "type": "number"
+          },
+          "upper": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Upper",
+            "type": "number"
+          }
+        },
+        "required": [
+          "lower",
+          "upper"
+        ],
+        "title": "DiceMarkers",
+        "type": "object"
+      },
+      "DiceMetricsV0": {
+        "additionalProperties": false,
+        "description": "Per-dataset Dice summary. Key names contain a dot, hence the aliases.",
+        "properties": {
+          "mean": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Mean",
+            "type": "number"
+          },
+          "median": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Median",
+            "type": "number"
+          },
+          "share_below_0.85": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Share Below 0.85",
+            "type": "number"
+          },
+          "share_below_0.90": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Share Below 0.90",
+            "type": "number"
+          }
+        },
+        "required": [
+          "median",
+          "mean",
+          "share_below_0.90",
+          "share_below_0.85"
+        ],
+        "title": "DiceMetricsV0",
+        "type": "object"
+      },
+      "ErrorDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          }
+        },
+        "required": [
+          "detail"
+        ],
+        "title": "ErrorDetail",
+        "type": "object"
+      },
+      "Evidence": {
+        "additionalProperties": false,
+        "description": "One named piece of evidence behind a result (e.g. ``tvd = 0.40``).",
+        "properties": {
+          "key": {
+            "minLength": 1,
+            "title": "Key",
+            "type": "string"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "Evidence",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "Health": {
+        "additionalProperties": false,
+        "properties": {
+          "note": {
+            "default": "Liveness only",
+            "title": "Note",
+            "type": "string"
+          },
+          "status": {
+            "const": "alive",
+            "default": "alive",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "title": "Health",
+        "type": "object"
+      },
+      "JobAccepted": {
+        "additionalProperties": false,
+        "properties": {
+          "job_id": {
+            "title": "Job Id",
+            "type": "string"
+          },
+          "report_url": {
+            "title": "Report Url",
+            "type": "string"
+          },
+          "result_url": {
+            "title": "Result Url",
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/JobState"
+          },
+          "status_url": {
+            "title": "Status Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id",
+          "state",
+          "status_url",
+          "result_url",
+          "report_url"
+        ],
+        "title": "JobAccepted",
+        "type": "object"
+      },
+      "JobAudit": {
+        "additionalProperties": false,
+        "description": "Audit fields recorded with every job (ADR 0001 section 8; stored as JSON until a DB exists).",
+        "properties": {
+          "api_version": {
+            "title": "Api Version",
+            "type": "string"
+          },
+          "core_version": {
+            "title": "Core Version",
+            "type": "string"
+          },
+          "dataset_fingerprint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset Fingerprint"
+          },
+          "embedding_space_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Embedding Space Id"
+          },
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "reference_fingerprint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Fingerprint"
+          },
+          "reference_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Id"
+          },
+          "requested_by": {
+            "description": "From the X-SlicePoint-User header; self-reported, 'unknown' if absent.",
+            "title": "Requested By",
+            "type": "string"
+          },
+          "schemas_version": {
+            "title": "Schemas Version",
+            "type": "string"
+          },
+          "verdict": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VerdictOutcome"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Final outcome (after any override)."
+          }
+        },
+        "required": [
+          "requested_by",
+          "api_version",
+          "core_version",
+          "schemas_version"
+        ],
+        "title": "JobAudit",
+        "type": "object"
+      },
+      "JobList": {
+        "additionalProperties": false,
+        "properties": {
+          "jobs": {
+            "items": {
+              "$ref": "#/components/schemas/JobSummary"
+            },
+            "title": "Jobs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "jobs"
+        ],
+        "title": "JobList",
+        "type": "object"
+      },
+      "JobRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "audit": {
+            "$ref": "#/components/schemas/JobAudit"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Why the job failed (one line, no server paths).",
+            "title": "Error"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "job_id": {
+            "pattern": "^[0-9a-f]{32}$",
+            "title": "Job Id",
+            "type": "string"
+          },
+          "kind": {
+            "const": "assessment",
+            "default": "assessment",
+            "title": "Kind",
+            "type": "string"
+          },
+          "request": {
+            "$ref": "#/components/schemas/JobRequestSummary"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "state": {
+            "$ref": "#/components/schemas/JobState"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/JobStep"
+            },
+            "title": "Steps",
+            "type": "array"
+          }
+        },
+        "required": [
+          "job_id",
+          "state",
+          "created_at",
+          "request",
+          "steps",
+          "audit"
+        ],
+        "title": "JobRecord",
+        "type": "object"
+      },
+      "JobRequestSummary": {
+        "additionalProperties": false,
+        "description": "What was asked for (the inline profile is recorded by id; the full profile is in the result).",
+        "properties": {
+          "dataset": {
+            "title": "Dataset",
+            "type": "string"
+          },
+          "on_inconsistency": {
+            "enum": [
+              "raise",
+              "drop_and_note"
+            ],
+            "title": "On Inconsistency",
+            "type": "string"
+          },
+          "profile_id": {
+            "title": "Profile Id",
+            "type": "string"
+          },
+          "reference_dataset": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Dataset"
+          },
+          "reference_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Id"
+          },
+          "reference_site_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Site Id"
+          },
+          "show_provisional_scores": {
+            "title": "Show Provisional Scores",
+            "type": "boolean"
+          },
+          "site_id": {
+            "title": "Site Id",
+            "type": "string"
+          },
+          "site_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Site Name"
+          }
+        },
+        "required": [
+          "dataset",
+          "site_id",
+          "site_name",
+          "reference_id",
+          "reference_dataset",
+          "reference_site_id",
+          "profile_id",
+          "on_inconsistency",
+          "show_provisional_scores"
+        ],
+        "title": "JobRequestSummary",
+        "type": "object"
+      },
+      "JobState": {
+        "enum": [
+          "queued",
+          "running",
+          "succeeded",
+          "failed"
+        ],
+        "title": "JobState",
+        "type": "string"
+      },
+      "JobStep": {
+        "additionalProperties": false,
+        "properties": {
+          "duration_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Ms"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StepStatus",
+            "default": "pending"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ],
+        "title": "JobStep",
+        "type": "object"
+      },
+      "JobSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "dataset": {
+            "title": "Dataset",
+            "type": "string"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "job_id": {
+            "title": "Job Id",
+            "type": "string"
+          },
+          "site_id": {
+            "title": "Site Id",
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/JobState"
+          },
+          "verdict": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VerdictOutcome"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "job_id",
+          "state",
+          "created_at",
+          "finished_at",
+          "site_id",
+          "dataset",
+          "verdict"
+        ],
+        "title": "JobSummary",
+        "type": "object"
+      },
+      "PerformanceSummary": {
+        "additionalProperties": false,
+        "description": "Model performance on this site. Each block is null when its inputs were missing.\n\nThe binary-call and Dice blocks keep the POC shapes (``BinMetricsV0``,\n``DiceMetricsV0``) and their arithmetic validators. The diameter block is the\nprofile-driven :class:`DiameterAgreement`; ``DiameterMetricsV0`` is for legacy files.",
+        "properties": {
+          "aaa_missing_as_wrong": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BinMetricsV0"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "aaa_when_answered": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BinMetricsV0"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "diameter": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DiameterAgreement"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dice": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DiceMetricsV0"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "PerformanceSummary",
+        "type": "object"
+      },
+      "Provenance": {
+        "additionalProperties": false,
+        "properties": {
+          "author": {
+            "minLength": 1,
+            "title": "Author",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "source": {
+            "minLength": 1,
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "author",
+          "date"
+        ],
+        "title": "Provenance",
+        "type": "object"
+      },
+      "ReferenceBuildRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset": {
+            "description": "Dataset folder, relative to the server's data root (e.g. hospital_b).",
+            "examples": [
+              "hospital_b"
+            ],
+            "maxLength": 400,
+            "title": "Dataset",
+            "type": "string"
+          },
+          "on_inconsistency": {
+            "default": "raise",
+            "enum": [
+              "raise",
+              "drop_and_note"
+            ],
+            "title": "On Inconsistency",
+            "type": "string"
+          },
+          "profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ThresholdProfile"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Threshold profile used to fit the reference (default hackathon-default-v0)."
+          },
+          "reference_id": {
+            "anyOf": [
+              {
+                "pattern": "^[a-z0-9][a-z0-9_-]{0,79}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Id to store it under (default ref-<site_id>).",
+            "title": "Reference Id"
+          },
+          "site_id": {
+            "description": "Stable id of the reference site. Required; never guessed from the folder.",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "title": "Site Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataset",
+          "site_id"
+        ],
+        "title": "ReferenceBuildRequest",
+        "type": "object"
+      },
+      "ReferenceInfo": {
+        "additionalProperties": false,
+        "properties": {
+          "built_at": {
+            "format": "date-time",
+            "title": "Built At",
+            "type": "string"
+          },
+          "built_by": {
+            "title": "Built By",
+            "type": "string"
+          },
+          "dataset": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Dataset name it was built from, if built by this service.",
+            "title": "Dataset"
+          },
+          "dataset_fingerprint": {
+            "title": "Dataset Fingerprint",
+            "type": "string"
+          },
+          "embedding_space_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Embedding Space Id"
+          },
+          "has_labels": {
+            "title": "Has Labels",
+            "type": "boolean"
+          },
+          "n_cases": {
+            "title": "N Cases",
+            "type": "integer"
+          },
+          "n_people": {
+            "title": "N People",
+            "type": "integer"
+          },
+          "profile_id": {
+            "title": "Profile Id",
+            "type": "string"
+          },
+          "reference_id": {
+            "title": "Reference Id",
+            "type": "string"
+          },
+          "requested_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested By"
+          },
+          "site_id": {
+            "title": "Site Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reference_id",
+          "site_id",
+          "dataset",
+          "n_cases",
+          "n_people",
+          "has_labels",
+          "embedding_space_id",
+          "profile_id",
+          "dataset_fingerprint",
+          "built_at",
+          "built_by"
+        ],
+        "title": "ReferenceInfo",
+        "type": "object"
+      },
+      "ReferenceList": {
+        "additionalProperties": false,
+        "properties": {
+          "references": {
+            "items": {
+              "$ref": "#/components/schemas/ReferenceInfo"
+            },
+            "title": "References",
+            "type": "array"
+          }
+        },
+        "required": [
+          "references"
+        ],
+        "title": "ReferenceList",
+        "type": "object"
+      },
+      "ReferenceRef": {
+        "additionalProperties": false,
+        "description": "Which reference profile the site was compared against.",
+        "properties": {
+          "embedding_space_id": {
+            "anyOf": [
+              {
+                "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Embedding Space Id"
+          },
+          "fingerprint": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "sha256 of the reference dataset content.",
+            "title": "Fingerprint"
+          },
+          "n_cases": {
+            "minimum": 0.0,
+            "title": "N Cases",
+            "type": "integer"
+          },
+          "reference_id": {
+            "minLength": 1,
+            "title": "Reference Id",
+            "type": "string"
+          },
+          "site_id": {
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+            "title": "Site Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reference_id",
+          "site_id",
+          "n_cases"
+        ],
+        "title": "ReferenceRef",
+        "type": "object"
+      },
+      "ReviewCase": {
+        "additionalProperties": false,
+        "description": "A scan worth a human look. ``priority`` is the most urgent of its ``reasons``;\n``error_mm`` is ``ai_diameter_mm - reference_diameter_mm`` when both exist.",
+        "properties": {
+          "aaa": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aaa"
+          },
+          "ai_aaa": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Aaa"
+          },
+          "ai_diameter_mm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Diameter Mm"
+          },
+          "case_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^\\S(?:.*\\S)?$",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "error_mm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Mm"
+          },
+          "person_group": {
+            "pattern": "^p\\d+$",
+            "title": "Person Group",
+            "type": "string"
+          },
+          "priority": {
+            "maximum": 4.0,
+            "minimum": 1.0,
+            "title": "Priority",
+            "type": "integer"
+          },
+          "reasons": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewReason"
+            },
+            "minItems": 1,
+            "title": "Reasons",
+            "type": "array"
+          },
+          "reference_diameter_mm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Diameter Mm"
+          }
+        },
+        "required": [
+          "case_id",
+          "person_group",
+          "reasons",
+          "priority"
+        ],
+        "title": "ReviewCase",
+        "type": "object"
+      },
+      "ReviewReason": {
+        "description": "Why a scan is listed for review. Priority: 1 missed or unanswered aneurysm,\n2 no answer, 3 size error beyond the tolerance, 4 false alarm.",
+        "enum": [
+          "missed_aneurysm",
+          "no_answer_on_aneurysm",
+          "no_answer",
+          "size_error",
+          "false_alarm"
+        ],
+        "title": "ReviewReason",
+        "type": "string"
+      },
+      "ScanSummary": {
+        "additionalProperties": false,
+        "description": "One scan as the viewer shows it. ``person_group`` is the real-person grouping\n(same patient id OR near-identical embedding), so it can join scans under different\npatient ids. ``ai_aaa`` null means the model gave no answer, never \"normal\".",
+        "properties": {
+          "aaa": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aaa"
+          },
+          "aaa_size_class": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AaaSizeClass"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "age_band": {
+            "anyOf": [
+              {
+                "pattern": "^\\d0-\\d9$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Age Band"
+          },
+          "ai_aaa": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Aaa"
+          },
+          "ai_diameter_mm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Diameter Mm"
+          },
+          "case_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^\\S(?:.*\\S)?$",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "contrast_phase": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ContrastPhase"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "person_group": {
+            "pattern": "^p\\d+$",
+            "title": "Person Group",
+            "type": "string"
+          },
+          "reference_diameter_mm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Diameter Mm"
+          },
+          "scanner_vendor": {
+            "anyOf": [
+              {
+                "description": "Open set, lowercased. Known: siemens, philips, ge; others (e.g. canon) are accepted.",
+                "examples": [
+                  "siemens",
+                  "philips",
+                  "ge"
+                ],
+                "maxLength": 64,
+                "minLength": 1,
+                "pattern": "^\\S(?:.*\\S)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scanner Vendor"
+          },
+          "sex": {
+            "anyOf": [
+              {
+                "description": "Open set. Known: M, F (normalised to upper case); other strings are kept.",
+                "examples": [
+                  "M",
+                  "F"
+                ],
+                "maxLength": 64,
+                "minLength": 1,
+                "pattern": "^\\S(?:.*\\S)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sex"
+          },
+          "slice_thickness_class": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SliceThicknessClass"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "case_id",
+          "person_group"
+        ],
+        "title": "ScanSummary",
+        "type": "object"
+      },
+      "SliceThicknessClass": {
+        "description": "Thickness class. In the data the mapping from ``slice_thickness_mm`` is exact:\nthin < 2 mm (0.6-1.5 observed), standard 2.0-3.75, thick 5.0. The schema does not\nenforce that mapping, because detecting inconsistent metadata is the analysis' job.",
+        "enum": [
+          "thin",
+          "standard",
+          "thick"
+        ],
+        "title": "SliceThicknessClass",
+        "type": "string"
+      },
+      "StepRecord": {
+        "additionalProperties": false,
+        "description": "One step of the assessment pipeline. ``detail`` is required unless the step is ok.",
+        "properties": {
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "state": {
+            "$ref": "#/components/schemas/StepState"
+          },
+          "step": {
+            "pattern": "^[a-z][a-z0-9_]{0,63}$",
+            "title": "Step",
+            "type": "string"
+          }
+        },
+        "required": [
+          "step",
+          "state"
+        ],
+        "title": "StepRecord",
+        "type": "object"
+      },
+      "StepState": {
+        "description": "Outcome of one pipeline step.",
+        "enum": [
+          "ok",
+          "skipped",
+          "failed"
+        ],
+        "title": "StepState",
+        "type": "string"
+      },
+      "StepStatus": {
+        "enum": [
+          "pending",
+          "running",
+          "succeeded",
+          "failed",
+          "skipped"
+        ],
+        "title": "StepStatus",
+        "type": "string"
+      },
+      "Strata": {
+        "additionalProperties": false,
+        "description": "The by-group (stratified) table, computed by the runner. The suppression rules and\nthe size tolerance it used are recorded with it, so a reader never has to guess them.",
+        "properties": {
+          "min_aaa_for_sensitivity": {
+            "exclusiveMinimum": 0.0,
+            "title": "Min Aaa For Sensitivity",
+            "type": "integer"
+          },
+          "min_group_size": {
+            "exclusiveMinimum": 0.0,
+            "title": "Min Group Size",
+            "type": "integer"
+          },
+          "rows": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/StratumRow"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "size_tolerance_mm": {
+            "exclusiveMinimum": 0.0,
+            "title": "Size Tolerance Mm",
+            "type": "number"
+          }
+        },
+        "required": [
+          "min_group_size",
+          "min_aaa_for_sensitivity",
+          "size_tolerance_mm"
+        ],
+        "title": "Strata",
+        "type": "object"
+      },
+      "StratumRow": {
+        "additionalProperties": false,
+        "description": "One group (``variable`` = ``level``) of the by-group table.\n\n``too_few`` (fewer than ``Strata.min_group_size`` scans) suppresses every metric.\n``sens_too_few`` (too few scans, or fewer than ``min_aaa_for_sensitivity``\naneurysms) suppresses sensitivity. Both rules count scans, not people. A missing\nvalue of the variable is the level ``MISSING``.",
+        "properties": {
+          "bias_mm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bias Mm"
+          },
+          "level": {
+            "minLength": 1,
+            "title": "Level",
+            "type": "string"
+          },
+          "mae_mm": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mae Mm"
+          },
+          "n": {
+            "minimum": 0.0,
+            "title": "N",
+            "type": "integer"
+          },
+          "n_aaa": {
+            "minimum": 0.0,
+            "title": "N Aaa",
+            "type": "integer"
+          },
+          "people": {
+            "minimum": 0.0,
+            "title": "People",
+            "type": "integer"
+          },
+          "sens": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sens"
+          },
+          "sens_hi": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sens Hi"
+          },
+          "sens_lo": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sens Lo"
+          },
+          "sens_too_few": {
+            "title": "Sens Too Few",
+            "type": "boolean"
+          },
+          "too_few": {
+            "title": "Too Few",
+            "type": "boolean"
+          },
+          "variable": {
+            "pattern": "^[a-z][a-z0-9_]{0,63}$",
+            "title": "Variable",
+            "type": "string"
+          },
+          "within_tolerance": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Share of the group's paired cases within Strata.size_tolerance_mm.",
+            "title": "Within Tolerance"
+          }
+        },
+        "required": [
+          "variable",
+          "level",
+          "n",
+          "people",
+          "n_aaa",
+          "too_few",
+          "sens_too_few"
+        ],
+        "title": "StratumRow",
+        "type": "object"
+      },
+      "SubFactor": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "pattern": "^[a-z][a-z0-9_]{0,63}$",
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ],
+        "title": "SubFactor",
+        "type": "object"
+      },
+      "ThresholdProfile": {
+        "additionalProperties": false,
+        "description": "All configurable numbers for one model (and optionally one site).\n\n``check_targets`` keys are the checks this profile expects; a verdict treats any of\nthem that did not run as *not evaluated*. ``value_sources`` maps a dotted field path\n(``aaa.decision_line_mm``, ``triggers.No-answer rate``) to a citation.",
+        "properties": {
+          "aaa": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AaaRules"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "check_targets": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "minProperties": 1,
+            "title": "Check Targets",
+            "type": "object"
+          },
+          "dice_markers": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DiceMarkers"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "min_group_size": {
+            "description": "Minimum subgroup n for subgroup flags.",
+            "exclusiveMinimum": 0.0,
+            "title": "Min Group Size",
+            "type": "integer"
+          },
+          "model_id": {
+            "minLength": 1,
+            "title": "Model Id",
+            "type": "string"
+          },
+          "parameters": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "description": "Named numbers that are not yellow/red lines: similarity cut-offs, multipliers, grid bounds, plausible ranges, seeds. Keys are snake_case, no dots.",
+            "title": "Parameters",
+            "type": "object"
+          },
+          "profile_id": {
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+            "title": "Profile Id",
+            "type": "string"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/Provenance"
+          },
+          "schema_version": {
+            "const": "0.1.0",
+            "default": "0.1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "site_id": {
+            "anyOf": [
+              {
+                "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Site Id"
+          },
+          "triggers": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/TriggerThreshold"
+            },
+            "title": "Triggers",
+            "type": "object"
+          },
+          "value_sources": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Value Sources",
+            "type": "object"
+          }
+        },
+        "required": [
+          "profile_id",
+          "model_id",
+          "provenance",
+          "min_group_size",
+          "check_targets"
+        ],
+        "title": "ThresholdProfile",
+        "type": "object"
+      },
+      "ToleranceRole": {
+        "enum": [
+          "bland_altman",
+          "size"
+        ],
+        "title": "ToleranceRole",
+        "type": "string"
+      },
+      "TriggerKind": {
+        "description": "Display unit of a trigger value (history.csv ``kind``).",
+        "enum": [
+          "pct",
+          "pp",
+          "sd",
+          "mm",
+          "num2"
+        ],
+        "title": "TriggerKind",
+        "type": "string"
+      },
+      "TriggerThreshold": {
+        "additionalProperties": false,
+        "description": "A yellow/red threshold pair with a direction.\n\nOrdering must agree with ``worse``: for ``high`` red > yellow, for ``low`` red < yellow.\nComparisons are strict by default, as in ``monitor.evaluate``; ``inclusive=True`` makes\nthem ``>=`` / ``<=`` (the notebook uses that for domain AUC and the cutoff shift).\n\nEither line may be absent, but not both. The notebook has red-only rules (repeats: any\nnear-duplicate share above 1% is red, with no yellow band) and yellow-only rules\n(specificity below 0.90 is at most a watch).",
+        "properties": {
+          "inclusive": {
+            "default": false,
+            "description": "Compare with >= / <= instead of the strict > / <.",
+            "title": "Inclusive",
+            "type": "boolean"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TriggerKind"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "red": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Red"
+          },
+          "worse": {
+            "$ref": "#/components/schemas/Worse"
+          },
+          "yellow": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Yellow"
+          }
+        },
+        "required": [
+          "yellow",
+          "red",
+          "worse"
+        ],
+        "title": "TriggerThreshold",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "Verdict": {
+        "additionalProperties": false,
+        "description": "A verdict with its rationale and the results it rests on.\n\nValidated invariants (hold for any verdict, including a human override):\n\n* ``go`` requires at least one result, every included result ``ok`` and nothing in\n  ``not_evaluated``.\n* ``no_go`` requires at least one ``problem``.\n* check ids are unique and ``not_evaluated`` does not overlap the results.\n\nThese apply to the derived ``outcome``. ``override`` (optional) carries a human\ndecision. It must differ from the derived outcome, and :attr:`final_outcome` returns it.",
+        "properties": {
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "not_evaluated": {
+            "default": [],
+            "description": "Checks the profile expects that produced no result.",
+            "items": {
+              "pattern": "^[a-z][a-z0-9_]{0,63}$",
+              "type": "string"
+            },
+            "title": "Not Evaluated",
+            "type": "array"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/VerdictOutcome"
+          },
+          "override": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VerdictOverride"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "rationale": {
+            "minLength": 1,
+            "title": "Rationale",
+            "type": "string"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/CheckResult"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": "0.1.0",
+            "default": "0.1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "site_id": {
+            "anyOf": [
+              {
+                "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Site Id"
+          }
+        },
+        "required": [
+          "outcome",
+          "rationale",
+          "results"
+        ],
+        "title": "Verdict",
+        "type": "object"
+      },
+      "VerdictOutcome": {
+        "enum": [
+          "go",
+          "no_go",
+          "borderline"
+        ],
+        "title": "VerdictOutcome",
+        "type": "string"
+      },
+      "VerdictOverride": {
+        "additionalProperties": false,
+        "description": "A human decision that replaces the derived outcome.\n\nOverriding to ``go`` while checks are ``problem`` or not evaluated is allowed, but only\nthrough this record, so the departure from the rule is always attributed and justified.",
+        "properties": {
+          "at": {
+            "description": "When, with a timezone.",
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "by": {
+            "description": "Who made the decision (person or committee identifier).",
+            "minLength": 1,
+            "pattern": "\\S",
+            "title": "By",
+            "type": "string"
+          },
+          "note": {
+            "description": "Required justification, at least 20 characters after trimming whitespace.",
+            "title": "Note",
+            "type": "string"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/VerdictOutcome",
+            "description": "The final outcome, replacing the derived one."
+          }
+        },
+        "required": [
+          "outcome",
+          "by",
+          "at",
+          "note"
+        ],
+        "title": "VerdictOverride",
+        "type": "object"
+      },
+      "WithinTolerance": {
+        "additionalProperties": false,
+        "description": "Share of cases with ``|predicted - reference| <= tolerance_mm``. The tolerance\ncomes from the threshold profile (``aaa.bland_altman_tolerance_mm`` /\n``aaa.size_tolerance_mm``); ``share`` is null when there are too few pairs.",
+        "properties": {
+          "role": {
+            "$ref": "#/components/schemas/ToleranceRole"
+          },
+          "share": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Share"
+          },
+          "tolerance_mm": {
+            "exclusiveMinimum": 0.0,
+            "title": "Tolerance Mm",
+            "type": "number"
+          }
+        },
+        "required": [
+          "role",
+          "tolerance_mm",
+          "share"
+        ],
+        "title": "WithinTolerance",
+        "type": "object"
+      },
+      "Worse": {
+        "description": "Which direction of a trigger value is bad.",
+        "enum": [
+          "high",
+          "low"
+        ],
+        "title": "Worse",
+        "type": "string"
+      }
+    },
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "Job-based SlicePoint assessments over slicepoint-core. All routes except /healthz need `Authorization: Bearer <token>`.",
+    "title": "SlicePoint API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/healthz": {
+      "get": {
+        "description": "Liveness only. No authentication; says nothing about data or jobs.",
+        "operationId": "healthz_healthz_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [],
+        "summary": "Healthz",
+        "tags": [
+          "meta"
+        ]
+      }
+    },
+    "/v1/assessments": {
+      "get": {
+        "description": "Every job this service knows about (in memory and on disk), newest first.",
+        "operationId": "list_assessments_v1_assessments_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Bad dataset name or reference"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Missing or wrong bearer token"
+          }
+        },
+        "summary": "List Assessments",
+        "tags": [
+          "assessments"
+        ]
+      },
+      "post": {
+        "description": "Queue an assessment. Poll ``GET /v1/assessments/{job_id}`` for per-step progress.",
+        "operationId": "submit_assessment_v1_assessments_post",
+        "parameters": [
+          {
+            "description": "Who is asking (for the audit record).",
+            "in": "header",
+            "name": "X-SlicePoint-User",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Who is asking (for the audit record).",
+              "title": "X-Slicepoint-User"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssessmentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobAccepted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Bad dataset name or reference"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Missing or wrong bearer token"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Stored reference not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Too many jobs queued"
+          }
+        },
+        "summary": "Submit Assessment",
+        "tags": [
+          "assessments"
+        ]
+      }
+    },
+    "/v1/assessments/{job_id}": {
+      "get": {
+        "description": "Job status with every step: pending, running, succeeded, failed or skipped.",
+        "operationId": "get_assessment_v1_assessments__job_id__get",
+        "parameters": [
+          {
+            "description": "Job id (32 hex characters).",
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "description": "Job id (32 hex characters).",
+              "pattern": "^[0-9a-f]{32}$",
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobRecord"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Bad dataset name or reference"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Missing or wrong bearer token"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Assessment",
+        "tags": [
+          "assessments"
+        ]
+      }
+    },
+    "/v1/assessments/{job_id}/report.html": {
+      "get": {
+        "description": "The self-contained HTML report.",
+        "operationId": "get_report_v1_assessments__job_id__report_html_get",
+        "parameters": [
+          {
+            "description": "Job id (32 hex characters).",
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "description": "Job id (32 hex characters).",
+              "pattern": "^[0-9a-f]{32}$",
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Bad dataset name or reference"
+          },
+          "401": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Missing or wrong bearer token"
+          },
+          "404": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Report",
+        "tags": [
+          "assessments"
+        ]
+      }
+    },
+    "/v1/assessments/{job_id}/result": {
+      "get": {
+        "description": "The versioned AssessmentResult. Provisional scores are absent unless the job asked for them.",
+        "operationId": "get_result_v1_assessments__job_id__result_get",
+        "parameters": [
+          {
+            "description": "Job id (32 hex characters).",
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "description": "Job id (32 hex characters).",
+              "pattern": "^[0-9a-f]{32}$",
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Bad dataset name or reference"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Missing or wrong bearer token"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Job not finished, or failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Result",
+        "tags": [
+          "assessments"
+        ]
+      }
+    },
+    "/v1/checks": {
+      "get": {
+        "description": "Descriptors of the registered checks (the UI renders cards from these).",
+        "operationId": "checks_v1_checks_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CheckDescriptor"
+                  },
+                  "title": "Response Checks V1 Checks Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Bad dataset name or reference"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Missing or wrong bearer token"
+          }
+        },
+        "summary": "Checks",
+        "tags": [
+          "meta"
+        ]
+      }
+    },
+    "/v1/datasets": {
+      "get": {
+        "description": "Dataset folders under the server's data root (folders holding features.parquet). Names only.",
+        "operationId": "datasets_v1_datasets_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Bad dataset name or reference"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Missing or wrong bearer token"
+          }
+        },
+        "summary": "Datasets",
+        "tags": [
+          "data"
+        ]
+      }
+    },
+    "/v1/references": {
+      "get": {
+        "operationId": "list_references_v1_references_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferenceList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Bad dataset name or reference"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Missing or wrong bearer token"
+          }
+        },
+        "summary": "List References",
+        "tags": [
+          "references"
+        ]
+      },
+      "post": {
+        "description": "Build a reference profile from a dataset and store it. Runs synchronously.",
+        "operationId": "build_reference_v1_references_post",
+        "parameters": [
+          {
+            "description": "Who is asking (for the audit record).",
+            "in": "header",
+            "name": "X-SlicePoint-User",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Who is asking (for the audit record).",
+              "title": "X-Slicepoint-User"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReferenceBuildRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferenceInfo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Bad dataset name or reference"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Missing or wrong bearer token"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Reference id already exists"
+          },
+          "422": {
+            "description": "Invalid request or input data"
+          }
+        },
+        "summary": "Build Reference",
+        "tags": [
+          "references"
+        ]
+      }
+    },
+    "/v1/references/{reference_id}": {
+      "get": {
+        "operationId": "get_reference_v1_references__reference_id__get",
+        "parameters": [
+          {
+            "description": "Reference profile id.",
+            "in": "path",
+            "name": "reference_id",
+            "required": true,
+            "schema": {
+              "description": "Reference profile id.",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,79}$",
+              "title": "Reference Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferenceInfo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Bad dataset name or reference"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Missing or wrong bearer token"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Reference",
+        "tags": [
+          "references"
+        ]
+      }
+    }
+  },
+  "security": [
+    {
+      "bearer": []
+    }
+  ]
+}
