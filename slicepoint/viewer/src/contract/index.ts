@@ -5,6 +5,7 @@ export type {
   AssessmentResult,
   BinMetricsV0,
   CasesToReview,
+  CheckDescriptor,
   CheckResult,
   CheckRun,
   CheckRunState,

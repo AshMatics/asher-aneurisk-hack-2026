@@ -36,6 +36,7 @@ describe("App", () => {
     expect(within(card).getByText("Problem")).toBeInTheDocument();
     expect(within(card).getByText(/effective n 32\./)).toBeInTheDocument();
     expect(screen.queryByText(/Show provisional scores/)).not.toBeInTheDocument();
+    expect(screen.queryByTestId("self-comparison")).not.toBeInTheDocument();
   });
 
   it("drills into a check's evidence", async () => {
@@ -100,6 +101,8 @@ describe("App", () => {
     expect(screen.getByTestId("final-verdict")).toHaveTextContent("GO");
     expect(screen.getByTestId("override")).toHaveTextContent("changed from BORDERLINE to GO");
     expect(screen.getByTestId("override")).toHaveTextContent("AI governance committee (example)");
+    // The example is hospital_a against a reference built from hospital_a: flagged next to the verdict.
+    expect(screen.getByTestId("self-comparison")).toHaveTextContent("compared against its own reference data");
   });
 
   it("moves between tabs with the keyboard and sorts cases", async () => {

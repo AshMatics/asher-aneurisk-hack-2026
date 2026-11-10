@@ -4,7 +4,7 @@ import type { AssessmentResult, ThresholdProfile } from "../contract";
 import { SCHEMA_VERSION } from "../contract";
 import { formatTimestamp, num } from "./format";
 import { displaySiteName, readable } from "./labels";
-import { checkTitle } from "./registry";
+import { checkLookup, type CheckLookup } from "./registry";
 import { NOT_RECORDED, STEP, type StatusLabel } from "./status";
 
 export interface KeyValue {
@@ -58,7 +58,7 @@ function defined<T>(m: Record<string, T | undefined> | null | undefined): [strin
   return Object.entries(m ?? {}).flatMap(([k, v]) => (v === undefined ? [] : [[k, v] as [string, T]]));
 }
 
-function thresholdsView(t: ThresholdProfile | null | undefined): ThresholdsView {
+function thresholdsView(t: ThresholdProfile | null | undefined, lookup: CheckLookup): ThresholdsView {
   if (t === null || t === undefined) {
     return {
       kind: "not_recorded",
@@ -99,7 +99,7 @@ function thresholdsView(t: ThresholdProfile | null | undefined): ThresholdsView 
       ...(p.notes ? [{ label: "Notes", value: p.notes }] : []),
     ],
     rules,
-    targets: defined(t.check_targets).map(([id, v]) => ({ label: checkTitle(id), value: `${v} of 100` })),
+    targets: defined(t.check_targets).map(([id, v]) => ({ label: lookup.title(id), value: `${v} of 100` })),
     triggers: defined(t.triggers).map(([name, tr]) => ({
       name,
       yellow: tr.yellow === null || tr.yellow === undefined ? "–" : num(tr.yellow),
@@ -164,7 +164,7 @@ export function buildAbout(result: AssessmentResult, readNotes: readonly string[
     notes: (result.notes ?? []).map(readable),
     methods,
     limits,
-    thresholds: thresholdsView(t),
+    thresholds: thresholdsView(t, checkLookup(result.check_descriptors)),
     provenance,
     steps,
     stepsLine: `${steps.length} steps: ${nSkip} skipped, ${nFail} failed. A skipped step never counts as passed.`,

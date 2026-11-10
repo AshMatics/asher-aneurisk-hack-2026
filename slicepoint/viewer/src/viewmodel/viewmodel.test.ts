@@ -121,13 +121,17 @@ describe("check cards", () => {
     const scanning = vm.checks.find((c) => c.id === "scanning");
     const auc = scanning?.evidence.find((g) => g.factor === "scan_content_auc");
     expect(auc?.status.label).toBe("Problem");
-    expect(auc?.rows.map((r) => [r.label, r.value])).toEqual([["AUC", "0.847"]]);
+    expect(auc?.rows.map((r) => [r.label, r.value])).toEqual([
+      ["AUC", "0.847"],
+      ["AUC raw", "0.847"],
+    ]);
     expect(auc?.rows[0]?.key).toBe("scan_content_auc.auc");
     expect(scanning?.otherEvidence.map((r) => r.key)).toContain("tvd.contrast_phase");
   });
 
   it("renders a check that is not one of the default five", () => {
     const r = fixture("hospital_c");
+    delete r.check_descriptors; // a file written before core 0.2.1: no descriptor for the new check
     r.checks = [...r.checks, { check_id: "contrast_timing", state: "evaluated", reason: null }] as typeof r.checks;
     r.verdict.results = [
       ...r.verdict.results,
@@ -153,6 +157,95 @@ describe("check cards", () => {
     expect(card?.failing).toEqual([{ id: "late_bolus", title: "Late bolus", failing: true }]);
     expect(card?.findings[0]?.text).toBe("Late bolus in Contrast phase: arterial (9 cases).");
     expect(card?.means).toBe("This check needs a closer look before deciding.");
+  });
+});
+
+describe("check descriptors from the result", () => {
+  it("takes titles and sub-factor titles from the result's descriptors", () => {
+    const r = fixture("hospital_b");
+    r.check_descriptors = (r.check_descriptors ?? []).map((d) =>
+      d.id === "repeats"
+        ? { ...d, title: "Distinct patients", sub_factors: (d.sub_factors ?? []).map((s) => ({ ...s, title: `${s.title} (result)` })) }
+        : d,
+    );
+    const vm = buildViewModel(r, { showScores: false });
+    const repeats = vm.checks.find((c) => c.id === "repeats");
+    expect(repeats?.title).toBe("Distinct patients");
+    expect(repeats?.failing.map((f) => f.title)).toEqual(["People (result)", "Random vs by-person split leakage (result)"]);
+    // The viewer-only copy is kept for a built-in check.
+    expect(repeats?.asks).toMatch(/^Does each scan come from a different person/);
+    expect(vm.verdict.problems.find((p) => p.id === "repeats")?.title).toBe("Distinct patients");
+    expect(vm.about.thresholds.kind === "ok" && vm.about.thresholds.targets.map((t) => t.label)).toContain("Distinct patients");
+  });
+
+  it("falls back to the built-in copy for a file without descriptors", () => {
+    const withDescriptors = buildViewModel(fixture("hospital_b"), { showScores: false });
+    const r = fixture("hospital_b");
+    delete r.check_descriptors;
+    expect(loadResultData(r).ok).toBe(true);
+    const without = buildViewModel(r, { showScores: false });
+    expect(without.checks.map((c) => [c.title, c.known, c.failing.map((f) => f.title)])).toEqual(
+      withDescriptors.checks.map((c) => [c.title, c.known, c.failing.map((f) => f.title)]),
+    );
+    expect(without.checks.map((c) => c.title)).toEqual([
+      "Different people",
+      "Scan settings match",
+      "Patients match",
+      "Labels follow 30 mm rule",
+      "AI accuracy",
+    ]);
+  });
+
+  it("renders a new check from its descriptor alone", () => {
+    const r = fixture("hospital_c");
+    r.check_descriptors = [
+      ...(r.check_descriptors ?? []),
+      {
+        id: "contrast_timing",
+        title: "Contrast timing",
+        definition: "Is the contrast bolus timed like at the reference?",
+        sub_factors: [{ id: "late_bolus", title: "Bolus arrives late" }],
+      },
+    ];
+    r.checks = [...r.checks, { check_id: "contrast_timing", state: "evaluated", reason: null }] as typeof r.checks;
+    r.verdict.results = [
+      ...r.verdict.results,
+      {
+        check_id: "contrast_timing",
+        status: "watch",
+        n: 42,
+        failing_sub_factors: ["late_bolus"],
+        summary: "Late bolus.",
+        evidence: [{ key: "late_bolus", value: "yellow", text: "Late bolus." }],
+      },
+    ];
+    expect(loadResultData(r).ok).toBe(true);
+    const card = buildViewModel(r, { showScores: false }).checks.find((c) => c.id === "contrast_timing");
+    expect(card?.known).toBe(true);
+    expect(card?.asks).toBe("Is the contrast bolus timed like at the reference?");
+    expect(card?.failing).toEqual([{ id: "late_bolus", title: "Bolus arrives late", failing: true }]);
+    expect(card?.evidence[0]?.title).toBe("Bolus arrives late");
+    expect(card?.means).toBe("This check needs a closer look before deciding.");
+  });
+});
+
+describe("domain AUC and self-comparison", () => {
+  it("shows the floored AUC and keeps the raw one", () => {
+    const scanning = buildViewModel(fixture("hospital_b"), { showScores: false }).checks.find((c) => c.id === "scanning");
+    const auc = scanning?.evidence.find((g) => g.factor === "scan_content_auc");
+    expect(auc?.rows.find((r) => r.key === "scan_content_auc.auc")?.value).toBe("0.5");
+    expect(Number(auc?.rows.find((r) => r.key === "scan_content_auc.auc_raw")?.value)).toBeLessThan(0.5);
+    expect(auc?.text).toMatch(/no better than chance/);
+  });
+
+  it("flags a site compared with its own reference next to the verdict", () => {
+    const own = buildViewModel(fixture("hospital_a_self"), { showScores: false });
+    expect(own.verdict.selfComparison).toMatch(/compared against its own reference data/);
+    expect(own.about.notes[0]).toBe(own.verdict.selfComparison);
+    expect(own.verdict.derivedOutcome).toBe("borderline"); // the verdict is unchanged
+    for (const id of ["hospital_b", "hospital_c", "hospital_d", "hospital_e"]) {
+      expect(buildViewModel(fixture(id), { showScores: false }).verdict.selfComparison).toBeNull();
+    }
   });
 });
 

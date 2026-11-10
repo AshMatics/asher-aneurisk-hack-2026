@@ -3,7 +3,7 @@
 import type { AssessmentResult, CheckResult, CheckRun, EvidenceItem } from "../contract";
 import { formatNEffective, int, num } from "./format";
 import { humanizeEvidenceKey, readable } from "./labels";
-import { GENERIC_MEANS, MEANS_NOT_RUN, checkCopy, checkTitle, subFactorTitle } from "./registry";
+import { GENERIC_MEANS, MEANS_NOT_RUN, checkLookup, type CheckLookup } from "./registry";
 import { CHECK_STATUS, FAILED, NOT_EVALUATED, SEVERITY_STATUS, type StatusLabel } from "./status";
 
 export interface Finding {
@@ -44,7 +44,7 @@ export interface ScoreView {
 export interface CheckCard {
   readonly id: string;
   readonly title: string;
-  /** False when the viewer has no copy for this check id (a custom check). */
+  /** False when neither the result's descriptors nor the viewer's copy know this check id. */
   readonly known: boolean;
   readonly asks: string;
   readonly state: CheckRun["state"];
@@ -85,6 +85,7 @@ function isFindingHead(ev: EvidenceItem): boolean {
 }
 
 function groupEvidence(
+  lookup: CheckLookup,
   checkId: string,
   res: CheckResult,
   showScores: boolean,
@@ -109,7 +110,7 @@ function groupEvidence(
   }
   const groups = [...heads.entries()].map(([factor, { ev, rows }]) => ({
     factor,
-    title: subFactorTitleOrFactor(checkId, factor),
+    title: subFactorTitleOrFactor(lookup, checkId, factor),
     status: CHECK_STATUS[SEVERITY_STATUS[ev.value as string] ?? "ok"],
     text: ev.text ? readable(ev.text) : null,
     rows,
@@ -117,10 +118,9 @@ function groupEvidence(
   return { groups, other };
 }
 
-function subFactorTitleOrFactor(checkId: string, factor: string): string {
-  const copy = checkCopy(checkId);
-  const sub = copy?.subFactors.find((s) => s.id === factor);
-  return sub ? sub.title : subFactorTitle("", factor);
+function subFactorTitleOrFactor(lookup: CheckLookup, checkId: string, factor: string): string {
+  const sub = lookup.copy(checkId)?.subFactors.find((s) => s.id === factor);
+  return sub ? sub.title : lookup.subFactorTitle("", factor);
 }
 
 function findings(res: CheckResult): Finding[] {
@@ -147,16 +147,17 @@ export interface CheckCardOptions {
 export function buildCheckCards(result: AssessmentResult, opts: CheckCardOptions): CheckCard[] {
   const results = new Map(result.verdict.results.map((r) => [r.check_id, r]));
   const targets = result.thresholds?.check_targets ?? {};
+  const lookup = checkLookup(result.check_descriptors);
   return result.checks.map((run): CheckCard => {
     const id = run.check_id;
-    const copy = checkCopy(id);
-    const title = checkTitle(id);
+    const copy = lookup.copy(id);
+    const title = lookup.title(id);
     const asks = copy?.asks ?? "";
     const allSubs = (failingIds: readonly string[]): SubFactorView[] => {
       const known = (copy?.subFactors ?? []).map((s) => ({ id: s.id, title: s.title, failing: failingIds.includes(s.id) }));
       const extra = failingIds
         .filter((f) => !known.some((k) => k.id === f))
-        .map((f) => ({ id: f, title: subFactorTitle(id, f), failing: true }));
+        .map((f) => ({ id: f, title: lookup.subFactorTitle(id, f), failing: true }));
       return [...known, ...extra];
     };
     const res = results.get(id);
@@ -188,7 +189,7 @@ export function buildCheckCards(result: AssessmentResult, opts: CheckCardOptions
     const failingIds = res.failing_sub_factors ?? [];
     const subs = allSubs(failingIds);
     const flagged = findings(res).filter((f) => f.status.tone !== "ok");
-    const { groups, other } = groupEvidence(id, res, opts.showScores);
+    const { groups, other } = groupEvidence(lookup, id, res, opts.showScores);
     const target = targets[id];
     const score =
       opts.showScores && res.score !== null && res.score !== undefined

@@ -223,3 +223,98 @@ def test_provisional_scores_are_stripped_from_json_by_default(reports: dict[str,
     stripped = strip_provisional_scores(rep.result)
     assert stripped.verdict.outcome == rep.result.verdict.outcome
     assert stripped.model_dump(exclude={"verdict"}) == rep.result.model_dump(exclude={"verdict"})
+
+
+# --------------------------------------------------------------------------- domain AUC floor
+
+
+def _auc_evidence(rep: object) -> tuple[float, float, str]:
+    from slicepoint_core import AssessmentReport
+
+    assert isinstance(rep, AssessmentReport)
+    ev = {e.key: e for e in rep.checks["scanning"].evidence}
+    auc, raw, head = ev["scan_content_auc.auc"].value, ev["scan_content_auc.auc_raw"].value, ev["scan_content_auc"]
+    assert isinstance(auc, float) and isinstance(raw, float) and head.text is not None
+    return auc, raw, head.text
+
+
+def test_floor_domain_auc() -> None:
+    from slicepoint_core.checks.builtin import floor_domain_auc
+
+    assert floor_domain_auc(0.14) == 0.5 and floor_domain_auc(0.5) == 0.5 and floor_domain_auc(0.85) == 0.85
+
+
+def test_domain_auc_below_chance_is_floored_and_raw_kept(reports: dict[str, object]) -> None:
+    """hospital_b and hospital_e cross-validate below 0.5 against hospital_a: noise, not separation."""
+    for site in ("hospital_b", "hospital_e"):
+        auc, raw, text = _auc_evidence(reports[site])
+        assert raw < 0.5 and auc == 0.5, site
+        assert "no better than chance" in text and "at or below chance" in text and "AUC 0.50" in text
+        assert "domain_auc" not in reports[site].checks["scanning"].failing_sub_factors  # type: ignore[attr-defined]
+
+
+def test_domain_auc_above_chance_is_unchanged(reports: dict[str, object]) -> None:
+    auc, raw, text = _auc_evidence(reports["hospital_c"])
+    assert auc == raw > 0.8 and "systematically different" in text
+
+
+def test_domain_auc_floor_is_applied_before_classifying(
+    reference: ReferenceProfile, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Classification uses the floored value: with a (hypothetical) yellow line at 0.5,
+    a raw 0.30 is classified as 0.5, i.e. watch, not ok."""
+    from slicepoint_core import stats
+
+    monkeypatch.setattr(stats, "domain_auc", lambda *a, **k: 0.30)
+    triggers = dict(HACKATHON_DEFAULT_PROFILE.triggers)
+    triggers["scanning_domain_auc"] = TriggerThreshold(yellow=0.5, red=0.8, worse=Worse.HIGH, inclusive=True)
+    profile = HACKATHON_DEFAULT_PROFILE.model_copy(update={"triggers": triggers})
+    rep = Assessment(load_site("hospital_b"), reference, profile, now=FIXED_NOW).run()
+    auc, raw, text = _auc_evidence(rep)
+    assert (auc, raw) == (0.5, 0.30)
+    head = next(e for e in rep.checks["scanning"].evidence if e.key == "scan_content_auc")
+    assert head.value == "yellow" and "AUC 0.50" in text
+    assert "domain_auc" in rep.checks["scanning"].failing_sub_factors
+
+
+# --------------------------------------------------------------------------- self-comparison
+
+
+def test_self_comparison_is_flagged_only_for_the_reference_site(
+    reports: dict[str, object], reference: ReferenceProfile
+) -> None:
+    from slicepoint_core import SELF_COMPARISON_NOTE, AssessmentReport
+
+    own = Assessment(load_site("hospital_a"), reference, HACKATHON_DEFAULT_PROFILE, now=FIXED_NOW).run()
+    assert own.result.is_self_comparison
+    assert own.result.notes[0] == SELF_COMPARISON_NOTE
+    assert own.result.dataset_fingerprint == reference.summary.provenance.dataset_fingerprint
+    # The verdict logic is unchanged: hospital_a against itself is borderline (measurement outliers).
+    assert own.verdict.outcome.value == "borderline"
+    for site, rep in reports.items():
+        assert isinstance(rep, AssessmentReport)
+        assert not rep.result.is_self_comparison, site
+        assert SELF_COMPARISON_NOTE not in rep.result.notes, site
+
+
+# --------------------------------------------------------------------------- embedded descriptors
+
+
+def test_result_embeds_the_registry_it_used(reports: dict[str, object], reference: ReferenceProfile) -> None:
+    from slicepoint_schemas import DEFAULT_CHECK_REGISTRY, AssessmentResult
+
+    from slicepoint_core import AssessmentReport
+
+    rep = reports["hospital_b"]
+    assert isinstance(rep, AssessmentReport)
+    assert rep.result.check_descriptors == DEFAULT_CHECK_REGISTRY.checks
+    assert rep.export().check_descriptors == DEFAULT_CHECK_REGISTRY.checks  # not stripped with the scores
+    assert AssessmentResult.model_validate_json(rep.to_json()).check_descriptors == DEFAULT_CHECK_REGISTRY.checks
+
+    reg = default_registry()
+    extra = CheckDescriptor(id="metadata", title="Metadata complete", definition="Share of scans with kVp.")
+    reg.register(CheckSpec(descriptor=extra, run=lambda ctx: CheckOutput(findings=[])))
+    custom = Assessment(load_site("hospital_b"), reference, registry=reg, now=FIXED_NOW).run()
+    assert custom.result.check_descriptors is not None
+    assert [d.id for d in custom.result.check_descriptors] == [s.id for s in reg]
+    assert custom.result.check_descriptors[-1] == extra

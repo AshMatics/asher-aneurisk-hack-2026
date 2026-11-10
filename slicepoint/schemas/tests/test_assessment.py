@@ -238,5 +238,53 @@ def test_review_case_rules() -> None:
 def test_versions() -> None:
     import slicepoint_schemas
 
-    assert slicepoint_schemas.__version__ == "0.2.0"
+    assert slicepoint_schemas.__version__ == "0.2.1"
     assert slicepoint_schemas.SCHEMA_VERSION == "0.1.0"  # the contract version is unchanged
+
+
+# --------------------------------------------------------------------------- 0.2.1 additions
+
+
+def test_check_descriptors_are_optional_and_round_trip() -> None:
+    from slicepoint_schemas import DEFAULT_CHECK_REGISTRY
+
+    assert AssessmentResult.model_validate(_result()).check_descriptors is None
+    res = AssessmentResult.model_validate(_result(check_descriptors=DEFAULT_CHECK_REGISTRY.checks))
+    assert res.check_descriptors == DEFAULT_CHECK_REGISTRY.checks
+    assert AssessmentResult.model_validate_json(res.model_dump_json()) == res
+
+
+def test_check_descriptors_must_cover_every_check() -> None:
+    from slicepoint_schemas import DEFAULT_CHECK_REGISTRY
+
+    partial = [d for d in DEFAULT_CHECK_REGISTRY.checks if d.id != "accuracy"]
+    with pytest.raises(ValidationError, match=r"no descriptor for checks \['accuracy'\]"):
+        AssessmentResult.model_validate(_result(check_descriptors=partial))
+    with pytest.raises(ValidationError, match="duplicate ids in check_descriptors"):
+        AssessmentResult.model_validate(_result(check_descriptors=[*DEFAULT_CHECK_REGISTRY.checks,
+                                                                   DEFAULT_CHECK_REGISTRY.checks[0]]))
+
+
+def test_check_descriptors_must_know_failing_sub_factors() -> None:
+    from slicepoint_schemas import DEFAULT_CHECK_REGISTRY
+
+    results = [
+        CheckResult(check_id=c, status=CheckStatus.OK, n=80) for c in ("repeats", "patients", "labels")
+    ] + [CheckResult(check_id="scanning", status=CheckStatus.WATCH, n=80, failing_sub_factors=("domain_auc",))]
+    data = _result(verdict=derive_verdict(results, HACKATHON_DEFAULT_PROFILE, site_id="hospital_b"))
+    AssessmentResult.model_validate({**data, "check_descriptors": DEFAULT_CHECK_REGISTRY.checks})
+    scanning = DEFAULT_CHECK_REGISTRY.as_mapping()["scanning"]
+    trimmed = scanning.model_copy(update={"sub_factors": tuple(s for s in scanning.sub_factors if s.id != "domain_auc")})
+    with pytest.raises(ValidationError, match=r"failing sub-factors \['domain_auc'\] are not in its descriptor"):
+        AssessmentResult.model_validate({**data, "check_descriptors": [
+            trimmed if d.id == "scanning" else d for d in DEFAULT_CHECK_REGISTRY.checks]})
+
+
+def test_is_self_comparison() -> None:
+    fp_a, fp_b = "a" * 64, "b" * 64
+    ref = {"reference_id": "ref-hospital_a", "site_id": "hospital_a", "n_cases": 100}
+    assert not AssessmentResult.model_validate(_result()).is_self_comparison  # no fingerprints recorded
+    same = _result(dataset_fingerprint=fp_a, reference={**ref, "fingerprint": fp_a})
+    assert AssessmentResult.model_validate(same).is_self_comparison
+    other = _result(dataset_fingerprint=fp_b, reference={**ref, "fingerprint": fp_a})
+    assert not AssessmentResult.model_validate(other).is_self_comparison

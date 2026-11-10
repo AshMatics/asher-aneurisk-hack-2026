@@ -163,7 +163,7 @@
       },
       "AssessmentResult": {
         "additionalProperties": false,
-        "description": "The full result of one assessment of one site against one reference.\n\n``thresholds``, ``strata``, ``cases_to_review`` and ``site_name`` were added after the\nfirst 0.1.0 files were written, so they are optional: an older file still validates,\nand a reader shows \"not recorded\" rather than assuming defaults.",
+        "description": "The full result of one assessment of one site against one reference.\n\n``thresholds``, ``strata``, ``cases_to_review`` and ``site_name`` were added after the\nfirst 0.1.0 files were written, so they are optional: an older file still validates,\nand a reader shows \"not recorded\" rather than assuming defaults. ``check_descriptors``\n(schemas 0.2.1) follows the same rule: a reader without it falls back to its own copy\nof the default registry.\n\nA site compared with its own reference data is visible from the two fingerprints\n(:attr:`is_self_comparison`); it is derived, not stored, so it cannot disagree with them.",
         "properties": {
           "cases_to_review": {
             "anyOf": [
@@ -175,6 +175,21 @@
               }
             ],
             "description": "Scans flagged for a human look; null when there are no scans."
+          },
+          "check_descriptors": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/CheckDescriptor"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The descriptors (titles, definitions, sub-factors) of the check registry the run used, so a reader renders check cards from the result, not from its own copy. Null in files written before schemas 0.2.1; readers then fall back to the default registry.",
+            "title": "Check Descriptors"
           },
           "checks": {
             "items": {
@@ -2827,7 +2842,7 @@
   "info": {
     "description": "Job-based SlicePoint assessments over slicepoint-core. All routes except /healthz and /v1/session need `Authorization: Bearer <token>` or the browser session cookie from `POST /v1/session` (cookie requests with unsafe methods also need `X-SlicePoint-CSRF: 1`).",
     "title": "SlicePoint API",
-    "version": "0.1.0"
+    "version": "0.1.1"
   },
   "openapi": "3.1.0",
   "paths": {

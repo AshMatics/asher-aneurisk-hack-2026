@@ -46,6 +46,13 @@ from .strata import cases_to_review, stratified_table
 
 _log = logging.getLogger(__name__)
 
+SELF_COMPARISON_NOTE = (
+    "This site was compared against its own reference data, so the shift checks cannot detect anything. "
+    "Use this only as a sanity check."
+)
+"""First note of a result whose dataset fingerprint equals the reference's
+(:attr:`~slicepoint_schemas.assessment.AssessmentResult.is_self_comparison`). The verdict is unchanged."""
+
 _SCORE_EVIDENCE_PREFIXES = ("score_part.", "score.")
 _SCORE_KEYS: dict[str, Any] = {"verdict": {"results": {"__all__": {"score", "score_method"}}}}
 
@@ -201,7 +208,10 @@ class Assessment:
 
         runs: list[CheckRun] = []
         results: list[CheckResult] = []
-        notes: list[str] = list(ds.notes)  # ingestion ("Files") notes first, as in the notebook
+        fingerprint = ds.fingerprint()
+        self_comparison = fingerprint == self.reference.summary.provenance.dataset_fingerprint
+        # The self-comparison warning leads; then ingestion ("Files") notes, as in the notebook.
+        notes: list[str] = ([SELF_COMPARISON_NOTE] if self_comparison else []) + list(ds.notes)
         findings: dict[str, list[Finding]] = {}
         if len(ds) < ctx.params.int("smallest_dataset_scans"):
             notes.append(f"Only {len(ds)} scans: every number below is rough, and subgroup results are very uncertain.")
@@ -260,7 +270,7 @@ class Assessment:
                 "profile_id": self.profile.profile_id,
                 "model_id": self.profile.model_id,
                 "embedding_space_id": ds.space.space_id if ds.space else None,
-                "dataset_fingerprint": ds.fingerprint(),
+                "dataset_fingerprint": fingerprint,
                 "generated_at": self.now or dt.datetime.now(dt.timezone.utc),
                 "generator": f"slicepoint-core {__version__}",
                 "steps": steps,
@@ -272,6 +282,7 @@ class Assessment:
                 "thresholds": self.profile,
                 "strata": strata,
                 "cases_to_review": cases,
+                "check_descriptors": self.registry.schema_registry().checks,
             },
             context=self.registry.validation_context(),
         )

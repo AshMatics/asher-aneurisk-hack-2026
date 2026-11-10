@@ -42,6 +42,7 @@ from .common import (
     UnitInterval,
     VersionedModel,
 )
+from .checks import CheckDescriptor
 from .embedding import SpaceId
 from .legacy import BinMetricsV0, DiceMetricsV0
 from .thresholds import ThresholdProfile
@@ -366,7 +367,12 @@ class AssessmentResult(VersionedModel):
 
     ``thresholds``, ``strata``, ``cases_to_review`` and ``site_name`` were added after the
     first 0.1.0 files were written, so they are optional: an older file still validates,
-    and a reader shows "not recorded" rather than assuming defaults.
+    and a reader shows "not recorded" rather than assuming defaults. ``check_descriptors``
+    (schemas 0.2.1) follows the same rule: a reader without it falls back to its own copy
+    of the default registry.
+
+    A site compared with its own reference data is visible from the two fingerprints
+    (:attr:`is_self_comparison`); it is derived, not stored, so it cannot disagree with them.
     """
 
     result_type: Literal["slicepoint.assessment_result"] = "slicepoint.assessment_result"
@@ -397,6 +403,18 @@ class AssessmentResult(VersionedModel):
     cases_to_review: CasesToReview | None = Field(
         default=None, description="Scans flagged for a human look; null when there are no scans."
     )
+    check_descriptors: tuple[CheckDescriptor, ...] | None = Field(
+        default=None,
+        description="The descriptors (titles, definitions, sub-factors) of the check registry the run used, so a "
+                    "reader renders check cards from the result, not from its own copy. Null in files written "
+                    "before schemas 0.2.1; readers then fall back to the default registry.",
+    )
+
+    @property
+    def is_self_comparison(self) -> bool:
+        """True when the site's dataset is the reference's own dataset (equal fingerprints).
+        The shift checks then cannot detect anything; the result is only a sanity check."""
+        return self.dataset_fingerprint is not None and self.dataset_fingerprint == self.reference.fingerprint
 
     @model_validator(mode="after")
     def _consistent(self) -> AssessmentResult:
@@ -433,7 +451,22 @@ class AssessmentResult(VersionedModel):
         case_ids = [s.case_id for s in self.scans]
         if len(case_ids) != len(set(case_ids)):
             raise ValueError("duplicate case_id in scans")
+        if self.check_descriptors is not None:
+            self._descriptors_cover_checks(self.check_descriptors)
         return self
+
+    def _descriptors_cover_checks(self, descriptors: tuple[CheckDescriptor, ...]) -> None:
+        by_id = {d.id: d for d in descriptors}
+        if len(by_id) != len(descriptors):
+            raise ValueError("duplicate ids in check_descriptors")
+        missing = [c.check_id for c in self.checks if c.check_id not in by_id]
+        if missing:
+            raise ValueError(f"check_descriptors has no descriptor for checks {missing}")
+        for r in self.verdict.results:
+            subs = {s.id for s in by_id[r.check_id].sub_factors}
+            unknown = [f for f in r.failing_sub_factors if f not in subs]
+            if unknown:
+                raise ValueError(f"check {r.check_id}: failing sub-factors {unknown} are not in its descriptor")
 
 
 __all__ = [

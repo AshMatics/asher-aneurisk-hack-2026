@@ -111,6 +111,7 @@ def test_cli_and_library_give_the_same_result(ref_dir: Path, tmp_path: Path) -> 
                "--reference-profile", ref_dir, "--out", out)
     assert proc.returncode == cli.EXIT_REVIEW, proc.stderr
     assert "Verdict: NO-GO" in proc.stdout and "Exit 3" in proc.stdout
+    assert "WARNING" not in proc.stdout  # hospital_c is not the reference's own data
     via_cli = AssessmentResult.model_validate_json(out.read_text(encoding="utf-8"))
     site = ParquetAdapter("hospital_c").load_tabular(PRACTICE_DIR / "hospital_c")
     direct = strip_provisional_scores(Assessment(site, ReferenceProfile.load(ref_dir), HACKATHON_DEFAULT_PROFILE,
@@ -283,3 +284,17 @@ def test_internal_failure_is_exit_2_without_traceback(
     assert "internal error: RuntimeError: simulated bug" in err and "--debug" in err and "Traceback" not in err
     assert cli.main([*args, "--debug"]) == cli.EXIT_INTERNAL
     assert "Traceback" in capsys.readouterr().err
+
+
+@needs_data
+def test_self_comparison_is_warned_in_the_text_summary(ref_dir: Path, tmp_path: Path) -> None:
+    from slicepoint_core import SELF_COMPARISON_NOTE
+
+    proc = run("assess", "--data", PRACTICE_DIR / "hospital_a", "--site-id", "hospital_a",
+               "--reference-profile", ref_dir, "--out", tmp_path / "r.json")
+    assert proc.returncode == cli.EXIT_REVIEW, proc.stderr
+    lines = proc.stdout.splitlines()
+    assert lines[1].startswith("Verdict:") and lines[2] == f"WARNING: {SELF_COMPARISON_NOTE}"
+    s = json.loads(run("assess", "--data", PRACTICE_DIR / "hospital_a", "--site-id", "hospital_a",
+                       "--reference-profile", ref_dir, "--out", tmp_path / "r2.json", "--json").stdout)
+    assert s["self_comparison"] is True

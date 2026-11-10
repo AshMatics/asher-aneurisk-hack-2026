@@ -18,10 +18,10 @@ Command line: ``slicepoint --help`` (see :mod:`slicepoint_core.cli`).
 
 from __future__ import annotations
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 from . import report, stats  # noqa: E402
-from .assessment import Assessment, AssessmentReport, strip_provisional_scores  # noqa: E402
+from .assessment import SELF_COMPARISON_NOTE, Assessment, AssessmentReport, strip_provisional_scores  # noqa: E402
 from .errors import InputError  # noqa: E402
 from .checks import CheckRegistry, CheckSpec, Requirement, default_registry  # noqa: E402
 from .ingestion import ParquetAdapter, TabularDataset  # noqa: E402
@@ -40,6 +40,7 @@ __all__ = [
     "ReferenceProfile",
     "ReferenceSummary",
     "Requirement",
+    "SELF_COMPARISON_NOTE",
     "TabularDataset",
     "copy_viewer",
     "__version__",

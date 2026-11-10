@@ -2,7 +2,7 @@
 // with who, when and why. The sentence follows report.py `_verdict_section`.
 import type { AssessmentResult, VerdictOutcome } from "../contract";
 import { formatTimestamp, joinAnd } from "./format";
-import { checkTitle } from "./registry";
+import { checkLookup } from "./registry";
 import { DISCLAIMER, VERDICT, type StatusLabel } from "./status";
 
 export interface OverrideView {
@@ -27,14 +27,31 @@ export interface VerdictView {
   readonly watches: readonly { id: string; title: string }[];
   readonly notEvaluated: readonly { id: string; title: string }[];
   readonly override: OverrideView | null;
+  /**
+   * Set when the site was compared with its own reference data (equal dataset fingerprints):
+   * the shift checks cannot detect anything. Shown next to the verdict; the verdict is unchanged.
+   */
+  readonly selfComparison: string | null;
   /** The producer's machine rationale (shown in provenance). */
   readonly rationale: string;
   readonly disclaimer: string;
 }
 
+/** Mirrors slicepoint_core.assessment.SELF_COMPARISON_NOTE (core also puts it first in `notes`). */
+export const SELF_COMPARISON_NOTE =
+  "This site was compared against its own reference data, so the shift checks cannot detect anything. " +
+  "Use this only as a sanity check.";
+
+/** Mirrors AssessmentResult.is_self_comparison: both fingerprints recorded and equal. */
+export function isSelfComparison(result: AssessmentResult): boolean {
+  const own = result.dataset_fingerprint;
+  return own !== null && own !== undefined && own === result.reference.fingerprint;
+}
+
 export function buildVerdict(result: AssessmentResult): VerdictView {
   const v = result.verdict;
-  const ref = (id: string) => ({ id, title: checkTitle(id) });
+  const lookup = checkLookup(result.check_descriptors);
+  const ref = (id: string) => ({ id, title: lookup.title(id) });
   const problems = v.results.filter((r) => r.status === "problem").map((r) => ref(r.check_id));
   const watches = v.results.filter((r) => r.status === "watch").map((r) => ref(r.check_id));
   const notEval = (v.not_evaluated ?? []).map(ref);
@@ -72,6 +89,7 @@ export function buildVerdict(result: AssessmentResult): VerdictView {
     override: o
       ? { derived: VERDICT[v.outcome], final: VERDICT[o.outcome], by: o.by, at: formatTimestamp(o.at), atIso: o.at, note: o.note }
       : null,
+    selfComparison: isSelfComparison(result) ? SELF_COMPARISON_NOTE : null,
     rationale: v.rationale,
     disclaimer: DISCLAIMER,
   };
