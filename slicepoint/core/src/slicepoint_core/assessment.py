@@ -109,9 +109,9 @@ class AssessmentReport:
         """The versioned ``AssessmentResult`` JSON. Provisional scores are omitted unless
         ``show_provisional_scores`` is true."""
         if show_provisional_scores:
-            return self.result.model_dump_json(indent=indent)
+            return self.result.model_dump_json(indent=indent, by_alias=True)
         # Stripped, and the keys left out altogether (the contract allows a check result without a score).
-        return self.export().model_dump_json(indent=indent, exclude=_SCORE_KEYS)
+        return self.export().model_dump_json(indent=indent, by_alias=True, exclude=_SCORE_KEYS)
 
     def to_html(self, *, show_provisional_scores: bool = False) -> str:
         """The self-contained HTML report (:func:`slicepoint_core.report.render_html`).

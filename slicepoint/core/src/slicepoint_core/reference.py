@@ -284,7 +284,7 @@ class ReferenceProfile:
         """Write ``reference.json`` (the summary) and ``reference_arrays.npz``."""
         out = Path(directory)
         out.mkdir(parents=True, exist_ok=True)
-        (out / SUMMARY_FILE).write_text(self.summary.model_dump_json(indent=2) + "\n", encoding="utf-8")
+        (out / SUMMARY_FILE).write_text(self.summary.model_dump_json(indent=2, by_alias=True) + "\n", encoding="utf-8")
         arrays: dict[str, npt.ArrayLike] = {f"numeric__{k}": v for k, v in self.numeric.items()}
         arrays["person_labels"] = self.person_labels
         if self.embeddings is not None:

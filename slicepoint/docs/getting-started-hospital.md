@@ -110,6 +110,24 @@ The 0 to 100 scores from the proof-of-concept are hidden, and left out of `resul
 their formulas have not been validated. Results come from a test sample, not a full trial. This report supports a
 decision and is not medical advice.
 
+## Option 3: the interactive viewer
+
+`slicepoint-viewer.html` is one file that opens a `result.json` in your browser. It has
+the same content as the report, and you can open each check's evidence and sort and
+filter the cases to review. Build it once with `pnpm build` in `slicepoint/viewer` (see
+its README), or ask whoever set SlicePoint up for a copy. Then:
+
+1. Double-click `slicepoint-viewer.html`. It works offline, with no server and no
+   installation.
+2. Click **Open result.json**, or drag the file onto the page.
+
+The viewer reads the file inside the browser and makes no network requests. Its security
+policy blocks them, so nothing you open is sent anywhere. It accepts only results written
+against the contract version it was built for. Any other file gets a message naming the
+problem. The draft 0 to 100 scores stay hidden unless `result.json` was written with
+`--show-provisional-scores`. Even then you have to switch them on, and they are labelled
+as unratified. For printing or a PDF, use `report.html`.
+
 ## Privacy
 
 SlicePoint runs entirely on your computer. It does not upload, send or phone home

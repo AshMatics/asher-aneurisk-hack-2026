@@ -90,6 +90,14 @@ def test_assess_json_summary_and_outputs(ref_dir: Path, tmp_path: Path) -> None:
     assert "https://" not in doc and "http://" not in doc and "provisional-v0" not in doc
     assert "<h1>SlicePoint fit check: Hospital B</h1>" in doc
     assert run("validate", legacy).returncode == 0
+    # The POC export never carries provisional scores (its findings are check/status/sentence).
+    assert "score" not in legacy.read_text(encoding="utf-8").lower()
+    # The written file must satisfy the published JSON Schema, not only Pydantic (which also
+    # accepts field names where the schema requires aliases).
+    import jsonschema
+
+    schema_path = Path(__file__).resolve().parents[2] / "schemas" / "jsonschema" / "AssessmentResult.schema.json"
+    jsonschema.validate(raw, json.loads(schema_path.read_text(encoding="utf-8")))
 
 
 @needs_data
