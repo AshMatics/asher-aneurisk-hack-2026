@@ -99,11 +99,11 @@ Deliberately **not** enforced at ingestion, because detecting these is what the 
 ## Running
 
 ```bash
-cd slicepoint/schemas
-uv venv && uv pip install -e '.[test]'
-.venv/bin/python -m pytest          # parquet test skips if pyarrow or data/practice is missing
-.venv/bin/mypy                      # --strict with the pydantic.mypy plugin, src + tests
-.venv/bin/slicepoint-schemas-export # regenerate jsonschema/  (--check to verify only)
+cd slicepoint && uv sync --all-packages --all-extras   # the uv workspace (see slicepoint/pyproject.toml)
+cd schemas
+uv run pytest                       # parquet test skips if pyarrow or data/practice is missing
+uv run mypy                         # --strict with the pydantic.mypy plugin, src + tests
+uv run slicepoint-schemas-export    # regenerate jsonschema/  (--check to verify only)
 ```
 
 `jsonschema/GENERATED_WITH_PYDANTIC` records the pydantic version that produced the committed schemas. Pydantic's JSON Schema output changes between releases, so the "committed == regenerated" test skips under a different pydantic version. The package itself is tested on Python 3.10 with pydantic 2.7.4, and on Python 3.12 with pydantic 2.14.

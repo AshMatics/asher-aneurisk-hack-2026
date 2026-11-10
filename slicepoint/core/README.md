@@ -18,11 +18,15 @@ the practice data is [examples/hospital_b_report.html](examples/hospital_b_repor
 ## Install and test
 
 ```bash
-cd slicepoint/core
-uv venv && uv pip install -e ../schemas -e '.[test,notebook]'
-.venv/bin/python -m pytest        # parity, CLI, report and notebook suites (need data/practice)
-.venv/bin/mypy                    # --strict with the pydantic plugin, src + tests
+cd slicepoint
+uv sync --all-packages --all-extras   # uv workspace: one .venv and one uv.lock for schemas + core
+cd core
+uv run pytest                     # parity, CLI, report and notebook suites (need data/practice)
+uv run mypy                       # --strict with the pydantic plugin, src + tests
 ```
+
+Without uv, `pip install -e ../schemas -e '.[test,notebook]'` in any virtualenv works too
+(the lock is then not applied).
 
 Tested on Python 3.12 (pandas 3.1, numpy 2.5, scikit-learn 1.9, scipy 1.18) and on
 Python 3.11 (pandas 2.3, numpy 2.4, scipy 1.17). On this Mac, the scipy wheel for

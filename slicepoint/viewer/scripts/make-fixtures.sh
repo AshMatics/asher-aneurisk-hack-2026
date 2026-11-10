@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Regenerate the bundled sample results from the synthetic practice data.
-# Needs slicepoint/core installed in slicepoint/core/.venv and data/practice present.
+# Needs the uv workspace synced (`uv sync --all-packages --all-extras` in slicepoint/) and data/practice.
 # Run from anywhere:  slicepoint/viewer/scripts/make-fixtures.sh
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
@@ -9,7 +9,7 @@ out="$here/../src/fixtures"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 cd "$core"
-py=.venv/bin/python
+py=../.venv/bin/python
 data=../../data/practice
 cli() { "$py" -m slicepoint_core.cli "$@" >/dev/null || [ $? -eq 3 ]; }
 cli reference build --data "$data/hospital_a" --site-id hospital_a --out "$tmp/ref_a"
