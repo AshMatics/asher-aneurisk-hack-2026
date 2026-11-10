@@ -116,7 +116,12 @@ five cards on page one. The renderer computes no statistics: the by-group table
 (`result.strata`), the case list (`result.cases_to_review`) and every threshold it prints
 (`result.thresholds`, the resolved `ThresholdProfile`) come from the result, so a saved
 `result.json` renders the same report. A result written before 0.2.0 lacks them and the
-report says "not recorded" instead of assuming defaults. The title shows `site_name`
+report says "not recorded" instead of assuming defaults. Check titles and sub-factor names
+come from the result's own `check_descriptors` (core 0.2.1); an older result falls back to
+the default registry. A site compared with its own reference data (equal dataset
+fingerprints, `AssessmentResult.is_self_comparison`) gets `SELF_COMPARISON_NOTE` as its
+first note, a warning next to the verdict in the report and a `WARNING:` line in the CLI
+summary; the verdict itself is unchanged. The title shows `site_name`
 (`--site-name`) or, failing that, the site id made readable (`hospital_b` -> "Hospital B");
 subgroup names in findings read "Contrast phase: arterial (16 cases)", not
 `contrast_phase=arterial (n=16)`.

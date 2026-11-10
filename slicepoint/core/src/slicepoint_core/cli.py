@@ -193,8 +193,12 @@ def _summary_text(s: dict[str, Any]) -> str:
     lines = [
         f"SlicePoint: site {s['site_id']} vs reference {s['reference_id']} (profile {s['profile_id']})",
         f"Verdict: {label}",
-        "",
     ]
+    if s.get("self_comparison"):
+        from .assessment import SELF_COMPARISON_NOTE
+
+        lines.append(f"WARNING: {SELF_COMPARISON_NOTE}")
+    lines.append("")
     for c in s["checks"]:
         status = str(c["status"]).upper()
         if c["n"] is None:

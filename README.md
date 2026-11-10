@@ -1,8 +1,18 @@
-# IID Is a Lie: Build the Open-Source Audit Toolkit for Medical AI Training Data
+# SlicePoint (from the IID Is a Lie hackathon)
 
-Sponsor problem for the 2026 Nucleate Pittsbrugh hackathon, presented by **Asher Informatics PBC** and **Aneurisk Inc.**
+The 2026 Nucleate Pittsburgh hackathon is over. This repo is now the home of **SlicePoint**, the runner-up project, which is being rebuilt here as open source. SlicePoint checks whether an imaging AI model fits a hospital's patients and scanners before go-live, and returns a GO / BORDERLINE / NO-GO verdict with the evidence behind it.
 
-> **New here?** [docs/README.md](docs/README.md) is the guide to every document: what to read first, reading paths by background and by customer, and which docs matter on which day. For the data, go to [docs/getting-started.md](docs/getting-started.md).
+**To start, go to [slicepoint/README.md](slicepoint/README.md).** It has the quick start (install, run one assessment, open the report), the package map, and how to run the service with the live web UI. The practice data goes in `data/practice/` (see [data/README.md](data/README.md)).
+
+The original hackathon brief is kept below for context.
+
+---
+
+# The hackathon brief: IID Is a Lie
+
+Sponsor problem for the 2026 Nucleate Pittsburgh hackathon, presented by **Asher Informatics PBC** and **Aneurisk Inc.**
+
+> [docs/README.md](docs/README.md) is the guide to the hackathon documents. For the data, go to [docs/getting-started.md](docs/getting-started.md).
 
 ## The problem
 
@@ -38,7 +48,8 @@ Each team gets cloud GPU credits, and each participant gets LLM inference and se
 ## Repo layout
 
 ```
-docs/       all documentation; start at docs/README.md
+slicepoint/ SlicePoint: schemas, core library + CLI, API, viewer, segmentation worker
+docs/       hackathon documentation; start at docs/README.md
 harness/    federated audit harness: run your audit inside each hospital, return only summaries
 starter/    starter notes
 data/       download instructions (data itself is hosted elsewhere)

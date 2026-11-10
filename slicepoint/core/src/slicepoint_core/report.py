@@ -31,6 +31,11 @@ come from the result itself (``result.strata``, ``result.cases_to_review``,
 ``result.thresholds``), so a saved ``result.json`` renders the same report as the live run.
 A result that lacks one of them (written before slicepoint-core 0.2.0) shows "not
 recorded" for it; no default is assumed.
+
+Check titles and sub-factor names come from the result's own ``check_descriptors``
+(slicepoint-core 0.2.1); an older result without them falls back to
+``DEFAULT_CHECK_REGISTRY``. A result whose site was compared with its own reference data
+(equal dataset fingerprints) gets a warning next to the verdict.
 """
 
 from __future__ import annotations
@@ -60,6 +65,7 @@ from slicepoint_schemas.legacy import BinMetricsV0
 from slicepoint_schemas.verdict import VerdictOutcome
 
 from . import __version__
+from .assessment import SELF_COMPARISON_NOTE
 from .stats import MISSING
 
 if TYPE_CHECKING:
@@ -78,6 +84,7 @@ NOT_RECORDED = "not recorded in this result"
 
 __all__ = [
     "DISCLAIMER",
+    "check_descriptors",
     "display_site_name",
     "format_n_effective",
     "humanize_column",
@@ -311,6 +318,19 @@ def _svg_dice_gauge(median: float, mean: float, markers: tuple[float, float] | N
 # --------------------------------------------------------------------------- sections
 
 
+def check_descriptors(
+    result: AssessmentResult, registry: SchemaCheckRegistry | None = None
+) -> dict[str, CheckDescriptor]:
+    """Descriptors to render ``result`` with: the default registry, overridden by the
+    result's own ``check_descriptors`` (absent in files written before core 0.2.1), then by
+    an explicitly passed ``registry``."""
+    out: dict[str, CheckDescriptor] = dict(DEFAULT_CHECK_REGISTRY.as_mapping())
+    out.update({d.id: d for d in result.check_descriptors or ()})
+    if registry is not None:
+        out.update(registry.as_mapping())
+    return out
+
+
 class _Ctx:
     """Everything the section renderers need, read once from the result (never defaulted)."""
 
@@ -318,7 +338,7 @@ class _Ctx:
         self.r = result
         self.show_scores = show_scores
         self.site = display_site_name(result.site_id, result.site_name)
-        self.descriptors: dict[str, CheckDescriptor] = dict((registry or DEFAULT_CHECK_REGISTRY).as_mapping())
+        self.descriptors: dict[str, CheckDescriptor] = check_descriptors(result, registry)
         self.results: dict[str, CheckResult] = {c.check_id: c for c in result.verdict.results}
         t = result.thresholds
         self.thresholds = t
@@ -369,6 +389,9 @@ def _verdict_section(c: _Ctx) -> str:
         f'<span aria-hidden="true">{_VERDICT_GLYPH[final]}</span> {_VERDICT_LABEL[final]}</span></p>',
         f'<p class="rationale">{_e(sentence)}</p>',
     ]
+    if c.r.is_self_comparison:
+        parts.append(f'<p class="warn" id="self-comparison"><strong>Self-comparison:</strong> '
+                     f'{_e(SELF_COMPARISON_NOTE)}</p>')
     counts = {s: sum(1 for r in v.results if r.status is s) for s in CheckStatus}
     parts.append(
         f'<p class="counts">{counts[CheckStatus.PROBLEM]} problem, {counts[CheckStatus.WATCH]} watch, '
@@ -1008,10 +1031,11 @@ def summarize(
     This is what ``slicepoint assess --json`` prints (plus ``outputs`` and ``exit_code``)
     and what the quickstart notebook shows as its check table. A check that did not run
     has ``status`` ``skipped`` or ``failed``, ``n`` null and a ``reason``; it never reads
-    as ok. Provisional scores are included only with ``show_provisional_scores``.
+    as ok. ``self_comparison`` is true when the site was compared with its own reference
+    data (the shift checks then cannot detect anything). Provisional scores are included only with ``show_provisional_scores``.
     """
     res: AssessmentResult = result if isinstance(result, AssessmentResult) else result.result
-    titles = {d.id: d.title for d in DEFAULT_CHECK_REGISTRY.checks}
+    titles = {cid: d.title for cid, d in check_descriptors(res).items()}
     by_id = {r.check_id: r for r in res.verdict.results}
     checks: list[dict[str, object]] = []
     for run in res.checks:
@@ -1033,6 +1057,7 @@ def summarize(
         "profile_id": res.profile_id,
         "verdict": v.final_outcome.value,
         "verdict_rationale": v.rationale,
+        "self_comparison": res.is_self_comparison,
         "not_evaluated": list(v.not_evaluated),
         "checks": checks,
         "skipped_steps": [st.step for st in res.steps if st.state is StepState.SKIPPED],

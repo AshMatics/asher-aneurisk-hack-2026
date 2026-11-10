@@ -19,7 +19,7 @@ export const SAMPLES: readonly Sample[] = [
   {
     id: "hospital_a_override",
     title: "Hospital A, committee override",
-    description: "BORDERLINE derived, set to GO by an example committee decision.",
+    description: "Hospital A against its own reference (a sanity check): BORDERLINE derived, set to GO by an example committee decision.",
     data: hospitalAOverride,
   },
   {

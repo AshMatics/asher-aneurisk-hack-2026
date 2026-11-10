@@ -10,8 +10,8 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT (pending written grant from the student team; see ADR 0001)" }
 dependencies = [
-    "slicepoint-schemas>=0.2.0,<0.3",
-    "slicepoint-core>=0.2.0,<0.3",
+    "slicepoint-schemas>=0.2.1,<0.3",
+    "slicepoint-core>=0.2.1,<0.3",
     "fastapi>=0.115",
     "uvicorn>=0.30",
 ]

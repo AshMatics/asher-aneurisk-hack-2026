@@ -293,3 +293,33 @@ def test_notebook_iframe_is_isolated(report_b: AssessmentReport) -> None:
     frag = report_b.to_notebook_html(height_px=500)
     assert frag.startswith("<iframe") and 'sandbox=""' in frag and "srcdoc=" in frag
     assert "<style>" not in frag  # escaped inside srcdoc, so it cannot restyle the notebook
+
+
+def test_self_comparison_warning_next_to_the_verdict(reference: ReferenceProfile, html_b: str) -> None:
+    from slicepoint_core import SELF_COMPARISON_NOTE
+
+    own = Assessment(load_site("hospital_a"), reference, HACKATHON_DEFAULT_PROFILE, now=FIXED_NOW).run()
+    doc = render_html(own)
+    verdict = doc[doc.index('<section id="verdict"'):doc.index("</section>", doc.index('<section id="verdict"'))]
+    assert 'id="self-comparison"' in verdict and SELF_COMPARISON_NOTE in verdict
+    assert SELF_COMPARISON_NOTE in doc[doc.index('<section id="notes"'):]
+    assert summarize(own)["self_comparison"] is True
+    assert 'id="self-comparison"' not in html_b
+    assert _parse(doc).errors == []
+
+
+def test_titles_come_from_the_result_descriptors(report_b: AssessmentReport) -> None:
+    r = report_b.result
+    assert r.check_descriptors is not None
+    renamed = tuple(d.model_copy(update={"title": "Scanner fit (from the result)"}) if d.id == "scanning" else d
+                    for d in r.check_descriptors)
+    doc = render_html(r.model_copy(update={"check_descriptors": renamed}))
+    assert "Scanner fit (from the result)" in doc and ">Scan settings match<" not in doc
+    checks = summarize(r.model_copy(update={"check_descriptors": renamed}))["checks"]
+    assert isinstance(checks, list)
+    assert {c["id"]: c["title"] for c in checks}["scanning"] == "Scanner fit (from the result)"
+
+
+def test_result_without_descriptors_falls_back_to_the_default_registry(report_b: AssessmentReport) -> None:
+    older = report_b.result.model_copy(update={"check_descriptors": None})
+    assert render_html(older) == render_html(report_b.result)

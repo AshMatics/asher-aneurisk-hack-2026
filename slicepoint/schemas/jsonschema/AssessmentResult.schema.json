@@ -54,6 +54,16 @@
       "title": "AaaSizeClass",
       "type": "string"
     },
+    "Audience": {
+      "description": "Who a check card is written for. INFERRED from ADR 0001 section 7 (decision\ncommittee, clinicians, analysts); the POC has no such field.",
+      "enum": [
+        "committee",
+        "clinician",
+        "analyst"
+      ],
+      "title": "Audience",
+      "type": "string"
+    },
     "BinMetricsV0": {
       "additionalProperties": false,
       "description": "Binary AAA-call metrics (``bin_metrics``, ipynb:835).\n\nCount arithmetic is exact by construction in the notebook and is enforced:\n``tp+fn == n_aaa``, ``tn+fp == n_not_aaa``, ``n_aaa+n_not_aaa == n``, and every no-answer\nis counted as wrong, so ``n_no_answer <= fn+fp``. Rates are null exactly when their\ndenominator is 0, and ``*_lo <= point <= *_hi`` (95% Wilson).",
@@ -252,6 +262,81 @@
         "n_scans"
       ],
       "title": "CasesToReview",
+      "type": "object"
+    },
+    "CheckDescriptor": {
+      "additionalProperties": false,
+      "description": "What a check is, independent of any result. The UI renders cards from this.",
+      "properties": {
+        "audience": {
+          "default": [
+            "committee"
+          ],
+          "items": {
+            "$ref": "#/$defs/Audience"
+          },
+          "title": "Audience",
+          "type": "array"
+        },
+        "definition": {
+          "minLength": 1,
+          "title": "Definition",
+          "type": "string"
+        },
+        "id": {
+          "pattern": "^[a-z][a-z0-9_]{0,63}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "legacy_check_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The `check` value used in POC slicepoint.json findings.",
+          "title": "Legacy Check Key"
+        },
+        "sub_factors": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/SubFactor"
+          },
+          "title": "Sub Factors",
+          "type": "array"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "maximum": 100,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Default target score from the POC spec.",
+          "title": "Target"
+        },
+        "title": {
+          "description": "UI title.",
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "definition"
+      ],
+      "title": "CheckDescriptor",
       "type": "object"
     },
     "CheckResult": {
@@ -1326,6 +1411,27 @@
       "title": "StratumRow",
       "type": "object"
     },
+    "SubFactor": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z][a-z0-9_]{0,63}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "title": {
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title"
+      ],
+      "title": "SubFactor",
+      "type": "object"
+    },
     "ThresholdProfile": {
       "additionalProperties": false,
       "description": "All configurable numbers for one model (and optionally one site).\n\n``check_targets`` keys are the checks this profile expects; a verdict treats any of\nthem that did not run as *not evaluated*. ``value_sources`` maps a dotted field path\n(``aaa.decision_line_mm``, ``triggers.No-answer rate``) to a citation.",
@@ -1688,7 +1794,7 @@
     }
   },
   "additionalProperties": false,
-  "description": "The full result of one assessment of one site against one reference.\n\n``thresholds``, ``strata``, ``cases_to_review`` and ``site_name`` were added after the\nfirst 0.1.0 files were written, so they are optional: an older file still validates,\nand a reader shows \"not recorded\" rather than assuming defaults.",
+  "description": "The full result of one assessment of one site against one reference.\n\n``thresholds``, ``strata``, ``cases_to_review`` and ``site_name`` were added after the\nfirst 0.1.0 files were written, so they are optional: an older file still validates,\nand a reader shows \"not recorded\" rather than assuming defaults. ``check_descriptors``\n(schemas 0.2.1) follows the same rule: a reader without it falls back to its own copy\nof the default registry.\n\nA site compared with its own reference data is visible from the two fingerprints\n(:attr:`is_self_comparison`); it is derived, not stored, so it cannot disagree with them.",
   "properties": {
     "cases_to_review": {
       "anyOf": [
@@ -1701,6 +1807,22 @@
       ],
       "default": null,
       "description": "Scans flagged for a human look; null when there are no scans."
+    },
+    "check_descriptors": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/CheckDescriptor"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "The descriptors (titles, definitions, sub-factors) of the check registry the run used, so a reader renders check cards from the result, not from its own copy. Null in files written before schemas 0.2.1; readers then fall back to the default registry.",
+      "title": "Check Descriptors"
     },
     "checks": {
       "items": {

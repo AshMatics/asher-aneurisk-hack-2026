@@ -1,13 +1,14 @@
-// Display copy for the five built-in checks.
+// Display copy for the checks.
 //
-// AssessmentResult carries check ids and sub-factor ids but not the registry's titles, so
-// the viewer keeps a copy of the default descriptors, exactly as slicepoint_core/report.py
-// does (it reads slicepoint_schemas.checks.DEFAULT_CHECK_REGISTRY). Titles and sub-factor
-// titles below mirror that registry; "asks" and "means" mirror report.py `_ASKS` / `_MEANS`.
+// Titles, definitions and sub-factor titles come from the result's own `check_descriptors`
+// (written by slicepoint-core 0.2.1 and later), so a new check needs no viewer change. A file
+// written before that has no descriptors; the viewer then falls back to DEFAULT_CHECKS, a copy
+// of slicepoint_schemas.checks.DEFAULT_CHECK_REGISTRY. "asks" and "means" are viewer-only
+// plain-language copy that mirrors report.py `_ASKS` / `_MEANS`; they stay here either way.
 //
-// A check that is not listed here still renders: its title and sub-factor names are the
-// ids made readable, and it gets the generic "what this means" copy.
-import type { CheckStatus } from "../contract/assessment-result.generated";
+// A check with neither a descriptor nor a copy still renders: its title and sub-factor names
+// are the ids made readable, and it gets the generic "what this means" copy.
+import type { CheckDescriptor, CheckStatus } from "../contract/assessment-result.generated";
 import { humanizeColumn } from "./labels";
 
 export interface SubFactorCopy {
@@ -138,14 +139,54 @@ export const MEANS_NOT_RUN =
 
 const BY_ID: ReadonlyMap<string, CheckCopy> = new Map(DEFAULT_CHECKS.map((c) => [c.id, c]));
 
+/** Looks up display copy for the checks of one result. */
+export interface CheckLookup {
+  /** Copy for a check: from the result's descriptor when present, else DEFAULT_CHECKS; undefined when neither knows it. */
+  copy(id: string): CheckCopy | undefined;
+  title(id: string): string;
+  subFactorTitle(checkId: string, subId: string): string;
+}
+
+function fromDescriptor(d: CheckDescriptor): CheckCopy {
+  const fallback = BY_ID.get(d.id);
+  return {
+    id: d.id,
+    title: d.title,
+    definition: d.definition,
+    asks: fallback?.asks ?? d.definition,
+    subFactors: (d.sub_factors ?? []).map((s) => sf(s.id, s.title)),
+    means: fallback?.means ?? GENERIC_MEANS,
+  };
+}
+
+/**
+ * The lookup for a result: its `check_descriptors` win, DEFAULT_CHECKS fill in for a file
+ * written without them (or a check id they do not cover, which the contract forbids).
+ */
+export function checkLookup(descriptors?: readonly CheckDescriptor[] | null): CheckLookup {
+  const own = new Map((descriptors ?? []).map((d) => [d.id, fromDescriptor(d)]));
+  const copy = (id: string) => own.get(id) ?? BY_ID.get(id);
+  return {
+    copy,
+    title: (id) => copy(id)?.title ?? humanizeColumn(id),
+    subFactorTitle: (checkId, subId) =>
+      copy(checkId)?.subFactors.find((s) => s.id === subId)?.title ?? humanizeColumn(subId),
+  };
+}
+
+const DEFAULT_LOOKUP = checkLookup(null);
+
+/** Copy from DEFAULT_CHECKS only. Prefer `checkLookup(result.check_descriptors)`. */
 export function checkCopy(id: string): CheckCopy | undefined {
-  return BY_ID.get(id);
+  return DEFAULT_LOOKUP.copy(id);
 }
 
+/** Title from DEFAULT_CHECKS only. Prefer `checkLookup(result.check_descriptors)`. */
 export function checkTitle(id: string): string {
-  return BY_ID.get(id)?.title ?? humanizeColumn(id);
+  return DEFAULT_LOOKUP.title(id);
 }
 
+/** Sub-factor title from DEFAULT_CHECKS only. Prefer `checkLookup(result.check_descriptors)`. */
 export function subFactorTitle(checkId: string, subId: string): string {
-  return BY_ID.get(checkId)?.subFactors.find((s) => s.id === subId)?.title ?? humanizeColumn(subId);
+  return DEFAULT_LOOKUP.subFactorTitle(checkId, subId);
 }

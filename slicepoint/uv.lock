@@ -2638,7 +2638,7 @@ wheels = [
 
 [[package]]
 name = "slicepoint-api"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "api" }
 dependencies = [
     { name = "fastapi" },
@@ -2670,7 +2670,7 @@ requires-dist = [
 
 [[package]]
 name = "slicepoint-core"
-version = "0.2.0"
+version = "0.2.1"
 source = { editable = "core" }
 dependencies = [
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },

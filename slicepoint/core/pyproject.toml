@@ -11,7 +11,7 @@ requires-python = ">=3.10"
 license = { text = "MIT (pending written grant from the student team; see ADR 0001)" }
 # ADR 0001 section 9: never FastAPI, a database, a GPU or torch.
 dependencies = [
-    "slicepoint-schemas>=0.2.0,<0.3",
+    "slicepoint-schemas>=0.2.1,<0.3",
     "numpy>=1.24",
     "pandas>=2.0",
     "pyarrow>=16",

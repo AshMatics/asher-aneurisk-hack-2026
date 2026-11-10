@@ -54,7 +54,7 @@ from .legacy import CompareResponseV1, DiceSummaryV0, MonthlySummaryV0, SlicePoi
 from .thresholds import HACKATHON_DEFAULT_PROFILE, ThresholdProfile, TriggerThreshold
 from .verdict import Verdict, VerdictOutcome, VerdictOverride, derive_verdict
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 __all__ = [
     "AssessmentResult",

@@ -178,6 +178,18 @@ def check_repeats(ctx: CheckContext) -> CheckOutput:
 
 
 _SCANNING_CATS = ("scanner_vendor", "contrast_phase", "slice_thickness_class")
+
+CHANCE_AUC = 0.5
+
+
+def floor_domain_auc(auc: float) -> float:
+    """The domain AUC the scanning check classifies and reports: ``max(auc, 0.5)``.
+
+    :func:`slicepoint_core.stats.domain_auc` returns the raw cross-validated AUC (notebook
+    parity). Below 0.5 it only means the classifier did no better than chance, so it is
+    floored at chance rather than read as a separation.
+    """
+    return max(float(auc), CHANCE_AUC)
 _SCANNING_NUMERIC = ("aorta_hu_mean", "kvp", "slice_thickness_mm")
 
 
@@ -218,20 +230,27 @@ def check_scanning(ctx: CheckContext) -> CheckOutput:
     if ctx.has_embeddings and ctx.reference_has_embeddings:
         ref = ctx.reference
         assert ref.embeddings is not None and ref.coverage is not None and ctx.dataset.embeddings is not None
-        auc = S.domain_auc(
+        auc_raw = S.domain_auc(
             ref.embeddings, ctx.dataset.embeddings,
             np.array([f"ref_{i}" for i in ref.person_labels], dtype=object),
             np.array([f"new_{i}" for i in ctx.people.labels], dtype=object),
             n_pc=p.int("embedding_max_pcs"), n_splits=p.int("cv_folds"), seed=p.int("random_seed"),
         )
+        # A cross-validated AUC below 0.5 is noise around chance, never "anti-separation":
+        # classify and report the floored value; the raw one stays in the evidence.
+        auc = floor_domain_auc(auc_raw)
         sev = Severity.of(p.classify("scanning_domain_auc", auc))
-        text = {
-            Severity.RED: f"A simple classifier can tell this hospital's scans from the reference with AUC {auc:.2f}; "
-                          "the images are systematically different.",
-            Severity.YELLOW: f"The scans are partly distinguishable from the reference (AUC {auc:.2f}).",
-            Severity.OK: f"The scans are hard to tell apart from the reference (AUC {auc:.2f}).",
-        }[sev]
-        findings.append(Finding("scan_content_auc", sev, text, "Scan content", {"auc": auc}))
+        if auc_raw < CHANCE_AUC and sev is Severity.OK:
+            text = (f"The scans cannot be told apart from the reference: a simple classifier did no better than "
+                    f"chance (AUC {auc:.2f}; cross-validated {auc_raw:.2f}, at or below chance).")
+        else:
+            text = {
+                Severity.RED: f"A simple classifier can tell this hospital's scans from the reference with AUC "
+                              f"{auc:.2f}; the images are systematically different.",
+                Severity.YELLOW: f"The scans are partly distinguishable from the reference (AUC {auc:.2f}).",
+                Severity.OK: f"The scans are hard to tell apart from the reference (AUC {auc:.2f}).",
+            }[sev]
+        findings.append(Finding("scan_content_auc", sev, text, "Scan content", {"auc": auc, "auc_raw": auc_raw}))
         outside = ref.coverage.share_outside(ctx.dataset.embeddings)
         sev = Severity.of(p.classify("Scans unlike anything in the reference", outside))
         if sev is not Severity.OK:
@@ -647,6 +666,7 @@ def default_registry() -> CheckRegistry:
 
 
 __all__ = [
+    "CHANCE_AUC",
     "SUBGROUP_COLUMNS",
     "CheckSkipped",
     "check_accuracy",
@@ -655,4 +675,5 @@ __all__ = [
     "check_repeats",
     "check_scanning",
     "default_registry",
+    "floor_domain_auc",
 ]

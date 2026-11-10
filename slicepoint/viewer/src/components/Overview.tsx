@@ -38,6 +38,11 @@ export function VerdictPanel({ verdict, onJump }: { verdict: VerdictView; onJump
             {o ? <span className="font-medium">The checks alone gave {v.derived.label}: </span> : null}
             {v.sentence}
           </p>
+          {v.selfComparison ? (
+            <p className="rounded-md border border-current bg-background/70 p-3 text-sm" role="note" data-testid="self-comparison">
+              <strong>Self-comparison:</strong> {v.selfComparison}
+            </p>
+          ) : null}
           <p className="text-sm text-muted-foreground">
             {v.counts.problem} problem, {v.counts.watch} watch, {v.counts.ok} ok, {v.counts.notEvaluated} not evaluated.
           </p>

@@ -14,8 +14,8 @@
   "model_id": "hackathon-baseline-aaa",
   "embedding_space_id": "merlin-ct-2048:hackathon",
   "dataset_fingerprint": "91c92cfa4550ae1ae37b1b3906f1296fb86c1d8ec04020ed205fa8665a712c0c",
-  "generated_at": "2026-11-10T00:45:50.259173Z",
-  "generator": "slicepoint-core 0.2.0",
+  "generated_at": "2026-11-10T18:15:23.949339Z",
+  "generator": "slicepoint-core 0.2.1",
   "steps": [
     {
       "step": "ingest",
@@ -341,6 +341,12 @@
           },
           {
             "key": "scan_content_auc.auc",
+            "value": 0.846875,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "scan_content_auc.auc_raw",
             "value": 0.846875,
             "unit": null,
             "text": null
@@ -2674,5 +2680,168 @@
         "error_mm": -4.147929722399645
       }
     ]
-  }
+  },
+  "check_descriptors": [
+    {
+      "id": "repeats",
+      "title": "Different people",
+      "definition": "Scans per distinct person: guards against repeat scans and patient leakage inflating accuracy. Notebook logic: near-duplicate groups (cosine > 0.95 or same patient_id) and the random vs by-patient split test.",
+      "target": 90,
+      "sub_factors": [
+        {
+          "id": "scans",
+          "title": "Scans"
+        },
+        {
+          "id": "people",
+          "title": "People"
+        },
+        {
+          "id": "leakage",
+          "title": "Random vs by-person split leakage"
+        }
+      ],
+      "audience": [
+        "committee"
+      ],
+      "legacy_check_key": "repeats"
+    },
+    {
+      "id": "scanning",
+      "title": "Scan settings match",
+      "definition": "Similarity of the acquisition mix to the reference; the card shows the lowest of scanner, contrast and slice thickness. Notebook logic: TVD, HU/kVp/slice Wasserstein, embedding domain AUC, coverage, impossible values.",
+      "target": 70,
+      "sub_factors": [
+        {
+          "id": "scanner_vendor",
+          "title": "Scanner"
+        },
+        {
+          "id": "contrast_phase",
+          "title": "Contrast"
+        },
+        {
+          "id": "slice_thickness_class",
+          "title": "Slice thickness"
+        },
+        {
+          "id": "domain_auc",
+          "title": "Scans distinguishable from the reference (domain AUC)"
+        },
+        {
+          "id": "coverage",
+          "title": "Scans outside the reference's coverage"
+        },
+        {
+          "id": "hu_shift",
+          "title": "Aorta brightness (HU) shift"
+        },
+        {
+          "id": "kvp_shift",
+          "title": "Tube voltage (kVp) shift"
+        },
+        {
+          "id": "impossible_values",
+          "title": "Impossible values (diameter, HU, kVp, slice, organ volume)"
+        },
+        {
+          "id": "embedding_shortcuts",
+          "title": "Embeddings encode scanner/protocol more than the aneurysm"
+        }
+      ],
+      "audience": [
+        "committee"
+      ],
+      "legacy_check_key": "scanning"
+    },
+    {
+      "id": "patients",
+      "title": "Patients match",
+      "definition": "Similarity of the patient mix to the reference; the card shows the lowest of sex, age and AAA size class. Notebook logic: TVD on sex/age, prevalence Fisher test, diameter Wasserstein (routed here by keyword).",
+      "target": 70,
+      "sub_factors": [
+        {
+          "id": "sex",
+          "title": "Sex"
+        },
+        {
+          "id": "age_band",
+          "title": "Age"
+        },
+        {
+          "id": "aaa_size_class",
+          "title": "AAA size class"
+        },
+        {
+          "id": "labelled_diameter_shift",
+          "title": "Labelled aorta diameter distribution shift"
+        },
+        {
+          "id": "predicted_diameter_shift",
+          "title": "Model-measured aorta diameter distribution shift"
+        }
+      ],
+      "audience": [
+        "committee"
+      ],
+      "legacy_check_key": "patients"
+    },
+    {
+      "id": "labels",
+      "title": "Labels follow 30 mm rule",
+      "definition": "Share of labels consistent with the AAA decision line. Notebook logic: conflict share, smallest labelled AAA, best-cutoff range vs reference.",
+      "target": 90,
+      "sub_factors": [
+        {
+          "id": "rule_conflicts",
+          "title": "Labels disagreeing with the decision line"
+        },
+        {
+          "id": "cutoff_alignment",
+          "title": "Cutoff alignment with reference"
+        }
+      ],
+      "audience": [
+        "committee"
+      ],
+      "legacy_check_key": "labels"
+    },
+    {
+      "id": "accuracy",
+      "title": "AI accuracy",
+      "definition": "Composite of segmentation Dice, size within tolerance and aneurysms caught. Notebook logic: binary/diameter/Dice metrics, subgroups, silent failures (no-answers), measurement outliers.",
+      "target": 88,
+      "sub_factors": [
+        {
+          "id": "dice",
+          "title": "Outline quality (Dice)"
+        },
+        {
+          "id": "size_within_tolerance",
+          "title": "Size within tolerance"
+        },
+        {
+          "id": "aneurysms_caught",
+          "title": "Aneurysms caught"
+        },
+        {
+          "id": "no_answers",
+          "title": "Model gave no answer"
+        },
+        {
+          "id": "specificity",
+          "title": "False alarms (specificity)"
+        },
+        {
+          "id": "subgroups",
+          "title": "Problems in subgroups"
+        }
+      ],
+      "audience": [
+        "committee",
+        "clinician"
+      ],
+      "legacy_check_key": "accuracy"
+    }
+  ]
 }
