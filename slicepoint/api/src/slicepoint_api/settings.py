@@ -8,6 +8,11 @@
 ``SLICEPOINT_MAX_CONCURRENT_JOBS``  jobs run at once, default 1
 ``SLICEPOINT_MAX_QUEUED_JOBS``  queued + running jobs before 503, default 16
 ``SLICEPOINT_ENABLE_DOCS``      ``1`` serves /docs and /openapi.json, default off
+``SLICEPOINT_UI_DIR``           folder holding the live viewer build (``pnpm build:live``);
+                                unset (default) serves no UI
+``SLICEPOINT_SESSION_TTL_SECONDS``  browser session lifetime, default 28800 (8 hours)
+``SLICEPOINT_COOKIE_SECURE``    ``0`` drops the cookie's ``Secure`` flag for plain-http
+                                loopback development; default on
 ``SLICEPOINT_API_HOST`` / ``SLICEPOINT_API_PORT``  bind address, default 127.0.0.1:8100
 ==============================  ========================================================
 
@@ -41,6 +46,9 @@ class Settings(BaseModel):
     max_concurrent_jobs: int = Field(default=1, ge=1, le=16)
     max_queued_jobs: int = Field(default=16, ge=1)
     enable_docs: bool = False
+    ui_dir: Path | None = None
+    session_ttl_seconds: int = Field(default=8 * 3600, ge=60, le=7 * 24 * 3600)
+    cookie_secure: bool = True
     host: str = "127.0.0.1"
     port: int = Field(default=8100, gt=0, lt=65536)
 
@@ -64,11 +72,14 @@ class Settings(BaseModel):
             "token": env["SLICEPOINT_SERVICE_TOKEN"],
             "data_root": env["SLICEPOINT_DATA_ROOT"],
             "results_dir": env["SLICEPOINT_RESULTS_DIR"],
-            "enable_docs": env.get("SLICEPOINT_ENABLE_DOCS", "0").strip().lower() in ("1", "true", "yes"),
+            "enable_docs": _flag(env.get("SLICEPOINT_ENABLE_DOCS", "0")),
+            "cookie_secure": _flag(env.get("SLICEPOINT_COOKIE_SECURE", "1")),
         }
         for key, name in (("max_body_bytes", "SLICEPOINT_MAX_BODY_BYTES"),
                           ("max_concurrent_jobs", "SLICEPOINT_MAX_CONCURRENT_JOBS"),
                           ("max_queued_jobs", "SLICEPOINT_MAX_QUEUED_JOBS"),
+                          ("ui_dir", "SLICEPOINT_UI_DIR"),
+                          ("session_ttl_seconds", "SLICEPOINT_SESSION_TTL_SECONDS"),
                           ("host", "SLICEPOINT_API_HOST"),
                           ("port", "SLICEPOINT_API_PORT")):
             if env.get(name):
@@ -87,7 +98,17 @@ class Settings(BaseModel):
         results.mkdir(parents=True, exist_ok=True)
         if results == root or results.is_relative_to(root):
             raise SettingsError("SLICEPOINT_RESULTS_DIR must not be inside SLICEPOINT_DATA_ROOT")
-        return self.model_copy(update={"data_root": root, "results_dir": results})
+        update: dict[str, object] = {"data_root": root, "results_dir": results}
+        if self.ui_dir is not None:
+            ui = self.ui_dir.expanduser().resolve()
+            if not (ui / "index.html").is_file():
+                raise SettingsError("SLICEPOINT_UI_DIR has no index.html (run `pnpm build:live` in slicepoint/viewer)")
+            update["ui_dir"] = ui
+        return self.model_copy(update=update)
+
+
+def _flag(value: str) -> bool:
+    return value.strip().lower() in ("1", "true", "yes", "on")
 
 
 def _first_line(exc: ValueError) -> str:

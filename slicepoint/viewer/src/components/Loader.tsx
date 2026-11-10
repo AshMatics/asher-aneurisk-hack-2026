@@ -1,6 +1,6 @@
 // Open a result.json: file picker, drag and drop, or a bundled sample. The file is read
 // with the File API in this browser; nothing is uploaded or fetched.
-import { useRef, useState, type DragEvent } from "react";
+import { useRef, useState, type DragEvent, type ReactNode } from "react";
 import { SAMPLES } from "../fixtures";
 import { MAX_FILE_BYTES, SCHEMA_VERSION, type LoadError } from "../viewmodel";
 import { Button, Card, cx } from "./ui";
@@ -109,7 +109,20 @@ export function DropZone({ onFile, onSample }: { onFile: (file: File) => void; o
   );
 }
 
-export function ErrorPanel({ fileName, error, onFile, onReset }: { fileName: string; error: LoadError; onFile: (f: File) => void; onReset: () => void }) {
+export function ErrorPanel({
+  fileName,
+  error,
+  onFile,
+  onReset,
+  actions,
+}: {
+  fileName: string;
+  error: LoadError;
+  onFile?: (f: File) => void;
+  onReset: () => void;
+  /** Replaces the default "open another file / back to start" buttons. */
+  actions?: ReactNode;
+}) {
   return (
     <div className="mx-auto max-w-3xl">
       <div role="alert" className="rounded-lg border-2 border-problem bg-problem-bg p-4 text-foreground sm:p-5">
@@ -127,12 +140,16 @@ export function ErrorPanel({ fileName, error, onFile, onReset }: { fileName: str
         ) : null}
       </div>
       <div className="mt-4 flex flex-wrap gap-2">
-        <FileButton onFile={onFile} label="Open another file" />
-        <Button variant="outline" onClick={onReset}>
-          Back to start
-        </Button>
+        {actions ?? (
+          <>
+            {onFile ? <FileButton onFile={onFile} label="Open another file" /> : null}
+            <Button variant="outline" onClick={onReset}>
+              Back to start
+            </Button>
+          </>
+        )}
       </div>
-      <p className="mt-3 text-xs text-muted-foreground">Maximum file size {Math.round(MAX_FILE_BYTES / 1024 / 1024)} MB.</p>
+      {onFile ? <p className="mt-3 text-xs text-muted-foreground">Maximum file size {Math.round(MAX_FILE_BYTES / 1024 / 1024)} MB.</p> : null}
     </div>
   );
 }

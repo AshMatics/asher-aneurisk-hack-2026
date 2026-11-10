@@ -11,6 +11,8 @@
 //    or network APIs (fetch, XMLHttpRequest, WebSocket, EventSource, sendBeacon) in the code.
 //    Plain http(s) strings that are never requested (XML namespaces, React's error-page
 //    link) are listed for the record.
+// 4. Fails if any live-mode code (src/live: the slicepoint-api client) was compiled in.
+//    The static entry never imports it; this proves it on the built bytes.
 import { createHash } from "node:crypto";
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
@@ -45,6 +47,14 @@ for (const api of network) {
   const re = new RegExp(`(^|[^\\w$.])${api.replace(/[()]/g, "\\$&")}`);
   if (re.test(code)) problems.push(`the script uses a network API: ${api}`);
 }
+// Markers of the live build's API client (src/live/client.ts). None may reach the static file.
+const liveMarkers = [
+  [/\/v1\//, "an API path (/v1/)"],
+  [/x-slicepoint-csrf/i, "the CSRF header name"],
+  [/credentials\s*:\s*["']same-origin/, "a fetch credentials option"],
+  [/\bfetchImpl\b|\bcreateClient\b|\bonUnauthorized\b/, "the live API client"],
+];
+for (const [re, what] of liveMarkers) if (re.test(code)) problems.push(`live-mode code in the static bundle: ${what}`);
 const urls = [...new Set([...code.matchAll(/https?:\/\/[^"'`\s)\\]+/g)].map((m) => m[0]))].sort();
 
 const sha = (s) => `'sha256-${createHash("sha256").update(s, "utf8").digest("base64")}'`;
@@ -70,4 +80,4 @@ writeFileSync(resolve(dist, "slicepoint-viewer.html"), html);
 const kb = (n) => `${(n / 1024).toFixed(0)} kB`;
 console.log(`check-build: dist/slicepoint-viewer.html ${kb(Buffer.byteLength(html))} (gzip ${kb(gzipSync(html).length)}), one inline script, ${styles.length} inline style(s).`);
 console.log(`check-build: CSP ${csp.replace(/'sha256-[^']+'/g, "'sha256-…'")}`);
-console.log(`check-build: no external references and no network APIs. URL strings in the code (never requested): ${urls.length ? urls.join(", ") : "none"}`);
+console.log(`check-build: no external references, no network APIs and no live-mode code. URL strings in the code (never requested): ${urls.length ? urls.join(", ") : "none"}`);

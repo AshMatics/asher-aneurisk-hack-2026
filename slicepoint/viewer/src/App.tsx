@@ -1,16 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { AboutPanel, CasesPanel, PerformancePanel, StrataPanel } from "./components/Panels";
-import { ChecksSection, VerdictPanel } from "./components/Overview";
+import { useCallback, useEffect, useState } from "react";
 import { DropZone, ErrorPanel, FileButton } from "./components/Loader";
-import { Tabs } from "./components/Tabs";
-import { Button, Notice } from "./components/ui";
+import { ResultScreen } from "./components/ResultScreen";
+import { ThemeButton } from "./components/ThemeButton";
+import { Notice } from "./components/ui";
 import { findSample } from "./fixtures";
-import { applyTheme, readThemeChoice, saveThemeChoice, type ThemeChoice } from "./theme";
 import {
   DISCLAIMER,
   MAX_FILE_BYTES,
-  PROVISIONAL_BANNER,
-  buildViewModel,
   loadResultData,
   loadResultText,
   type AssessmentResult,
@@ -20,9 +16,10 @@ import {
 type State =
   | { kind: "empty" }
   | { kind: "error"; source: string; error: LoadError }
-  | { kind: "loaded"; source: string; result: AssessmentResult; readNotes: readonly string[]; sample: boolean };
+  | { kind: "loaded"; source: string; result: AssessmentResult; readNotes: readonly string[]; sample: boolean; seq: number };
 
-type TabId = "overview" | "performance" | "groups" | "cases" | "about";
+// Each opened result gets a fresh ResultScreen (tab and score toggle reset).
+let loads = 0;
 
 function sampleFromQuery(): string | null {
   try {
@@ -39,33 +36,14 @@ function initialState(): State {
   if (!sample) return { kind: "empty" };
   const out = loadResultData(sample.data);
   return out.ok
-    ? { kind: "loaded", source: `Sample: ${sample.title}`, result: out.result, readNotes: out.compatNotes, sample: true }
+    ? { kind: "loaded", source: `Sample: ${sample.title}`, result: out.result, readNotes: out.compatNotes, sample: true, seq: ++loads }
     : { kind: "error", source: `Sample: ${sample.title}`, error: out.error };
 }
 
-const THEME_NEXT: Record<ThemeChoice, ThemeChoice> = { system: "light", light: "dark", dark: "system" };
-const THEME_LABEL: Record<ThemeChoice, string> = { system: "Theme: system", light: "Theme: light", dark: "Theme: dark" };
-
 export function App() {
   const [state, setState] = useState<State>(initialState);
-  const [tab, setTab] = useState<TabId>("overview");
-  const [showScores, setShowScores] = useState(false);
-  const [theme, setTheme] = useState<ThemeChoice>(readThemeChoice);
 
-  useEffect(() => {
-    applyTheme(theme);
-    if (theme !== "system" || typeof window.matchMedia !== "function") return;
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const on = () => applyTheme("system");
-    mq.addEventListener?.("change", on);
-    return () => mq.removeEventListener?.("change", on);
-  }, [theme]);
-
-  const reset = useCallback(() => {
-    setState({ kind: "empty" });
-    setTab("overview");
-    setShowScores(false);
-  }, []);
+  const reset = useCallback(() => setState({ kind: "empty" }), []);
 
   const openFile = useCallback(async (file: File) => {
     const source = file.name || "the file";
@@ -93,11 +71,9 @@ export function App() {
       return;
     }
     const out = loadResultText(text);
-    setTab("overview");
-    setShowScores(false);
     setState(
       out.ok
-        ? { kind: "loaded", source, result: out.result, readNotes: out.compatNotes, sample: false }
+        ? { kind: "loaded", source, result: out.result, readNotes: out.compatNotes, sample: false, seq: ++loads }
         : { kind: "error", source, error: out.error },
     );
   }, []);
@@ -106,32 +82,16 @@ export function App() {
     const s = findSample(id);
     if (!s) return;
     const out = loadResultData(s.data);
-    setTab("overview");
-    setShowScores(false);
     setState(
       out.ok
-        ? { kind: "loaded", source: `Sample: ${s.title}`, result: out.result, readNotes: out.compatNotes, sample: true }
+        ? { kind: "loaded", source: `Sample: ${s.title}`, result: out.result, readNotes: out.compatNotes, sample: true, seq: ++loads }
         : { kind: "error", source: `Sample: ${s.title}`, error: out.error },
     );
   }, []);
 
-  const view = useMemo(
-    () => (state.kind === "loaded" ? buildViewModel(state.result, { showScores, readNotes: state.readNotes }) : null),
-    [state, showScores],
-  );
-
   useEffect(() => {
-    if (state.kind === "loaded") document.title = `SlicePoint: ${view?.header.site ?? ""}`;
-    else document.title = "SlicePoint viewer";
-  }, [state, view]);
-
-  // Jump from the verdict to a check card (both are on the overview tab).
-  const jumpToCheck = useCallback((id: string) => {
-    const el = document.getElementById(`check-${id}`);
-    if (!el) return;
-    el.scrollIntoView?.({ behavior: "smooth", block: "start" });
-    el.focus({ preventScroll: true });
-  }, []);
+    if (state.kind !== "loaded") document.title = "SlicePoint viewer";
+  }, [state]);
 
   // Drop a file anywhere on the page, also after a result is open.
   useEffect(() => {
@@ -162,80 +122,15 @@ export function App() {
           </button>
           <div className="flex flex-wrap items-center gap-2">
             {state.kind !== "empty" ? <FileButton onFile={openFile} variant="outline" size="sm" label="Open another file" /> : null}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                const next = THEME_NEXT[theme];
-                setTheme(next);
-                saveThemeChoice(next);
-              }}
-              aria-label={`${THEME_LABEL[theme]}. Switch to ${THEME_NEXT[theme]}.`}
-            >
-              {THEME_LABEL[theme]}
-            </Button>
+            <ThemeButton />
           </div>
         </div>
       </header>
       <main id="main" className="mx-auto max-w-6xl px-4 py-6">
         {state.kind === "empty" ? <DropZone onFile={openFile} onSample={openSample} /> : null}
         {state.kind === "error" ? <ErrorPanel fileName={state.source} error={state.error} onFile={openFile} onReset={reset} /> : null}
-        {state.kind === "loaded" && view ? (
-          <>
-            <div className="mb-4">
-              <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">SlicePoint fit check: {view.header.site}</h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {view.header.subtitle} Generated {view.header.generated}.
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Showing {state.source}
-                {state.sample ? " (synthetic practice data)" : ""}.
-              </p>
-            </div>
-            {view.scores.available ? (
-              <div className="mb-4 rounded-md border-2 border-dashed border-watch bg-watch-bg p-3 text-sm text-foreground">
-                <label className="flex cursor-pointer items-start gap-2 font-medium">
-                  <input
-                    type="checkbox"
-                    className="mt-1 size-4"
-                    checked={showScores}
-                    onChange={(e) => setShowScores(e.target.checked)}
-                  />
-                  <span>
-                    Show provisional scores (unratified, method {view.scores.methods.join(", ")})
-                  </span>
-                </label>
-                <p className="mt-1 pl-6 text-xs">{PROVISIONAL_BANNER}</p>
-              </div>
-            ) : null}
-            <Tabs
-              label="Result sections"
-              active={tab}
-              onChange={(id) => setTab(id as TabId)}
-              tabs={[
-                { id: "overview", label: "Overview" },
-                { id: "performance", label: "Performance" },
-                { id: "groups", label: "By group" },
-                {
-                  id: "cases",
-                  label: "Cases to review",
-                  ...(view.cases.kind === "ok" ? { badge: String(view.cases.rows.length) } : {}),
-                },
-                { id: "about", label: "Methods & provenance" },
-              ]}
-            >
-              {tab === "overview" ? (
-                <>
-                  <VerdictPanel verdict={view.verdict} onJump={jumpToCheck} />
-                  <ChecksSection checks={view.checks} scores={view.scores} />
-                </>
-              ) : null}
-              {tab === "performance" ? <PerformancePanel perf={view.performance} /> : null}
-              {tab === "groups" ? <StrataPanel strata={view.strata} /> : null}
-              {tab === "cases" ? <CasesPanel cases={view.cases} /> : null}
-              {tab === "about" ? <AboutPanel about={view.about} /> : null}
-            </Tabs>
-          </>
+        {state.kind === "loaded" ? (
+          <ResultScreen key={state.seq} result={state.result} readNotes={state.readNotes} source={state.source} sample={state.sample} />
         ) : null}
       </main>
       <footer className="mx-auto max-w-6xl border-t px-4 py-6 text-sm">

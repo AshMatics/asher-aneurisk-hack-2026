@@ -61,6 +61,8 @@ def test_lifecycle_202_then_409_then_result(data_root: Path, tmp_path: Path) -> 
         html = c.get(f"/v1/assessments/{job_id}/report.html", headers=AUTH)
         assert html.status_code == 200 and html.headers["content-type"].startswith("text/html")
         assert "Hospital B" in html.text
+        csp = html.headers["content-security-policy"]
+        assert csp.startswith("default-src 'none'") and "script-src" not in csp and "frame-ancestors 'none'" in csp
 
 
 def test_skipped_port_steps_are_never_a_pass(client: TestClient, reference_id: str) -> None:

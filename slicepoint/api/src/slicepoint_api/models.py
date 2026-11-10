@@ -204,5 +204,16 @@ class JobAccepted(ApiModel):
     report_url: str
 
 
+class SessionCreate(ApiModel):
+    """The service token, exchanged once for a browser session cookie."""
+
+    token: str = Field(min_length=1, max_length=512, description="The service token. Never stored by the page.")
+
+
+class SessionInfo(ApiModel):
+    signed_in: bool
+    expires_at: dt.datetime | None = Field(default=None, description="When the session cookie stops working.")
+
+
 class ErrorDetail(ApiModel):
     detail: str

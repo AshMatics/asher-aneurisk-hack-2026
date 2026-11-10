@@ -2,7 +2,7 @@
   "name": "slicepoint-viewer",
   "version": "0.2.0",
   "private": true,
-  "description": "Static SlicePoint viewer: renders an AssessmentResult JSON in the browser, offline.",
+  "description": "SlicePoint viewer: a static build that renders an AssessmentResult JSON offline, and a live build served by slicepoint-api.",
   "license": "MIT",
   "type": "module",
   "packageManager": "pnpm@9.12.2",
@@ -11,15 +11,19 @@
   },
   "scripts": {
     "dev": "vite",
+    "dev:live": "vite --mode live",
     "gen:contract": "node scripts/gen-contract.mjs",
     "check:contract": "node scripts/gen-contract.mjs --check",
+    "gen:api": "node scripts/gen-api.mjs",
+    "check:api": "node scripts/gen-api.mjs --check",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint . --max-warnings 0",
     "test": "vitest run",
     "build": "node scripts/gen-contract.mjs --check && tsc --noEmit -p tsconfig.json && vite build && node scripts/check-build.mjs",
     "build:core": "pnpm build && node scripts/sync-core.mjs",
+    "build:live": "node scripts/gen-api.mjs --check && tsc --noEmit -p tsconfig.json && vite build --mode live && node scripts/check-live.mjs",
     "preview": "vite preview",
-    "verify": "pnpm check:contract && pnpm typecheck && pnpm lint && pnpm test && pnpm build"
+    "verify": "pnpm check:contract && pnpm check:api && pnpm typecheck && pnpm lint && pnpm test && pnpm build && pnpm build:live"
   },
   "dependencies": {
     "ajv": "8.20.0",
@@ -42,11 +46,19 @@
     "globals": "17.14.0",
     "jsdom": "31.0.0",
     "json-schema-to-typescript": "16.0.0",
+    "openapi-typescript": "7.13.0",
     "tailwindcss": "4.3.5",
     "typescript": "6.0.3",
     "typescript-eslint": "8.72.2",
     "vite": "8.3.7",
     "vite-plugin-singlefile": "2.3.4",
     "vitest": "5.1.0"
+  },
+  "pnpm": {
+    "peerDependencyRules": {
+      "allowedVersions": {
+        "openapi-typescript>typescript": "6"
+      }
+    }
   }
 }
