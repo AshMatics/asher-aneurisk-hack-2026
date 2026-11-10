@@ -125,6 +125,15 @@ and shows them in the report with a "provisional, not validated" banner.
 `ParquetAdapter(site_id).load(folder)` returns the contract `CuratedDataset`, as the
 `IngestionAdapter` protocol requires. `Assessment` accepts either view.
 
+## Static viewer
+
+`slicepoint/viewer` (milestone 3) builds `slicepoint-viewer.html`: one offline HTML file
+that opens any `result.json` this package writes and renders it interactively. You can
+drill into a check's evidence and sort and filter the cases to review. It validates the
+file against `AssessmentResult.schema.json` and refuses other `schema_version`s. It
+computes no statistics and makes no network requests. See
+[../viewer/README.md](../viewer/README.md).
+
 ## Layout
 
 | Module | What it holds |

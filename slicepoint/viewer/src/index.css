@@ -1,0 +1,188 @@
+@import "tailwindcss";
+
+/* Dark mode follows the .dark class on <html>, set from the system preference or the
+   theme toggle (src/theme.ts). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Stock shadcn/ui "neutral" tokens (POC spec, "Design tokens"), plus status tokens.
+   Status colours always come with a text label; contrast is AA on their own background. */
+:root {
+  --background: hsl(0 0% 100%);
+  --foreground: hsl(0 0% 3.9%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(0 0% 3.9%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(0 0% 3.9%);
+  --primary: hsl(0 0% 9%);
+  --primary-foreground: hsl(0 0% 98%);
+  --secondary: hsl(0 0% 96.1%);
+  --secondary-foreground: hsl(0 0% 9%);
+  --muted: hsl(0 0% 96.1%);
+  --muted-foreground: hsl(0 0% 45.1%);
+  --accent: hsl(0 0% 96.1%);
+  --accent-foreground: hsl(0 0% 9%);
+  --destructive: hsl(0 84.2% 60.2%);
+  --destructive-foreground: hsl(0 0% 98%);
+  --border: hsl(0 0% 89.8%);
+  --input: hsl(0 0% 89.8%);
+  --ring: hsl(0 0% 3.9%);
+  --radius: 0.5rem;
+  --chart-1: hsl(12 76% 61%);
+  --chart-2: hsl(173 58% 39%);
+  --chart-3: hsl(197 37% 24%);
+  --chart-4: hsl(43 74% 66%);
+  --chart-5: hsl(27 87% 67%);
+
+  --ok: hsl(145 63% 24%);
+  --ok-bg: hsl(142 55% 94%);
+  --watch: hsl(30 95% 27%);
+  --watch-bg: hsl(45 95% 91%);
+  --problem: hsl(0 72% 40%);
+  --problem-bg: hsl(0 85% 96%);
+  --skip: hsl(0 0% 30%);
+  --skip-bg: hsl(0 0% 93%);
+}
+
+.dark {
+  --background: hsl(0 0% 3.9%);
+  --foreground: hsl(0 0% 98%);
+  --card: hsl(0 0% 6%);
+  --card-foreground: hsl(0 0% 98%);
+  --popover: hsl(0 0% 3.9%);
+  --popover-foreground: hsl(0 0% 98%);
+  --primary: hsl(0 0% 98%);
+  --primary-foreground: hsl(0 0% 9%);
+  --secondary: hsl(0 0% 14.9%);
+  --secondary-foreground: hsl(0 0% 98%);
+  --muted: hsl(0 0% 14.9%);
+  --muted-foreground: hsl(0 0% 63.9%);
+  --accent: hsl(0 0% 14.9%);
+  --accent-foreground: hsl(0 0% 98%);
+  --destructive: hsl(0 62.8% 30.6%);
+  --destructive-foreground: hsl(0 0% 98%);
+  --border: hsl(0 0% 14.9%);
+  --input: hsl(0 0% 14.9%);
+  --ring: hsl(0 0% 83.1%);
+  --chart-1: hsl(220 70% 50%);
+  --chart-2: hsl(160 60% 45%);
+  --chart-3: hsl(30 80% 55%);
+  --chart-4: hsl(280 65% 60%);
+  --chart-5: hsl(340 75% 55%);
+
+  --ok: hsl(142 60% 70%);
+  --ok-bg: hsl(145 45% 13%);
+  --watch: hsl(43 92% 66%);
+  --watch-bg: hsl(36 60% 13%);
+  --problem: hsl(0 90% 76%);
+  --problem-bg: hsl(0 50% 15%);
+  --skip: hsl(0 0% 78%);
+  --skip-bg: hsl(0 0% 17%);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-ok: var(--ok);
+  --color-ok-bg: var(--ok-bg);
+  --color-watch: var(--watch);
+  --color-watch-bg: var(--watch-bg);
+  --color-problem: var(--problem);
+  --color-problem-bg: var(--problem-bg);
+  --color-skip: var(--skip);
+  --color-skip-bg: var(--skip-bg);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  /* No web fonts are downloaded: Inter is used if installed, else the system UI font. */
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    overflow-wrap: anywhere;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+/* Narrow screens: tables marked .stack become one block per row, each cell labelled. */
+@media (max-width: 639px) {
+  table.stack thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  table.stack,
+  table.stack tbody,
+  table.stack tr,
+  table.stack th,
+  table.stack td {
+    display: block;
+    width: 100%;
+  }
+  table.stack tr {
+    border-bottom: 1px solid var(--border);
+    padding: 0.5rem 0;
+  }
+  table.stack td,
+  table.stack th[scope="row"] {
+    border: 0;
+    padding: 0.125rem 0;
+  }
+  table.stack td[data-label]::before {
+    content: attr(data-label) ": ";
+    color: var(--muted-foreground);
+    font-weight: 500;
+  }
+  table.stack td:empty {
+    display: none;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}

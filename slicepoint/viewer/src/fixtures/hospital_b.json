@@ -1,0 +1,2694 @@
+{
+  "schema_version": "0.1.0",
+  "result_type": "slicepoint.assessment_result",
+  "site_id": "hospital_b",
+  "site_name": null,
+  "reference": {
+    "reference_id": "ref-hospital_a",
+    "site_id": "hospital_a",
+    "n_cases": 100,
+    "embedding_space_id": "merlin-ct-2048:hackathon",
+    "fingerprint": "d3cef452bceb61b40263407313f31d2e53c08b3ed5f601c631c714ba5e8b85b2"
+  },
+  "profile_id": "hackathon-default-v0",
+  "model_id": "hackathon-baseline-aaa",
+  "embedding_space_id": "merlin-ct-2048:hackathon",
+  "dataset_fingerprint": "d240ac3e638de3679e16485f3a71d19dbaa2da6226e05c981059f507dd67ff63",
+  "generated_at": "2026-11-10T00:45:43.208730Z",
+  "generator": "slicepoint-core 0.2.0",
+  "steps": [
+    {
+      "step": "ingest",
+      "state": "ok",
+      "detail": "80 cases from ../../data/practice/hospital_b"
+    },
+    {
+      "step": "embed",
+      "state": "ok",
+      "detail": "precomputed, space merlin-ct-2048:hackathon"
+    },
+    {
+      "step": "load_reference",
+      "state": "ok",
+      "detail": "ref-hospital_a (100 cases)"
+    },
+    {
+      "step": "segmentation",
+      "state": "skipped",
+      "detail": "segmentation worker not configured; Dice taken from predictions.parquet"
+    },
+    {
+      "step": "check_repeats",
+      "state": "ok",
+      "detail": null
+    },
+    {
+      "step": "check_scanning",
+      "state": "ok",
+      "detail": null
+    },
+    {
+      "step": "check_patients",
+      "state": "ok",
+      "detail": null
+    },
+    {
+      "step": "check_labels",
+      "state": "ok",
+      "detail": null
+    },
+    {
+      "step": "check_accuracy",
+      "state": "ok",
+      "detail": null
+    },
+    {
+      "step": "verdict",
+      "state": "ok",
+      "detail": "no_go"
+    },
+    {
+      "step": "performance",
+      "state": "ok",
+      "detail": null
+    },
+    {
+      "step": "strata",
+      "state": "ok",
+      "detail": "20 groups"
+    },
+    {
+      "step": "cases_to_review",
+      "state": "ok",
+      "detail": "8 of 80 scans flagged"
+    }
+  ],
+  "checks": [
+    {
+      "check_id": "repeats",
+      "state": "evaluated",
+      "reason": null
+    },
+    {
+      "check_id": "scanning",
+      "state": "evaluated",
+      "reason": null
+    },
+    {
+      "check_id": "patients",
+      "state": "evaluated",
+      "reason": null
+    },
+    {
+      "check_id": "labels",
+      "state": "evaluated",
+      "reason": null
+    },
+    {
+      "check_id": "accuracy",
+      "state": "evaluated",
+      "reason": null
+    }
+  ],
+  "verdict": {
+    "schema_version": "0.1.0",
+    "outcome": "no_go",
+    "rationale": "Problem in: accuracy, repeats. (Rule inferred from the POC spec and notebook; status-based, scores unused.)",
+    "results": [
+      {
+        "check_id": "repeats",
+        "status": "problem",
+        "n": 80,
+        "n_effective": 32.0,
+        "n_effective_method": "kish_design_effect_per_person",
+        "subjects": 40,
+        "failing_sub_factors": [
+          "people",
+          "leakage"
+        ],
+        "summary": "60 of 80 scans (75%) have a near-identical twin; there are only 40 real patients behind 80 scans. 31 of the twins are filed under a different patient ID, so ID-based checks would miss them. Accuracy measured on this data will look better than it really is until repeats are removed. A random split gives 2.6 mm error but the honest by-patient split gives 6.7 mm: the data leaks, so random-split results here are too optimistic.",
+        "evidence": [
+          {
+            "key": "near_duplicates",
+            "value": "red",
+            "unit": null,
+            "text": "60 of 80 scans (75%) have a near-identical twin; there are only 40 real patients behind 80 scans. 31 of the twins are filed under a different patient ID, so ID-based checks would miss them. Accuracy measured on this data will look better than it really is until repeats are removed."
+          },
+          {
+            "key": "near_duplicates.scans",
+            "value": 80,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "near_duplicates.patient_ids",
+            "value": 60,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "near_duplicates.real_people",
+            "value": 40,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "near_duplicates.scans_with_near_duplicate",
+            "value": 60,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "near_duplicates.share_with_near_duplicate",
+            "value": 0.75,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "near_duplicates.duplicates_under_different_patient_id",
+            "value": 31,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "near_duplicates.median_nearest_neighbour_similarity",
+            "value": 0.9940751194953918,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "leakage",
+            "value": "red",
+            "unit": null,
+            "text": "A random split gives 2.6 mm error but the honest by-patient split gives 6.7 mm: the data leaks, so random-split results here are too optimistic."
+          },
+          {
+            "key": "leakage.random_split_mae_mm",
+            "value": 2.555912971134609,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "leakage.by_person_mae_mm",
+            "value": 6.73207267036967,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "leakage.gap_ratio",
+            "value": 0.6203378816179269,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "leakage.random_split_r2",
+            "value": 0.2198167007240941,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "leakage.by_person_r2",
+            "value": -1.9129486005241993,
+            "unit": null,
+            "text": null
+          }
+        ],
+        "source": "computed"
+      },
+      {
+        "check_id": "scanning",
+        "status": "watch",
+        "n": 80,
+        "n_effective": 32.0,
+        "n_effective_method": "kish_design_effect_per_person",
+        "subjects": 40,
+        "failing_sub_factors": [
+          "scanner_vendor"
+        ],
+        "summary": "The scanner brand mix differs from the reference (distance 0.17). siemens: 71% here vs 88% reference; philips: 20% here vs 4% reference.",
+        "evidence": [
+          {
+            "key": "implausible_values",
+            "value": "ok",
+            "unit": null,
+            "text": "No impossible diameters, brightness, kVp, slice thickness or organ volumes."
+          },
+          {
+            "key": "implausible_values.count",
+            "value": 0,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "tvd_scanner_vendor",
+            "value": "yellow",
+            "unit": null,
+            "text": "The scanner brand mix differs from the reference (distance 0.17). siemens: 71% here vs 88% reference; philips: 20% here vs 4% reference."
+          },
+          {
+            "key": "tvd_scanner_vendor.distance",
+            "value": 0.16749999999999998,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "scan_content_auc",
+            "value": "ok",
+            "unit": null,
+            "text": "The scans are hard to tell apart from the reference (AUC 0.45)."
+          },
+          {
+            "key": "scan_content_auc.auc",
+            "value": 0.44749999999999995,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "share_outside_reference_coverage",
+            "value": 0.0125,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "tvd.scanner_vendor",
+            "value": 0.16749999999999998,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "tvd.contrast_phase",
+            "value": 0.06000000000000001,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "tvd.slice_thickness_class",
+            "value": 0.135,
+            "unit": null,
+            "text": null
+          }
+        ],
+        "source": "computed"
+      },
+      {
+        "check_id": "patients",
+        "status": "ok",
+        "n": 80,
+        "n_effective": 32.0,
+        "n_effective_method": "kish_design_effect_per_person",
+        "subjects": 40,
+        "failing_sub_factors": [],
+        "summary": "Nothing to flag.",
+        "evidence": [
+          {
+            "key": "tvd.sex",
+            "value": 0.014999999999999958,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "tvd.age_band",
+            "value": 0.10750000000000001,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "tvd.aaa_size_class",
+            "value": 0.01999999999999997,
+            "unit": null,
+            "text": null
+          }
+        ],
+        "source": "computed"
+      },
+      {
+        "check_id": "labels",
+        "status": "ok",
+        "n": 80,
+        "n_effective": 32.0,
+        "n_effective_method": "kish_design_effect_per_person",
+        "subjects": 40,
+        "failing_sub_factors": [],
+        "summary": "Aneurysm labels follow the 30 mm rule (largest 'no AAA' 27.9 mm, smallest 'AAA' 35.4 mm). This hospital's labels line up with the model's diameter output at about the same cutoff as the reference.",
+        "evidence": [
+          {
+            "key": "rule_conflicts",
+            "value": "ok",
+            "unit": null,
+            "text": "Aneurysm labels follow the 30 mm rule (largest 'no AAA' 27.9 mm, smallest 'AAA' 35.4 mm)."
+          },
+          {
+            "key": "rule_conflicts.largest_diameter_labelled_not_aaa",
+            "value": 27.879203718901298,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "rule_conflicts.smallest_diameter_labelled_aaa",
+            "value": 35.387144558440994,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "rule_conflicts.reference_smallest_aaa",
+            "value": 30.23243291566195,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "rule_conflicts.n_labels_disagreeing_with_cutoff",
+            "value": 0,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "rule_conflicts.share_disagreeing",
+            "value": 0.0,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "rule_conflicts.cutoff_mm",
+            "value": 30.0,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "cutoff_shift",
+            "value": "ok",
+            "unit": null,
+            "text": "This hospital's labels line up with the model's diameter output at about the same cutoff as the reference."
+          },
+          {
+            "key": "cutoff_shift.low",
+            "value": 28.5,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "cutoff_shift.high",
+            "value": 28.5,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "cutoff_shift.bal_acc_at_best",
+            "value": 0.9927536231884058,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "cutoff_shift.shift_mm",
+            "value": 0.5,
+            "unit": null,
+            "text": null
+          }
+        ],
+        "source": "computed"
+      },
+      {
+        "check_id": "accuracy",
+        "status": "problem",
+        "n": 80,
+        "n_effective": 32.0,
+        "n_effective_method": "kish_design_effect_per_person",
+        "subjects": 40,
+        "failing_sub_factors": [
+          "no_answers",
+          "size_within_tolerance",
+          "subgroups",
+          "dice"
+        ],
+        "summary": "The model returned no AAA answer for 5% of scans, most often in: {'contrast_phase': {'arterial': 0.1875, 'non-contrast': 0.05555555555555555}, 'sex': {'F': 0.11764705882352941}, 'scanner_vendor': {'siemens': 0.07017543859649122}, 'slice_thickness_class': {'standard': 0.07894736842105263, 'thin': 0.027777777777777776}}. A blank must never be read as 'normal'.",
+        "evidence": [
+          {
+            "key": "no_answers",
+            "value": "red",
+            "unit": null,
+            "text": "The model returned no AAA answer for 5% of scans, most often in: {'contrast_phase': {'arterial': 0.1875, 'non-contrast': 0.05555555555555555}, 'sex': {'F': 0.11764705882352941}, 'scanner_vendor': {'siemens': 0.07017543859649122}, 'slice_thickness_class': {'standard': 0.07894736842105263, 'thin': 0.027777777777777776}}. A blank must never be read as 'normal'."
+          },
+          {
+            "key": "no_answers.share_no_answer",
+            "value": 0.05,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "no_answers.by_group",
+            "value": "{\"contrast_phase\": {\"arterial\": 0.1875, \"non-contrast\": 0.05555555555555555}, \"sex\": {\"F\": 0.11764705882352941}, \"scanner_vendor\": {\"siemens\": 0.07017543859649122}, \"slice_thickness_class\": {\"standard\": 0.07894736842105263, \"thin\": 0.027777777777777776}}",
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "measurement_outliers",
+            "value": "yellow",
+            "unit": null,
+            "text": "4 scan(s) where the model's diameter differs from the label by more than 4.2 mm (3x the reference spread). Worth a manual look."
+          },
+          {
+            "key": "measurement_outliers.count",
+            "value": 4,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "measurement_outliers.threshold_mm",
+            "value": 4.245431587065521,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "aneurysms_caught",
+            "value": "ok",
+            "unit": null,
+            "text": "The model caught 6 of 7 aneurysms (sensitivity 86%, plausible range 49% to 97%; reference 89%). Balanced accuracy 0.90, G-mean 0.90."
+          },
+          {
+            "key": "aneurysms_caught.n",
+            "value": 80,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "aneurysms_caught.n_aaa",
+            "value": 7,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "aneurysms_caught.n_not_aaa",
+            "value": 73,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "aneurysms_caught.tp",
+            "value": 6,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "aneurysms_caught.fn",
+            "value": 1,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "aneurysms_caught.tn",
+            "value": 69,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "aneurysms_caught.fp",
+            "value": 4,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "aneurysms_caught.n_no_answer",
+            "value": 4,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "aneurysms_caught.sens",
+            "value": 0.8571428571428571,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "aneurysms_caught.sens_lo",
+            "value": 0.4868721707256811,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "aneurysms_caught.sens_hi",
+            "value": 0.9743203756552565,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "aneurysms_caught.spec",
+            "value": 0.9452054794520548,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "aneurysms_caught.spec_lo",
+            "value": 0.8674100245784024,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "aneurysms_caught.spec_hi",
+            "value": 0.9784875025843027,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "aneurysms_caught.bal_acc",
+            "value": 0.9011741682974559,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "aneurysms_caught.g_mean",
+            "value": 0.900097842039752,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "diameter_error",
+            "value": "ok",
+            "unit": null,
+            "text": "Diameter error: on average 0.7 mm (reference 0.7 mm); 93% of scans within 2 mm; bias -0.2 mm."
+          },
+          {
+            "key": "diameter_error.mae",
+            "value": 0.719440132238235,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "diameter_error.bias",
+            "value": -0.24287906483386798,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "diameter_error.loa_low",
+            "value": -2.945540308675448,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "diameter_error.loa_high",
+            "value": 2.4597821790077123,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "diameter_error.n",
+            "value": 76,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "subgroup_many_no_answers",
+            "value": "yellow",
+            "unit": null,
+            "text": "Problem 'many no-answers' in: contrast_phase=arterial (n=16), contrast_phase=non-contrast (n=18), slice_thickness_class=standard (n=38), sex=F (n=34), scanner_vendor=siemens (n=57)."
+          },
+          {
+            "key": "subgroup_many_no_answers.groups",
+            "value": "contrast_phase=arterial (n=16); contrast_phase=non-contrast (n=18); slice_thickness_class=standard (n=38); sex=F (n=34); scanner_vendor=siemens (n=57)",
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "dice",
+            "value": "ok",
+            "unit": null,
+            "text": "The model's aorta outline overlaps the expert outline well in most scans (median Dice 0.98, reference 0.98); 5% of scans are below 0.90."
+          },
+          {
+            "key": "dice.median",
+            "value": 0.9815819091899509,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "dice.mean",
+            "value": 0.9700810098462866,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "dice.share_below_line",
+            "value": 0.05,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "poor_outline_error",
+            "value": "yellow",
+            "unit": null,
+            "text": "Scans with a poor outline (Dice < 0.90) have an average diameter error of 4.9 mm, versus 0.5 mm for the rest."
+          },
+          {
+            "key": "poor_outline_error.error_low_mm",
+            "value": 4.86957757624615,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "poor_outline_error.error_rest_mm",
+            "value": 0.5488865386488687,
+            "unit": null,
+            "text": null
+          },
+          {
+            "key": "subgroups_flagged",
+            "value": 5,
+            "unit": null,
+            "text": null
+          }
+        ],
+        "source": "computed"
+      }
+    ],
+    "not_evaluated": [],
+    "site_id": "hospital_b",
+    "profile_id": "hackathon-default-v0",
+    "model_id": "hackathon-baseline-aaa",
+    "override": null
+  },
+  "performance": {
+    "aaa_missing_as_wrong": {
+      "n": 80,
+      "n_aaa": 7,
+      "n_not_aaa": 73,
+      "tp": 6,
+      "fn": 1,
+      "tn": 69,
+      "fp": 4,
+      "n_no_answer": 4,
+      "sens": 0.8571428571428571,
+      "sens_lo": 0.4868721707256811,
+      "sens_hi": 0.9743203756552565,
+      "spec": 0.9452054794520548,
+      "spec_lo": 0.8674100245784024,
+      "spec_hi": 0.9784875025843027,
+      "bal_acc": 0.9011741682974559,
+      "g_mean": 0.900097842039752
+    },
+    "aaa_when_answered": {
+      "n": 76,
+      "n_aaa": 7,
+      "n_not_aaa": 69,
+      "tp": 6,
+      "fn": 1,
+      "tn": 69,
+      "fp": 0,
+      "n_no_answer": 0,
+      "sens": 0.8571428571428571,
+      "sens_lo": 0.4868721707256811,
+      "sens_hi": 0.9743203756552565,
+      "spec": 1.0,
+      "spec_lo": 0.9472627418109483,
+      "spec_hi": 1.0,
+      "bal_acc": 0.9285714285714286,
+      "g_mean": 0.9258200997725514
+    },
+    "diameter": {
+      "n": 76,
+      "min_n": 3,
+      "mae": 0.719440132238235,
+      "rmse": 1.4001356052186198,
+      "bias": -0.24287906483386798,
+      "sd": 1.3789087978783572,
+      "loa_low": -2.945540308675448,
+      "loa_high": 2.4597821790077123,
+      "within_tolerance": [
+        {
+          "role": "bland_altman",
+          "tolerance_mm": 2.0,
+          "share": 0.9342105263157895
+        },
+        {
+          "role": "size",
+          "tolerance_mm": 3.0,
+          "share": 0.9473684210526315
+        }
+      ],
+      "spearman": 0.9123843115590983
+    },
+    "dice": {
+      "median": 0.9815819091899509,
+      "mean": 0.9700810098462866,
+      "share_below_0.90": 0.05,
+      "share_below_0.85": 0.0125
+    }
+  },
+  "scans": [
+    {
+      "case_id": "050f1a66726bf8c5",
+      "person_group": "p0",
+      "sex": "F",
+      "age_band": "60-69",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "non-contrast",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 23.842088980114337,
+      "ai_diameter_mm": 18.946159877166817,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "10747c7f19bbccbf",
+      "person_group": "p1",
+      "sex": "M",
+      "age_band": "60-69",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 20.670026608594387,
+      "ai_diameter_mm": 20.74246851269154,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "1239b435355cf634",
+      "person_group": "p2",
+      "sex": "F",
+      "age_band": "50-59",
+      "scanner_vendor": "philips",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 17.51010212614828,
+      "ai_diameter_mm": 18.403364922849335,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "12936a0e317d7e10",
+      "person_group": "p3",
+      "sex": "M",
+      "age_band": "60-69",
+      "scanner_vendor": "philips",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 22.102036105300343,
+      "ai_diameter_mm": 21.50581316760657,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "1347b6adfa9652f5",
+      "person_group": "p4",
+      "sex": "M",
+      "age_band": "70-79",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 23.243278598338918,
+      "ai_diameter_mm": 23.717082451262844,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "13fe8ee249f5ea0d",
+      "person_group": "p5",
+      "sex": "M",
+      "age_band": "40-49",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 26.968520623842718,
+      "ai_diameter_mm": 28.40072599736119,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "17606aa2a21ec8a8",
+      "person_group": "p6",
+      "sex": "M",
+      "age_band": "60-69",
+      "scanner_vendor": "philips",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 18.3915239725374,
+      "ai_diameter_mm": 18.185354872581918,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "2569b7523dc82e80",
+      "person_group": "p6",
+      "sex": "M",
+      "age_band": "60-69",
+      "scanner_vendor": "philips",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 17.88854381999832,
+      "ai_diameter_mm": 17.88854381999832,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "25e62e0721874450",
+      "person_group": "p7",
+      "sex": "F",
+      "age_band": "70-79",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "non-contrast",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 19.912307751739878,
+      "ai_diameter_mm": 19.912307751739878,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "2bdc140128d607d2",
+      "person_group": "p8",
+      "sex": "F",
+      "age_band": "40-49",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 15.443445211480501,
+      "ai_diameter_mm": 15.524174696260024,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "2f4fc0f3cfa28bfc",
+      "person_group": "p9",
+      "sex": "F",
+      "age_band": "60-69",
+      "scanner_vendor": null,
+      "contrast_phase": "non-contrast",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 22.95830673604786,
+      "ai_diameter_mm": 22.119852746034088,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "31fe5abd4066493c",
+      "person_group": "p10",
+      "sex": "M",
+      "age_band": "30-39",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "non-contrast",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 17.92344832893492,
+      "ai_diameter_mm": 17.92344832893492,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "3521570a9222fdcd",
+      "person_group": "p11",
+      "sex": "M",
+      "age_band": "50-59",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "arterial",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 24.73863375370596,
+      "ai_diameter_mm": 24.73863375370596,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "36c6a1458f4a3c58",
+      "person_group": "p12",
+      "sex": "F",
+      "age_band": "90-99",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "thick",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 19.6596032513375,
+      "ai_diameter_mm": 19.319679086361656,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "39ace6380061fefd",
+      "person_group": "p13",
+      "sex": "M",
+      "age_band": "80-89",
+      "scanner_vendor": "philips",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "30-54mm",
+      "aaa": true,
+      "reference_diameter_mm": 36.55857631145009,
+      "ai_diameter_mm": 36.91647144357957,
+      "ai_aaa": true
+    },
+    {
+      "case_id": "3a66fcff837f1e8e",
+      "person_group": "p14",
+      "sex": "F",
+      "age_band": "80-89",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "arterial",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 26.177280225416848,
+      "ai_diameter_mm": null,
+      "ai_aaa": null
+    },
+    {
+      "case_id": "3e07c872c7e5a4e8",
+      "person_group": "p15",
+      "sex": "F",
+      "age_band": "60-69",
+      "scanner_vendor": "ge",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 23.96351393264352,
+      "ai_diameter_mm": 23.769728648009426,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "48a38696f7a2b40c",
+      "person_group": "p6",
+      "sex": "M",
+      "age_band": "60-69",
+      "scanner_vendor": "philips",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 17.63282482844205,
+      "ai_diameter_mm": 18.07630600626897,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "49c403a341e1b66d",
+      "person_group": "p16",
+      "sex": "M",
+      "age_band": "20-29",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "non-contrast",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 18.200274723201296,
+      "ai_diameter_mm": 18.33712082089225,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "4e57229743cff22f",
+      "person_group": "p5",
+      "sex": "M",
+      "age_band": "40-49",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 26.690076071479673,
+      "ai_diameter_mm": 28.230148604457515,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "57cccc056d6e347f",
+      "person_group": "p17",
+      "sex": "M",
+      "age_band": "70-79",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 22.94716401813985,
+      "ai_diameter_mm": 23.154082282934976,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "58368a637e3abdb2",
+      "person_group": "p5",
+      "sex": "M",
+      "age_band": "40-49",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 27.16615541441225,
+      "ai_diameter_mm": 28.6574597618142,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "5bca1970468b29a2",
+      "person_group": "p14",
+      "sex": "F",
+      "age_band": "80-89",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "arterial",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 25.607469668565475,
+      "ai_diameter_mm": null,
+      "ai_aaa": null
+    },
+    {
+      "case_id": "5c638186d390f906",
+      "person_group": "p2",
+      "sex": "F",
+      "age_band": "50-59",
+      "scanner_vendor": "philips",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 17.67766952966369,
+      "ai_diameter_mm": 17.67766952966369,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "5efb1c88edcdd5df",
+      "person_group": "p18",
+      "sex": "M",
+      "age_band": "40-49",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 20.955899543324062,
+      "ai_diameter_mm": 20.702314317604234,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "615e3ec434cf544b",
+      "person_group": "p19",
+      "sex": "F",
+      "age_band": "80-89",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "thick",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 19.924858845171276,
+      "ai_diameter_mm": 19.4164878389476,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "61680da474f4fa9f",
+      "person_group": "p20",
+      "sex": "M",
+      "age_band": "70-79",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 21.840329667841555,
+      "ai_diameter_mm": 22.192341021172147,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "62aa78707a1fe527",
+      "person_group": "p11",
+      "sex": "M",
+      "age_band": "50-59",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "arterial",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 24.979561736890755,
+      "ai_diameter_mm": 25.338063918348254,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "6b7c9f262ab2298f",
+      "person_group": "p21",
+      "sex": "F",
+      "age_band": "70-79",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 19.76841268056455,
+      "ai_diameter_mm": 19.800713673670014,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "6d9ae534585f6eaa",
+      "person_group": "p0",
+      "sex": "F",
+      "age_band": "60-69",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "non-contrast",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 23.898314105226707,
+      "ai_diameter_mm": 19.39732188219453,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "77c25f5505e493e6",
+      "person_group": "p22",
+      "sex": "F",
+      "age_band": "70-79",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 24.82438317461282,
+      "ai_diameter_mm": 24.82438317461282,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "78caa829771bed16",
+      "person_group": "p14",
+      "sex": "F",
+      "age_band": "80-89",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "arterial",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 26.04562647044538,
+      "ai_diameter_mm": null,
+      "ai_aaa": null
+    },
+    {
+      "case_id": "809e3957c5869839",
+      "person_group": "p23",
+      "sex": "M",
+      "age_band": "50-59",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "arterial",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 22.41093483101497,
+      "ai_diameter_mm": 22.610838109190027,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "83c7f3d60ca9669e",
+      "person_group": "p24",
+      "sex": "M",
+      "age_band": "50-59",
+      "scanner_vendor": "philips",
+      "contrast_phase": "arterial",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 24.119681691635506,
+      "ai_diameter_mm": 26.01633267182703,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "84ac847abb1ad5c2",
+      "person_group": "p9",
+      "sex": "F",
+      "age_band": "60-69",
+      "scanner_vendor": null,
+      "contrast_phase": "non-contrast",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 22.545362739123473,
+      "ai_diameter_mm": 22.19829776090641,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "87e01d6c28e4733c",
+      "person_group": "p11",
+      "sex": "M",
+      "age_band": "50-59",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "arterial",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 24.752176144540194,
+      "ai_diameter_mm": 24.5953738722642,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "8b79f83e90ed1cb2",
+      "person_group": "p25",
+      "sex": "F",
+      "age_band": "60-69",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "non-contrast",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 20.12764891036125,
+      "ai_diameter_mm": 18.38305024429087,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "8b927180eae9a299",
+      "person_group": "p24",
+      "sex": "M",
+      "age_band": "50-59",
+      "scanner_vendor": "philips",
+      "contrast_phase": "arterial",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 24.82438317461282,
+      "ai_diameter_mm": 24.9899979991996,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "8bafe31097ca6a71",
+      "person_group": "p9",
+      "sex": "F",
+      "age_band": "60-69",
+      "scanner_vendor": null,
+      "contrast_phase": "non-contrast",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 22.89650628371062,
+      "ai_diameter_mm": 21.95449840010015,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "8d53855b383a3cb4",
+      "person_group": "p26",
+      "sex": "M",
+      "age_band": "50-59",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "non-contrast",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 21.47673159491453,
+      "ai_diameter_mm": 22.090722034374522,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "8dc8300c930794cd",
+      "person_group": "p23",
+      "sex": "M",
+      "age_band": "50-59",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "arterial",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 21.998479119019937,
+      "ai_diameter_mm": 22.682275992203813,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "8e2c6cd16986482b",
+      "person_group": "p27",
+      "sex": "F",
+      "age_band": "40-49",
+      "scanner_vendor": "philips",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 17.663844461187466,
+      "ai_diameter_mm": 18.005453761277202,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "915269a8caf0413f",
+      "person_group": "p28",
+      "sex": "M",
+      "age_band": "60-69",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 27.879203718901298,
+      "ai_diameter_mm": 27.98660393831306,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "9809cb6a06e80f92",
+      "person_group": "p29",
+      "sex": "M",
+      "age_band": "50-59",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "arterial",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 21.643635539701915,
+      "ai_diameter_mm": 21.826995796380768,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "9bcfbb37577ef2cf",
+      "person_group": "p30",
+      "sex": "F",
+      "age_band": "60-69",
+      "scanner_vendor": "ge",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 21.98407819346642,
+      "ai_diameter_mm": 22.711377647849314,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "9f2d9f6a28512da3",
+      "person_group": "p24",
+      "sex": "M",
+      "age_band": "50-59",
+      "scanner_vendor": "philips",
+      "contrast_phase": "arterial",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 24.300861106944836,
+      "ai_diameter_mm": 25.358932789445,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "a0875e57e3d0452b",
+      "person_group": "p31",
+      "sex": "M",
+      "age_band": "50-59",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "thick",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 19.557607215607945,
+      "ai_diameter_mm": 19.557607215607945,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "a2578c41b8473abf",
+      "person_group": "p32",
+      "sex": "F",
+      "age_band": "70-79",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "non-contrast",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 24.62214450449026,
+      "ai_diameter_mm": 23.759208741033444,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "a6e0005efb9e3bfd",
+      "person_group": "p33",
+      "sex": "M",
+      "age_band": "50-59",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "thick",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 22.073740054644116,
+      "ai_diameter_mm": 22.005681084665387,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "a95eb4393561c9f2",
+      "person_group": "p0",
+      "sex": "F",
+      "age_band": "60-69",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "non-contrast",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 23.71181140275875,
+      "ai_diameter_mm": 18.5,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "ad2f5ff50eafb1c0",
+      "person_group": "p20",
+      "sex": "M",
+      "age_band": "70-79",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 22.331508059380646,
+      "ai_diameter_mm": 22.2449374077343,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "af8ce3719564402d",
+      "person_group": "p23",
+      "sex": "M",
+      "age_band": "50-59",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "arterial",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 22.98248905213376,
+      "ai_diameter_mm": 22.472009703417267,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "b27f6e0f5b72c1e5",
+      "person_group": "p34",
+      "sex": "M",
+      "age_band": "30-39",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 21.828879952943073,
+      "ai_diameter_mm": 22.20923231451281,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "b37fb7c45831cdbb",
+      "person_group": "p26",
+      "sex": "M",
+      "age_band": "50-59",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "non-contrast",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 22.305673208928702,
+      "ai_diameter_mm": 22.099384640980528,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "b94fbf0d08793bb3",
+      "person_group": "p35",
+      "sex": "M",
+      "age_band": "70-79",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "30-54mm",
+      "aaa": true,
+      "reference_diameter_mm": 39.37534156307718,
+      "ai_diameter_mm": 39.335621820222386,
+      "ai_aaa": true
+    },
+    {
+      "case_id": "ba500f44a16598f2",
+      "person_group": "p18",
+      "sex": "M",
+      "age_band": "40-49",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 21.025718459276927,
+      "ai_diameter_mm": 20.641585866346514,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "c159568557a6aad3",
+      "person_group": "p36",
+      "sex": "F",
+      "age_band": "70-79",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "non-contrast",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 22.638462845343543,
+      "ai_diameter_mm": null,
+      "ai_aaa": null
+    },
+    {
+      "case_id": "c465a5a69881538b",
+      "person_group": "p30",
+      "sex": "F",
+      "age_band": "60-69",
+      "scanner_vendor": "ge",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 22.557924353704717,
+      "ai_diameter_mm": 23.545795933272153,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "c5720039f513d589",
+      "person_group": "p27",
+      "sex": "F",
+      "age_band": "40-49",
+      "scanner_vendor": "philips",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 17.61355949942644,
+      "ai_diameter_mm": 16.419653178310558,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "c59c4263ebf771cf",
+      "person_group": "p27",
+      "sex": "F",
+      "age_band": "40-49",
+      "scanner_vendor": "philips",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 17.392527130926087,
+      "ai_diameter_mm": 17.356554957709783,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "ca6c117f29a70bab",
+      "person_group": "p19",
+      "sex": "F",
+      "age_band": "80-89",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "thick",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 20.589249220546,
+      "ai_diameter_mm": 19.111490202206703,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "cb495f026d3f91da",
+      "person_group": "p37",
+      "sex": "F",
+      "age_band": "70-79",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "non-contrast",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 20.838665984174707,
+      "ai_diameter_mm": 20.89258241577618,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "cff80dc4a019422c",
+      "person_group": "p2",
+      "sex": "F",
+      "age_band": "50-59",
+      "scanner_vendor": "philips",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 17.90206469857964,
+      "ai_diameter_mm": 18.56272095456616,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "d2dd550f193604cc",
+      "person_group": "p38",
+      "sex": "M",
+      "age_band": "60-69",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "30-54mm",
+      "aaa": true,
+      "reference_diameter_mm": 35.387144558440994,
+      "ai_diameter_mm": 28.844410203711913,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "db81b4a7bd73d661",
+      "person_group": "p35",
+      "sex": "M",
+      "age_band": "70-79",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "30-54mm",
+      "aaa": true,
+      "reference_diameter_mm": 39.322385482063524,
+      "ai_diameter_mm": 39.2587569849072,
+      "ai_aaa": true
+    },
+    {
+      "case_id": "dc960f6b65a59de9",
+      "person_group": "p19",
+      "sex": "F",
+      "age_band": "80-89",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "thick",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 19.241074456313022,
+      "ai_diameter_mm": 19.534385063487303,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "de592d2a3773523a",
+      "person_group": "p29",
+      "sex": "M",
+      "age_band": "50-59",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "arterial",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 21.360009363293827,
+      "ai_diameter_mm": 21.360009363293827,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "e35dd09a25a81546",
+      "person_group": "p26",
+      "sex": "M",
+      "age_band": "50-59",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "non-contrast",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 21.384489272096054,
+      "ai_diameter_mm": 21.83908315992621,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "e4acec5210c8f141",
+      "person_group": "p20",
+      "sex": "M",
+      "age_band": "70-79",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 22.39324776464205,
+      "ai_diameter_mm": 22.308406200670653,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "e98c4c3798a8f72c",
+      "person_group": "p34",
+      "sex": "M",
+      "age_band": "30-39",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 22.14245155930695,
+      "ai_diameter_mm": 21.63511862238223,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "ef7ec97a67335996",
+      "person_group": "p35",
+      "sex": "M",
+      "age_band": "70-79",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "30-54mm",
+      "aaa": true,
+      "reference_diameter_mm": 39.30490896833841,
+      "ai_diameter_mm": 39.49862282764002,
+      "ai_aaa": true
+    },
+    {
+      "case_id": "f2c1f9be16fb69c0",
+      "person_group": "p34",
+      "sex": "M",
+      "age_band": "30-39",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 22.893945340963537,
+      "ai_diameter_mm": 22.231284492334233,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "f620cd4b2c2b188c",
+      "person_group": "p13",
+      "sex": "M",
+      "age_band": "80-89",
+      "scanner_vendor": "philips",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "30-54mm",
+      "aaa": true,
+      "reference_diameter_mm": 37.265593919309254,
+      "ai_diameter_mm": 37.327114055531894,
+      "ai_aaa": true
+    },
+    {
+      "case_id": "f6d964bccbab565a",
+      "person_group": "p30",
+      "sex": "F",
+      "age_band": "60-69",
+      "scanner_vendor": "ge",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 22.80350850198276,
+      "ai_diameter_mm": 23.03258561256204,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "f87fe811ef687707",
+      "person_group": "p18",
+      "sex": "M",
+      "age_band": "40-49",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 20.838665984174707,
+      "ai_diameter_mm": 20.670026608594387,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "fa94a2bf6152d013",
+      "person_group": "p13",
+      "sex": "M",
+      "age_band": "80-89",
+      "scanner_vendor": "philips",
+      "contrast_phase": "venous",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "30-54mm",
+      "aaa": true,
+      "reference_diameter_mm": 36.68787265568828,
+      "ai_diameter_mm": 36.54107278118693,
+      "ai_aaa": true
+    },
+    {
+      "case_id": "fb0de524c9d9eecd",
+      "person_group": "p25",
+      "sex": "F",
+      "age_band": "60-69",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "non-contrast",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 19.144189719076646,
+      "ai_diameter_mm": 18.867962264113206,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "fc09023b822c4a1f",
+      "person_group": "p25",
+      "sex": "F",
+      "age_band": "60-69",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "non-contrast",
+      "slice_thickness_class": "standard",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 20.288222429291174,
+      "ai_diameter_mm": 17.77449923533927,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "fc128d92ecfd2729",
+      "person_group": "p39",
+      "sex": "F",
+      "age_band": "30-39",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "arterial",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 14.317821063276353,
+      "ai_diameter_mm": 14.534441853748634,
+      "ai_aaa": false
+    },
+    {
+      "case_id": "ff72eb0c120c9c2f",
+      "person_group": "p29",
+      "sex": "M",
+      "age_band": "50-59",
+      "scanner_vendor": "siemens",
+      "contrast_phase": "arterial",
+      "slice_thickness_class": "thin",
+      "aaa_size_class": "none",
+      "aaa": false,
+      "reference_diameter_mm": 21.022218714230338,
+      "ai_diameter_mm": 21.75043345389428,
+      "ai_aaa": false
+    }
+  ],
+  "notes": [
+    "R2 is unreliable with this few scans and a narrow diameter range; compare errors in mm and the random-vs-patient gap instead.",
+    "No aneurysm cases in these groups, so the model's AAA detection there could not be tested: contrast_phase=arterial, contrast_phase=non-contrast, sex=F, age_band=40-49, age_band=50-59.",
+    "Subgroups with only 1-2 aneurysms give meaningless sensitivity numbers; they are listed but should not be interpreted."
+  ],
+  "thresholds": {
+    "schema_version": "0.1.0",
+    "profile_id": "hackathon-default-v0",
+    "model_id": "hackathon-baseline-aaa",
+    "site_id": null,
+    "provenance": {
+      "source": "SlicePoint hackathon POC (notebooks + POC spec), via data-contract-inventory.md",
+      "author": "SlicePoint student team; transcribed by slicepoint-schemas",
+      "date": "2026-11-09",
+      "notes": "Reproduces the POC, not a clinical recommendation. Conflicts: (1) min group size is 12-14 in the spec vs n>=15 in the notebook flag_row; the notebook value 15 is used. (2) The spec's Dice UI markers (0.81/0.90) differ from the notebook/monitor Dice thresholds (red 0.85 / yellow 0.90), which are kept in triggers. (3) The spec says population SD; the notebook mixes population and sample SD; slicepoint-core uses population SD (ddof=0) throughout, see core PARITY.md. (4) monitor.py emits the 'Aneurysms the model caught' row with worse='high' when there are fewer than 3 aneurysms (value n/a); the intended direction is low and that is what is stored here. (5) The notebook-specific rules (triggers with snake_case keys and `parameters`) were added for slicepoint-core milestone 1; they are transcribed from test_your_hospital.ipynb and are what the five checks read."
+    },
+    "aaa": {
+      "decision_line_mm": 30.0,
+      "large_aneurysm_line_mm": 55.0,
+      "nearby_window_mm": 5.0,
+      "size_tolerance_mm": 3.0,
+      "bland_altman_tolerance_mm": 2.0
+    },
+    "dice_markers": {
+      "lower": 0.81,
+      "upper": 0.9
+    },
+    "min_group_size": 15,
+    "check_targets": {
+      "repeats": 90,
+      "scanning": 70,
+      "patients": 70,
+      "labels": 90,
+      "accuracy": 88
+    },
+    "triggers": {
+      "No-answer rate": {
+        "yellow": 0.02,
+        "red": 0.04,
+        "worse": "high",
+        "kind": "pct",
+        "inclusive": false
+      },
+      "Change in share of scans called AAA": {
+        "yellow": 0.05,
+        "red": 0.1,
+        "worse": "high",
+        "kind": "pp",
+        "inclusive": false
+      },
+      "Shift in predicted aorta size": {
+        "yellow": 0.25,
+        "red": 0.5,
+        "worse": "high",
+        "kind": "sd",
+        "inclusive": false
+      },
+      "Scanner brand mix": {
+        "yellow": 0.15,
+        "red": 0.3,
+        "worse": "high",
+        "kind": "pct",
+        "inclusive": false
+      },
+      "Contrast phase mix": {
+        "yellow": 0.15,
+        "red": 0.3,
+        "worse": "high",
+        "kind": "pct",
+        "inclusive": false
+      },
+      "Slice thickness mix": {
+        "yellow": 0.15,
+        "red": 0.3,
+        "worse": "high",
+        "kind": "pct",
+        "inclusive": false
+      },
+      "Sex mix": {
+        "yellow": 0.15,
+        "red": 0.3,
+        "worse": "high",
+        "kind": "pct",
+        "inclusive": false
+      },
+      "Age mix": {
+        "yellow": 0.15,
+        "red": 0.3,
+        "worse": "high",
+        "kind": "pct",
+        "inclusive": false
+      },
+      "Shift in aorta brightness (HU)": {
+        "yellow": 0.25,
+        "red": 0.5,
+        "worse": "high",
+        "kind": "sd",
+        "inclusive": false
+      },
+      "Rise in missing scanner/patient details": {
+        "yellow": 0.05,
+        "red": 0.1,
+        "worse": "high",
+        "kind": "pct",
+        "inclusive": false
+      },
+      "Scans unlike anything in the reference": {
+        "yellow": 0.1,
+        "red": 0.2,
+        "worse": "high",
+        "kind": "pct",
+        "inclusive": false
+      },
+      "Near-duplicate scans": {
+        "yellow": 0.01,
+        "red": 0.03,
+        "worse": "high",
+        "kind": "pct",
+        "inclusive": false
+      },
+      "Duplicates filed under different patient IDs": {
+        "yellow": 0.005,
+        "red": 0.02,
+        "worse": "high",
+        "kind": "pct",
+        "inclusive": false
+      },
+      "Broken aorta 3D shapes": {
+        "yellow": 0.05,
+        "red": 0.15,
+        "worse": "high",
+        "kind": "pct",
+        "inclusive": false
+      },
+      "Aneurysms the model caught": {
+        "yellow": 0.8,
+        "red": 0.7,
+        "worse": "low",
+        "kind": "pct",
+        "inclusive": false
+      },
+      "Average diameter error": {
+        "yellow": 2.0,
+        "red": 3.0,
+        "worse": "high",
+        "kind": "mm",
+        "inclusive": false
+      },
+      "Labels that disagree with the 30 mm rule": {
+        "yellow": 0.02,
+        "red": 0.05,
+        "worse": "high",
+        "kind": "pct",
+        "inclusive": false
+      },
+      "Outline quality (Dice)": {
+        "yellow": 0.9,
+        "red": 0.85,
+        "worse": "low",
+        "kind": "num2",
+        "inclusive": false
+      },
+      "repeats_near_duplicate_share": {
+        "yellow": null,
+        "red": 0.01,
+        "worse": "high",
+        "kind": "pct",
+        "inclusive": false
+      },
+      "repeats_missing_patient_id_count": {
+        "yellow": 0.0,
+        "red": null,
+        "worse": "high",
+        "kind": null,
+        "inclusive": false
+      },
+      "repeats_leakage_gap_ratio": {
+        "yellow": null,
+        "red": 0.15,
+        "worse": "high",
+        "kind": null,
+        "inclusive": false
+      },
+      "scanning_domain_auc": {
+        "yellow": 0.65,
+        "red": 0.8,
+        "worse": "high",
+        "kind": null,
+        "inclusive": true
+      },
+      "scanning_implausible_value_count": {
+        "yellow": null,
+        "red": 0.0,
+        "worse": "high",
+        "kind": null,
+        "inclusive": false
+      },
+      "scanning_embedding_shortcut_margin": {
+        "yellow": 0.1,
+        "red": null,
+        "worse": "high",
+        "kind": null,
+        "inclusive": false
+      },
+      "numeric_shift_sd": {
+        "yellow": 0.25,
+        "red": 0.5,
+        "worse": "high",
+        "kind": "sd",
+        "inclusive": false
+      },
+      "numeric_shift_p": {
+        "yellow": 0.05,
+        "red": 0.01,
+        "worse": "low",
+        "kind": null,
+        "inclusive": false
+      },
+      "AAA size class mix": {
+        "yellow": 0.15,
+        "red": 0.3,
+        "worse": "high",
+        "kind": "pct",
+        "inclusive": false
+      },
+      "patients_prevalence_fisher_p": {
+        "yellow": 0.05,
+        "red": null,
+        "worse": "low",
+        "kind": null,
+        "inclusive": false
+      },
+      "patients_prevalence_abs_diff": {
+        "yellow": 0.05,
+        "red": null,
+        "worse": "high",
+        "kind": "pp",
+        "inclusive": false
+      },
+      "labels_smallest_aaa_below_line_mm": {
+        "yellow": null,
+        "red": 3.0,
+        "worse": "high",
+        "kind": "mm",
+        "inclusive": false
+      },
+      "labels_size_class_mismatch_count": {
+        "yellow": 0.0,
+        "red": null,
+        "worse": "high",
+        "kind": null,
+        "inclusive": false
+      },
+      "labels_cutoff_shift_mm": {
+        "yellow": 2.0,
+        "red": 3.0,
+        "worse": "high",
+        "kind": "mm",
+        "inclusive": true
+      },
+      "accuracy_specificity": {
+        "yellow": 0.9,
+        "red": null,
+        "worse": "low",
+        "kind": "pct",
+        "inclusive": false
+      },
+      "accuracy_measurement_outlier_count": {
+        "yellow": 0.0,
+        "red": null,
+        "worse": "high",
+        "kind": null,
+        "inclusive": false
+      },
+      "accuracy_subgroup_flag_count": {
+        "yellow": 0.0,
+        "red": null,
+        "worse": "high",
+        "kind": null,
+        "inclusive": false
+      },
+      "accuracy_dice_median": {
+        "yellow": 0.9,
+        "red": 0.85,
+        "worse": "low",
+        "kind": "num2",
+        "inclusive": false
+      },
+      "accuracy_dice_share_below_line": {
+        "yellow": 0.1,
+        "red": null,
+        "worse": "high",
+        "kind": "pct",
+        "inclusive": false
+      }
+    },
+    "parameters": {
+      "near_duplicate_similarity": 0.95,
+      "random_seed": 0.0,
+      "cv_folds": 5.0,
+      "embedding_max_pcs": 32.0,
+      "coverage_knn_k": 5.0,
+      "coverage_percentile": 95.0,
+      "permutation_count": 1000.0,
+      "numeric_test_min_n": 5.0,
+      "min_aaa_for_sensitivity": 3.0,
+      "subgroup_mae_ref_multiple": 2.0,
+      "subgroup_hospital_wide_share": 0.8,
+      "evidence_gap_min_n": 10.0,
+      "outlier_sd_multiple": 3.0,
+      "smallest_dataset_scans": 50.0,
+      "cutoff_grid_low_mm": 20.0,
+      "cutoff_grid_high_mm": 40.0,
+      "cutoff_grid_step_mm": 0.5,
+      "dice_poor_outline_line": 0.9,
+      "dice_secondary_line": 0.85,
+      "poor_outline_error_ratio": 2.0,
+      "poor_outline_error_floor_mm": 2.0,
+      "poor_outline_min_cases": 3.0,
+      "embedding_probe_min_class_n": 10.0,
+      "embedding_probe_min_rows": 25.0,
+      "leakage_mlp_max_iter": 3000.0,
+      "plausible_diameter_low_mm": 8.0,
+      "plausible_diameter_high_mm": 120.0,
+      "plausible_hu_low": -150.0,
+      "plausible_hu_high": 1000.0,
+      "plausible_kvp_low": 70.0,
+      "plausible_kvp_high": 150.0,
+      "plausible_slice_low_mm": 0.1,
+      "plausible_slice_high_mm": 10.0,
+      "repeat_scan_icc": 1.0
+    },
+    "value_sources": {
+      "aaa.decision_line_mm": "slicepoint/python_notebooks/test_your_hospital.ipynb:80 AAA_CUTOFF_MM = 30; monitor.py:147-148; spec",
+      "aaa.large_aneurysm_line_mm": "slicepoint/python_notebooks/test_your_hospital.ipynb cell 15 size-class expectation (<55 -> 30-54mm); spec",
+      "aaa.nearby_window_mm": "docs/Slicepoint POC Reconstruction Spec.pdf p.24-25 (UI constants; no code backs them)",
+      "aaa.size_tolerance_mm": "docs/Slicepoint POC Reconstruction Spec.pdf p.24-25 (UI constants; no code backs them); matches performance.diameter.within_3mm",
+      "aaa.bland_altman_tolerance_mm": "docs/Slicepoint POC Reconstruction Spec.pdf p.24-25 (UI constants; no code backs them); matches performance.diameter.within_2mm",
+      "dice_markers.lower": "docs/Slicepoint POC Reconstruction Spec.pdf p.24-25 (UI constants; no code backs them)",
+      "dice_markers.upper": "docs/Slicepoint POC Reconstruction Spec.pdf p.24-25 (UI constants; no code backs them)",
+      "min_group_size": "slicepoint/python_notebooks/test_your_hospital.ipynb:944 flag_row n >= 15 (spec says 12-14; notebook wins)",
+      "check_targets.repeats": "docs/Slicepoint POC Reconstruction Spec.pdf p.24-25 (UI constants; no code backs them)",
+      "check_targets.scanning": "docs/Slicepoint POC Reconstruction Spec.pdf p.24-25 (UI constants; no code backs them)",
+      "check_targets.patients": "docs/Slicepoint POC Reconstruction Spec.pdf p.24-25 (UI constants; no code backs them)",
+      "check_targets.labels": "docs/Slicepoint POC Reconstruction Spec.pdf p.24-25 (UI constants; no code backs them)",
+      "check_targets.accuracy": "docs/Slicepoint POC Reconstruction Spec.pdf p.24-25 (UI constants; no code backs them)",
+      "triggers.No-answer rate": "slicepoint/python_notebooks/monitor.py evaluate() L46-155",
+      "triggers.Change in share of scans called AAA": "slicepoint/python_notebooks/monitor.py evaluate() L46-155",
+      "triggers.Shift in predicted aorta size": "slicepoint/python_notebooks/monitor.py evaluate() L46-155",
+      "triggers.Scanner brand mix": "slicepoint/python_notebooks/monitor.py evaluate() L46-155",
+      "triggers.Contrast phase mix": "slicepoint/python_notebooks/monitor.py evaluate() L46-155",
+      "triggers.Slice thickness mix": "slicepoint/python_notebooks/monitor.py evaluate() L46-155",
+      "triggers.Sex mix": "slicepoint/python_notebooks/monitor.py evaluate() L46-155",
+      "triggers.Age mix": "slicepoint/python_notebooks/monitor.py evaluate() L46-155",
+      "triggers.Shift in aorta brightness (HU)": "slicepoint/python_notebooks/monitor.py evaluate() L46-155",
+      "triggers.Rise in missing scanner/patient details": "slicepoint/python_notebooks/monitor.py evaluate() L46-155",
+      "triggers.Scans unlike anything in the reference": "slicepoint/python_notebooks/monitor.py evaluate() L46-155",
+      "triggers.Near-duplicate scans": "slicepoint/python_notebooks/monitor.py evaluate() L46-155",
+      "triggers.Duplicates filed under different patient IDs": "slicepoint/python_notebooks/monitor.py evaluate() L46-155",
+      "triggers.Broken aorta 3D shapes": "slicepoint/python_notebooks/monitor.py evaluate() L46-155",
+      "triggers.Aneurysms the model caught": "slicepoint/python_notebooks/monitor.py evaluate() L46-155",
+      "triggers.Average diameter error": "slicepoint/python_notebooks/monitor.py evaluate() L46-155",
+      "triggers.Labels that disagree with the 30 mm rule": "slicepoint/python_notebooks/monitor.py evaluate() L46-155",
+      "triggers.Outline quality (Dice)": "slicepoint/python_notebooks/monitor.py evaluate() L46-155",
+      "triggers.repeats_near_duplicate_share": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "triggers.repeats_missing_patient_id_count": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "triggers.repeats_leakage_gap_ratio": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "triggers.scanning_domain_auc": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "triggers.scanning_implausible_value_count": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "triggers.scanning_embedding_shortcut_margin": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "triggers.numeric_shift_sd": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "triggers.numeric_shift_p": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "triggers.patients_prevalence_fisher_p": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "triggers.patients_prevalence_abs_diff": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "triggers.labels_smallest_aaa_below_line_mm": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "triggers.labels_size_class_mismatch_count": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "triggers.labels_cutoff_shift_mm": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "triggers.accuracy_specificity": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "triggers.accuracy_measurement_outlier_count": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "triggers.accuracy_subgroup_flag_count": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "triggers.accuracy_dice_median": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "triggers.accuracy_dice_share_below_line": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "triggers.AAA size class mix": "reviewer decision 2026-11-09, new vs POC (same lines as the other mixes)",
+      "parameters.near_duplicate_similarity": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "parameters.random_seed": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "parameters.cv_folds": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "parameters.embedding_max_pcs": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "parameters.coverage_knn_k": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "parameters.coverage_percentile": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "parameters.permutation_count": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "parameters.numeric_test_min_n": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "parameters.min_aaa_for_sensitivity": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "parameters.subgroup_mae_ref_multiple": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "parameters.subgroup_hospital_wide_share": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "parameters.evidence_gap_min_n": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "parameters.outlier_sd_multiple": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "parameters.smallest_dataset_scans": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "parameters.cutoff_grid_low_mm": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "parameters.cutoff_grid_high_mm": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "parameters.cutoff_grid_step_mm": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "parameters.dice_poor_outline_line": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "parameters.dice_secondary_line": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "parameters.poor_outline_error_ratio": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "parameters.poor_outline_error_floor_mm": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "parameters.poor_outline_min_cases": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "parameters.embedding_probe_min_class_n": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "parameters.embedding_probe_min_rows": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "parameters.leakage_mlp_max_iter": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "parameters.plausible_diameter_low_mm": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "parameters.plausible_diameter_high_mm": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "parameters.plausible_hu_low": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "parameters.plausible_hu_high": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "parameters.plausible_kvp_low": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "parameters.plausible_kvp_high": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "parameters.plausible_slice_low_mm": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "parameters.plausible_slice_high_mm": "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md section 3, 'Notebook findings')",
+      "parameters.repeat_scan_icc": "slicepoint-core (new, not in the POC): ICC for the Kish design effect of repeat scans per person. 1.0 treats repeat scans of one person as fully redundant, so n_effective = (sum m)^2 / sum m^2, the conservative bound."
+    }
+  },
+  "strata": {
+    "min_group_size": 15,
+    "min_aaa_for_sensitivity": 3,
+    "size_tolerance_mm": 3.0,
+    "rows": [
+      {
+        "variable": "contrast_phase",
+        "level": "arterial",
+        "n": 16,
+        "people": 6,
+        "n_aaa": 0,
+        "too_few": false,
+        "bias_mm": 0.37103492199365296,
+        "mae_mm": 0.47369363291557404,
+        "within_tolerance": 1.0,
+        "sens": null,
+        "sens_lo": null,
+        "sens_hi": null,
+        "sens_too_few": true
+      },
+      {
+        "variable": "contrast_phase",
+        "level": "non-contrast",
+        "n": 18,
+        "people": 10,
+        "n_aaa": 0,
+        "too_few": false,
+        "bias_mm": -1.2400403747286997,
+        "mae_mm": 1.3881988284442968,
+        "within_tolerance": 0.8235294117647058,
+        "sens": null,
+        "sens_lo": null,
+        "sens_hi": null,
+        "sens_too_few": true
+      },
+      {
+        "variable": "contrast_phase",
+        "level": "venous",
+        "n": 46,
+        "people": 24,
+        "n_aaa": 7,
+        "too_few": false,
+        "bias_mm": -0.04786035962833821,
+        "mae_mm": 0.5417402769271819,
+        "within_tolerance": 0.9782608695652174,
+        "sens": 0.8571428571428571,
+        "sens_lo": 0.4868721707256811,
+        "sens_hi": 0.9743203756552565,
+        "sens_too_few": false
+      },
+      {
+        "variable": "slice_thickness_class",
+        "level": "standard",
+        "n": 38,
+        "people": 14,
+        "n_aaa": 4,
+        "too_few": false,
+        "bias_mm": -0.10064022619222897,
+        "mae_mm": 0.8041557633436534,
+        "within_tolerance": 0.9714285714285714,
+        "sens": 0.75,
+        "sens_lo": 0.30064184258240184,
+        "sens_hi": 0.9544127391902995,
+        "sens_too_few": false
+      },
+      {
+        "variable": "slice_thickness_class",
+        "level": "thick",
+        "n": 6,
+        "people": 4,
+        "n_aaa": 0,
+        "too_few": true,
+        "bias_mm": null,
+        "mae_mm": null,
+        "within_tolerance": null,
+        "sens": null,
+        "sens_lo": null,
+        "sens_hi": null,
+        "sens_too_few": true
+      },
+      {
+        "variable": "slice_thickness_class",
+        "level": "thin",
+        "n": 36,
+        "people": 22,
+        "n_aaa": 3,
+        "too_few": false,
+        "bias_mm": -0.3667313845229338,
+        "mae_mm": 0.6812735590396048,
+        "within_tolerance": 0.9142857142857143,
+        "sens": 1.0,
+        "sens_lo": 0.4385029682449546,
+        "sens_hi": 1.0,
+        "sens_too_few": false
+      },
+      {
+        "variable": "sex",
+        "level": "F",
+        "n": 34,
+        "people": 18,
+        "n_aaa": 0,
+        "too_few": false,
+        "bias_mm": -0.7122269274362482,
+        "mae_mm": 1.0133372477322447,
+        "within_tolerance": 0.9,
+        "sens": null,
+        "sens_lo": null,
+        "sens_hi": null,
+        "sens_too_few": true
+      },
+      {
+        "variable": "sex",
+        "level": "M",
+        "n": 46,
+        "people": 22,
+        "n_aaa": 7,
+        "too_few": false,
+        "bias_mm": 0.06321736729811919,
+        "mae_mm": 0.5277681003943159,
+        "within_tolerance": 0.9782608695652174,
+        "sens": 0.8571428571428571,
+        "sens_lo": 0.4868721707256811,
+        "sens_hi": 0.9743203756552565,
+        "sens_too_few": false
+      },
+      {
+        "variable": "age_band",
+        "level": "20-29",
+        "n": 1,
+        "people": 1,
+        "n_aaa": 0,
+        "too_few": true,
+        "bias_mm": null,
+        "mae_mm": null,
+        "within_tolerance": null,
+        "sens": null,
+        "sens_lo": null,
+        "sens_hi": null,
+        "sens_too_few": true
+      },
+      {
+        "variable": "age_band",
+        "level": "30-39",
+        "n": 5,
+        "people": 3,
+        "n_aaa": 0,
+        "too_few": true,
+        "bias_mm": null,
+        "mae_mm": null,
+        "within_tolerance": null,
+        "sens": null,
+        "sens_lo": null,
+        "sens_hi": null,
+        "sens_too_few": true
+      },
+      {
+        "variable": "age_band",
+        "level": "40-49",
+        "n": 10,
+        "people": 4,
+        "n_aaa": 0,
+        "too_few": true,
+        "bias_mm": null,
+        "mae_mm": null,
+        "within_tolerance": null,
+        "sens": null,
+        "sens_lo": null,
+        "sens_hi": null,
+        "sens_too_few": true
+      },
+      {
+        "variable": "age_band",
+        "level": "50-59",
+        "n": 20,
+        "people": 8,
+        "n_aaa": 0,
+        "too_few": false,
+        "bias_mm": 0.34774945187480155,
+        "mae_mm": 0.4419123677667406,
+        "within_tolerance": 1.0,
+        "sens": null,
+        "sens_lo": null,
+        "sens_hi": null,
+        "sens_too_few": true
+      },
+      {
+        "variable": "age_band",
+        "level": "60-69",
+        "n": 20,
+        "people": 10,
+        "n_aaa": 1,
+        "too_few": false,
+        "bias_mm": -1.3121074563356228,
+        "mae_mm": 1.5688646009221678,
+        "within_tolerance": 0.8,
+        "sens": null,
+        "sens_lo": null,
+        "sens_hi": null,
+        "sens_too_few": true
+      },
+      {
+        "variable": "age_band",
+        "level": "70-79",
+        "n": 14,
+        "people": 10,
+        "n_aaa": 3,
+        "too_few": true,
+        "bias_mm": null,
+        "mae_mm": null,
+        "within_tolerance": null,
+        "sens": null,
+        "sens_lo": null,
+        "sens_hi": null,
+        "sens_too_few": true
+      },
+      {
+        "variable": "age_band",
+        "level": "80-89",
+        "n": 9,
+        "people": 3,
+        "n_aaa": 3,
+        "too_few": true,
+        "bias_mm": null,
+        "mae_mm": null,
+        "within_tolerance": null,
+        "sens": null,
+        "sens_lo": null,
+        "sens_hi": null,
+        "sens_too_few": true
+      },
+      {
+        "variable": "age_band",
+        "level": "90-99",
+        "n": 1,
+        "people": 1,
+        "n_aaa": 0,
+        "too_few": true,
+        "bias_mm": null,
+        "mae_mm": null,
+        "within_tolerance": null,
+        "sens": null,
+        "sens_lo": null,
+        "sens_hi": null,
+        "sens_too_few": true
+      },
+      {
+        "variable": "scanner_vendor",
+        "level": "MISSING",
+        "n": 3,
+        "people": 1,
+        "n_aaa": 0,
+        "too_few": true,
+        "bias_mm": null,
+        "mae_mm": null,
+        "within_tolerance": null,
+        "sens": null,
+        "sens_lo": null,
+        "sens_hi": null,
+        "sens_too_few": true
+      },
+      {
+        "variable": "scanner_vendor",
+        "level": "ge",
+        "n": 4,
+        "people": 2,
+        "n_aaa": 0,
+        "too_few": true,
+        "bias_mm": null,
+        "mae_mm": null,
+        "within_tolerance": null,
+        "sens": null,
+        "sens_lo": null,
+        "sens_hi": null,
+        "sens_too_few": true
+      },
+      {
+        "variable": "scanner_vendor",
+        "level": "philips",
+        "n": 16,
+        "people": 6,
+        "n_aaa": 3,
+        "too_few": false,
+        "bias_mm": 0.23123074248450126,
+        "mae_mm": 0.5036145432948509,
+        "within_tolerance": 1.0,
+        "sens": 1.0,
+        "sens_lo": 0.4385029682449546,
+        "sens_hi": 1.0,
+        "sens_too_few": false
+      },
+      {
+        "variable": "scanner_vendor",
+        "level": "siemens",
+        "n": 57,
+        "people": 31,
+        "n_aaa": 4,
+        "too_few": false,
+        "bias_mm": -0.41097050594679624,
+        "mae_mm": 0.7991331523845895,
+        "within_tolerance": 0.9245283018867925,
+        "sens": 0.75,
+        "sens_lo": 0.30064184258240184,
+        "sens_hi": 0.9544127391902995,
+        "sens_too_few": false
+      }
+    ]
+  },
+  "cases_to_review": {
+    "size_tolerance_mm": 3.0,
+    "n_scans": 80,
+    "cases": [
+      {
+        "case_id": "d2dd550f193604cc",
+        "person_group": "p38",
+        "reasons": [
+          "missed_aneurysm",
+          "size_error"
+        ],
+        "priority": 1,
+        "aaa": true,
+        "ai_aaa": false,
+        "reference_diameter_mm": 35.387144558440994,
+        "ai_diameter_mm": 28.844410203711913,
+        "error_mm": -6.542734354729081
+      },
+      {
+        "case_id": "3a66fcff837f1e8e",
+        "person_group": "p14",
+        "reasons": [
+          "no_answer"
+        ],
+        "priority": 2,
+        "aaa": false,
+        "ai_aaa": null,
+        "reference_diameter_mm": 26.177280225416848,
+        "ai_diameter_mm": null,
+        "error_mm": null
+      },
+      {
+        "case_id": "5bca1970468b29a2",
+        "person_group": "p14",
+        "reasons": [
+          "no_answer"
+        ],
+        "priority": 2,
+        "aaa": false,
+        "ai_aaa": null,
+        "reference_diameter_mm": 25.607469668565475,
+        "ai_diameter_mm": null,
+        "error_mm": null
+      },
+      {
+        "case_id": "78caa829771bed16",
+        "person_group": "p14",
+        "reasons": [
+          "no_answer"
+        ],
+        "priority": 2,
+        "aaa": false,
+        "ai_aaa": null,
+        "reference_diameter_mm": 26.04562647044538,
+        "ai_diameter_mm": null,
+        "error_mm": null
+      },
+      {
+        "case_id": "c159568557a6aad3",
+        "person_group": "p36",
+        "reasons": [
+          "no_answer"
+        ],
+        "priority": 2,
+        "aaa": false,
+        "ai_aaa": null,
+        "reference_diameter_mm": 22.638462845343543,
+        "ai_diameter_mm": null,
+        "error_mm": null
+      },
+      {
+        "case_id": "a95eb4393561c9f2",
+        "person_group": "p0",
+        "reasons": [
+          "size_error"
+        ],
+        "priority": 3,
+        "aaa": false,
+        "ai_aaa": false,
+        "reference_diameter_mm": 23.71181140275875,
+        "ai_diameter_mm": 18.5,
+        "error_mm": -5.211811402758752
+      },
+      {
+        "case_id": "050f1a66726bf8c5",
+        "person_group": "p0",
+        "reasons": [
+          "size_error"
+        ],
+        "priority": 3,
+        "aaa": false,
+        "ai_aaa": false,
+        "reference_diameter_mm": 23.842088980114337,
+        "ai_diameter_mm": 18.946159877166817,
+        "error_mm": -4.89592910294752
+      },
+      {
+        "case_id": "6d9ae534585f6eaa",
+        "person_group": "p0",
+        "reasons": [
+          "size_error"
+        ],
+        "priority": 3,
+        "aaa": false,
+        "ai_aaa": false,
+        "reference_diameter_mm": 23.898314105226707,
+        "ai_diameter_mm": 19.39732188219453,
+        "error_mm": -4.500992223032178
+      }
+    ]
+  }
+}
