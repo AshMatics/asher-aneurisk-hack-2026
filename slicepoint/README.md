@@ -1,5 +1,8 @@
 # SlicePoint
 
+[API service](api/README.md): the FastAPI service (`slicepoint-api`) that runs
+assessments as jobs over `slicepoint-core`.
+
 [Segmentation package](segmentation/README.md): pretrained 3D aorta segmentation,
 mask comparison, cohort evaluation, an authenticated local API, tests, and an
 optional Base44 proxy example.

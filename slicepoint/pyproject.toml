@@ -1,6 +1,7 @@
 # uv workspace for the SlicePoint Python packages (development and CI).
+# Members: schemas (contract), core (analysis library), api (FastAPI service, M4).
 #
-#   uv sync --all-packages --all-extras    # one .venv here with schemas + core and their test extras
+#   uv sync --all-packages --all-extras    # one .venv here with schemas + core + api and their test extras
 #   uv run --directory core pytest         # or: cd core && uv run pytest / uv run mypy
 #
 # One uv.lock pins every dependency for both packages. Hospitals do not need uv: the
@@ -11,5 +12,5 @@
 # (ADR 0001 section 4) with torch/TotalSegmentator pins and its own Python range, and it
 # should not constrain the analysis packages' lock.
 [tool.uv.workspace]
-members = ["schemas", "core"]
+members = ["schemas", "core", "api"]
 exclude = ["segmentation"]
