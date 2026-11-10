@@ -20,13 +20,13 @@ lives in ``override.outcome``, and :attr:`Verdict.final_outcome` gives the one t
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from enum import Enum
 from typing import Annotated
 
 from pydantic import AwareDatetime, Field, StringConstraints, field_validator, model_validator
 
-from .checks import CheckResult, CheckStatus
+from .checks import CHECK_REGISTRY_CONTEXT_KEY, CheckDescriptor, CheckRegistry, CheckResult, CheckStatus
 from .common import CheckId, ContractModel, SiteId, VersionedModel
 from .thresholds import ThresholdProfile
 
@@ -133,8 +133,13 @@ def derive_verdict(
     profile: ThresholdProfile,
     *,
     site_id: str | None = None,
+    registry: CheckRegistry | Mapping[str, CheckDescriptor] | None = None,
 ) -> Verdict:
-    """Apply the inferred rule (module docstring) and return a validated :class:`Verdict`."""
+    """Apply the inferred rule (module docstring) and return a validated :class:`Verdict`.
+
+    Pass ``registry`` when the results include checks beyond the default five, so they
+    validate against it (the same as ``context={"check_registry": registry}``).
+    """
     res = tuple(results)
     present = {r.check_id for r in res}
     missing = tuple(c for c in profile.check_targets if c not in present)
@@ -157,12 +162,15 @@ def derive_verdict(
         rationale += f" Not evaluated: {', '.join(missing)}."
     rationale += " (Rule inferred from the POC spec and notebook; status-based, scores unused.)"
 
-    return Verdict(
-        outcome=outcome,
-        rationale=rationale,
-        results=res,
-        not_evaluated=missing,
-        site_id=site_id if site_id is not None else profile.site_id,
-        profile_id=profile.profile_id,
-        model_id=profile.model_id,
+    return Verdict.model_validate(
+        {
+            "outcome": outcome,
+            "rationale": rationale,
+            "results": res,
+            "not_evaluated": missing,
+            "site_id": site_id if site_id is not None else profile.site_id,
+            "profile_id": profile.profile_id,
+            "model_id": profile.model_id,
+        },
+        context=None if registry is None else {CHECK_REGISTRY_CONTEXT_KEY: registry},
     )

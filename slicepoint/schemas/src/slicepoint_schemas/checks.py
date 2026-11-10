@@ -139,7 +139,11 @@ DEFAULT_CHECK_REGISTRY = CheckRegistry(
                 "(cosine > 0.95 or same patient_id) and the random vs by-patient split test."
             ),
             target=90,
-            sub_factors=(_sf("scans", "Scans"), _sf("people", "People")),
+            sub_factors=(
+                _sf("scans", "Scans"),
+                _sf("people", "People"),
+                _sf("leakage", "Random vs by-person split leakage"),
+            ),
             legacy_check_key="repeats",
         ),
         CheckDescriptor(
@@ -155,6 +159,10 @@ DEFAULT_CHECK_REGISTRY = CheckRegistry(
                 _sf("scanner_vendor", "Scanner"),
                 _sf("contrast_phase", "Contrast"),
                 _sf("slice_thickness_class", "Slice thickness"),
+                _sf("domain_auc", "Scans distinguishable from the reference (domain AUC)"),
+                _sf("coverage", "Scans outside the reference's coverage"),
+                _sf("hu_shift", "Aorta brightness (HU) shift"),
+                _sf("kvp_shift", "Tube voltage (kVp) shift"),
             ),
             legacy_check_key="scanning",
         ),
@@ -201,6 +209,9 @@ DEFAULT_CHECK_REGISTRY = CheckRegistry(
                 _sf("dice", "Outline quality (Dice)"),
                 _sf("size_within_tolerance", "Size within tolerance"),
                 _sf("aneurysms_caught", "Aneurysms caught"),
+                _sf("no_answers", "Model gave no answer"),
+                _sf("specificity", "False alarms (specificity)"),
+                _sf("subgroups", "Problems in subgroups"),
             ),
             audience=(Audience.COMMITTEE, Audience.CLINICIAN),
             legacy_check_key="accuracy",
@@ -208,7 +219,11 @@ DEFAULT_CHECK_REGISTRY = CheckRegistry(
     )
 )
 """The five POC checks. Titles and targets from the POC spec (p.24-25); sub-factor ids
-for ``labels`` are INFERRED from the feeding notebook logic (the spec lists none)."""
+for ``labels`` are INFERRED from the feeding notebook logic (the spec lists none). The
+sub-factors after the spec's three per card (leakage, domain_auc, coverage, hu_shift,
+kvp_shift, no_answers, specificity, subgroups) were added by reviewer decision
+2026-11-09 so every notebook rule has a named sub-factor. The spec's card shows "the
+lowest of" its first three; the UI keeps that rule."""
 
 CHECK_REGISTRY: Mapping[str, CheckDescriptor] = DEFAULT_CHECK_REGISTRY.as_mapping()
 

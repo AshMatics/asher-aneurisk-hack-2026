@@ -17,9 +17,10 @@ ingestion surface  ──►  analysis core  ──►  API (FastAPI /v1)  ─�
 | `common` | `ContractModel` (frozen, `extra=forbid`, no NaN/inf), `VersionedModel` (`schema_version`), `SiteId`, opaque `CaseId` / `PatientId`, legacy `ShortCaseId`, `AgeBand`, closed enums for legacy and open `OpenSex` / `OpenScannerVendor` for new data |
 | `ingestion` | Row models that mirror the practice parquet exactly, `DatasetManifest`, `CuratedDataset` (join integrity), the `IngestionAdapter` protocol and declared stub adapters |
 | `embedding` | `EmbeddingSpace`, `EmbeddingSet`, `CaseEmbedding`. Dimension is checked. Comparing across spaces is rejected (`assert_comparable`, `EmbeddingComparisonRequest`). `HACKATHON_MERLIN_CT_SPACE` |
-| `thresholds` | `TriggerThreshold` (ordering checked against `worse`), `ThresholdProfile` with per-value provenance, and `HACKATHON_DEFAULT_PROFILE` |
+| `thresholds` | `TriggerThreshold` (ordering checked against `worse`; either line may be absent; optional `inclusive` comparison), `ThresholdProfile` with named `parameters` and per-value provenance, and `HACKATHON_DEFAULT_PROFILE` |
 | `checks` | `CheckStatus`, `CheckDescriptor`, `CheckRegistry` (the 5 POC checks), and `CheckResult` (status first; `score` needs a `score_method`; per-check `n` is required; optional `n_effective` needs an `n_effective_method`; optional `subjects`) |
-| `verdict` | `Verdict` (consistency validated on the derived outcome), `VerdictOverride` (attributed, justified human decision) with `final_outcome`, and `derive_verdict(results, profile)` |
+| `verdict` | `Verdict` (consistency validated on the derived outcome), `VerdictOverride` (attributed, justified human decision) with `final_outcome`, and `derive_verdict(results, profile, registry=None)` |
+| `assessment` | `AssessmentResult`, the versioned top-level result of one assessment (steps run as ok/skipped/failed, one `CheckRun` per registered check, the `Verdict`, `PerformanceSummary`, per-scan `ScanSummary`, notes). This is what `slicepoint-core` returns and what the static viewer and the API will render. |
 | `legacy` | `SlicePointFileV0`, `MonthlySummaryV0`, `DiceSummaryV0`, `CompareResponseV1`, plus converters to the new models |
 | `export` | JSON Schema for every top-level model, written to `jsonschema/` |
 
@@ -39,7 +40,28 @@ ingestion surface  ──►  analysis core  ──►  API (FastAPI /v1)  ─�
 - **Sample size is per check.** `n` is the number of cases the check actually used. The legacy converter's `n` (the file's scan count) is a legacy-only stand-in.
 - **Effective sample size.** `n_effective` (with `n_effective_method`, `0 < n_effective <= n`) and `subjects` (`<= n`) are optional. Repeat scans of one person and clustering within a site carry less information than `n` independent cases, and that matters for Wilson intervals and the "too few to judge" suppression.
 
-To add a check, add a `CheckDescriptor` to a `CheckRegistry` and pass that registry in the validation context (`context={"check_registry": registry}`). Only data changes.
+- **Notebook rules are profile data.** `slicepoint-core` milestone 1 added the
+  `test_your_hospital.ipynb` rules to `HACKATHON_DEFAULT_PROFILE`. They are snake_case
+  `triggers` (for example `repeats_near_duplicate_share`, red only, and
+  `scanning_domain_auc`, inclusive) and `parameters` (for example
+  `near_duplicate_similarity`, `permutation_count` and the plausible ranges), each with a
+  `value_sources` citation. Some notebook rules are red-only or yellow-only and some use
+  `>=`, so `TriggerThreshold` now allows either line to be absent and has
+  `inclusive=False` by default. Both changes are additive.
+- **Reviewer decisions 2026-11-09.**
+  - The default registry gained sub-factors so every notebook rule is named:
+    - repeats: `leakage`;
+    - scanning: `domain_auc`, `coverage`, `hu_shift`, `kvp_shift`;
+    - accuracy: `no_answers`, `specificity`, `subgroups`.
+  - A new trigger, `AAA size class mix` (0.15 / 0.30), is new vs the POC.
+  - `AssessmentResult.performance.diameter` is the profile-driven `DiameterAgreement`
+    (`within_tolerance` entries carry their `tolerance_mm` and role). `DiameterMetricsV0`
+    remains for legacy files.
+- **Skipped is not ok.** In `AssessmentResult`, a check whose inputs were missing is a
+  `CheckRun` with state `skipped` and a reason. Every check in `verdict.not_evaluated`
+  must be explained that way.
+
+To add a check, add a `CheckDescriptor` to a `CheckRegistry` and pass that registry in the validation context (`context={"check_registry": registry}`), or to `derive_verdict(..., registry=...)`. Only data changes.
 
 ## Fact vs INFERRED
 
@@ -88,8 +110,9 @@ uv venv && uv pip install -e '.[test]'
 - **No score formulas.** The 0–100 check scores have no formula anywhere in the repo. `score` stays optional and must name its `score_method`; the legacy converters leave it `None`.
 - **No `<hospital>_dice.json` writer.** `DiceSummaryV0` is inferred from the POC spec.
 - **Ingestion adapters are TBD.** Every input today is hand-curated hackathon parquet. `ParquetAdapter` belongs in the analysis core; the oxidicom DICOM, NIfTI and report-text adapters are declarations that raise `NotImplementedError`.
-- **Persistence and audit are not modeled yet.** That covers the assessment record (who, model version, dataset hash, space id, profile, verdict) and the orchestrator step/job models (ADR section 5).
+- **Persistence and audit are not modeled yet.** `AssessmentResult` carries the dataset fingerprint, space id, profile, verdict and per-step states, but not who ran it or where it is stored, and there is no job model (ADR sections 5 and 8).
+- `AssessmentResult.performance` still reuses the legacy V0 blocks for the binary call and Dice (`BinMetricsV0`, `DiceMetricsV0`); only the diameter block is profile-driven.
 - `<hospital>_test_results.json` (the notebook's richer output) and `history.csv` are not modeled. No sample of either exists.
 - The legacy closed enums (`ScannerVendor`, `Sex`) hold only the observed POC values by design. New data uses the open types.
-- No formula yet produces `n_effective`. The field and its method name are the contract; the computation belongs in the analysis core.
+- `n_effective` is produced by `slicepoint-core` (Kish design effect over real-person groups, method `kish_design_effect_per_person`, ICC from `parameters.repeat_scan_icc`).
 - `final_outcome` is a Python property, not a serialized field. API clients compute it as `override?.outcome ?? outcome`.

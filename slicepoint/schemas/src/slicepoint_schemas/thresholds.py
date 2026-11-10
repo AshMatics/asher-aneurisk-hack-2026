@@ -40,21 +40,41 @@ class TriggerThreshold(ContractModel):
     """A yellow/red threshold pair with a direction.
 
     Ordering must agree with ``worse``: for ``high`` red > yellow, for ``low`` red < yellow.
-    Comparisons are strict, as in ``monitor.evaluate``.
+    Comparisons are strict by default, as in ``monitor.evaluate``; ``inclusive=True`` makes
+    them ``>=`` / ``<=`` (the notebook uses that for domain AUC and the cutoff shift).
+
+    Either line may be absent, but not both. The notebook has red-only rules (repeats: any
+    near-duplicate share above 1% is red, with no yellow band) and yellow-only rules
+    (specificity below 0.90 is at most a watch).
     """
 
-    yellow: float
-    red: float
+    yellow: float | None
+    red: float | None
     worse: Worse
     kind: TriggerKind | None = None
+    inclusive: bool = Field(
+        default=False, description="Compare with >= / <= instead of the strict > / <."
+    )
 
     @model_validator(mode="after")
     def _ordering(self) -> TriggerThreshold:
+        if self.yellow is None and self.red is None:
+            raise ValueError("a trigger needs a yellow line, a red line or both")
+        if self.yellow is None or self.red is None:
+            return self
         if self.worse is Worse.HIGH and not self.red > self.yellow:
             raise ValueError(f"worse=high needs red > yellow (got red={self.red}, yellow={self.yellow})")
         if self.worse is Worse.LOW and not self.red < self.yellow:
             raise ValueError(f"worse=low needs red < yellow (got red={self.red}, yellow={self.yellow})")
         return self
+
+    def crosses(self, value: float, line: float | None) -> bool:
+        """True if ``value`` is on the bad side of ``line`` (False when the line is absent)."""
+        if line is None:
+            return False
+        if self.worse is Worse.HIGH:
+            return value >= line if self.inclusive else value > line
+        return value <= line if self.inclusive else value < line
 
     def classify(self, value: float | None) -> CheckStatus | None:
         """The monitor.py status rule. ``None`` stands for monitor's ``n/a``.
@@ -64,13 +84,9 @@ class TriggerThreshold(ContractModel):
         """
         if value is None or value != value:
             return None
-        if self.worse is Worse.HIGH:
-            bad_red, bad_yellow = value > self.red, value > self.yellow
-        else:
-            bad_red, bad_yellow = value < self.red, value < self.yellow
-        if bad_red:
+        if self.crosses(value, self.red):
             return CheckStatus.PROBLEM
-        if bad_yellow:
+        if self.crosses(value, self.yellow):
             return CheckStatus.WATCH
         return CheckStatus.OK
 
@@ -141,6 +157,11 @@ class ThresholdProfile(VersionedModel):
     min_group_size: int = Field(gt=0, description="Minimum subgroup n for subgroup flags.")
     check_targets: dict[str, int] = Field(min_length=1)
     triggers: dict[str, TriggerThreshold] = Field(default_factory=dict)
+    parameters: dict[str, float] = Field(
+        default_factory=dict,
+        description="Named numbers that are not yellow/red lines: similarity cut-offs, "
+        "multipliers, grid bounds, plausible ranges, seeds. Keys are snake_case, no dots.",
+    )
     value_sources: dict[str, str] = Field(default_factory=dict)
 
     @model_validator(mode="after")
@@ -151,6 +172,9 @@ class ThresholdProfile(VersionedModel):
                 raise ValueError(f"check_targets: unknown check_id {check_id!r}")
             if not 0 <= target <= 100:
                 raise ValueError(f"check_targets[{check_id}] must be in 0..100")
+        for key in (*self.triggers, *self.parameters):
+            if "." in key:
+                raise ValueError(f"trigger/parameter key {key!r} must not contain '.'")
         for path in self.value_sources:
             if not _resolve_path(self, path):
                 raise ValueError(f"value_sources: {path!r} does not name a field of this profile")
@@ -202,6 +226,99 @@ _TRIGGERS: dict[str, TriggerThreshold] = {
     ),
 }
 
+_NB_LINES = (
+    "slicepoint/python_notebooks/test_your_hospital.ipynb (see data-contract-inventory.md "
+    "section 3, 'Notebook findings')"
+)
+
+_NOTEBOOK_TRIGGERS: dict[str, TriggerThreshold] = {
+    # repeats (cell 11): red if share_with_near_duplicate > 0.01; no yellow band.
+    "repeats_near_duplicate_share": TriggerThreshold(
+        yellow=None, red=0.01, worse=Worse.HIGH, kind=TriggerKind.PCT
+    ),
+    # repeats (cell 11): yellow if any patient_id is missing.
+    "repeats_missing_patient_id_count": TriggerThreshold(yellow=0, red=None, worse=Worse.HIGH),
+    # leakage (cell 13): red if (honest MAE - random MAE) > 0.15 x honest MAE.
+    "repeats_leakage_gap_ratio": TriggerThreshold(yellow=None, red=0.15, worse=Worse.HIGH),
+    # scan content (cell 20): AUC >= 0.80 red, >= 0.65 yellow (inclusive).
+    "scanning_domain_auc": TriggerThreshold(yellow=0.65, red=0.80, worse=Worse.HIGH, inclusive=True),
+    # impossible values (cell 15): any value outside the plausible ranges is red.
+    "scanning_implausible_value_count": TriggerThreshold(yellow=None, red=0, worse=Worse.HIGH),
+    # embeddings (cell 26): yellow if acquisition signal > AAA signal + 0.10.
+    "scanning_embedding_shortcut_margin": TriggerThreshold(yellow=0.10, red=None, worse=Worse.HIGH),
+    # numeric Wasserstein permutation test (cell 19): red if p < 0.01 AND shift > 0.5 SD;
+    # yellow if p < 0.05 AND shift > 0.25 SD. Both lines must be crossed.
+    "numeric_shift_sd": TriggerThreshold(yellow=0.25, red=0.50, worse=Worse.HIGH, kind=TriggerKind.SD),
+    "numeric_shift_p": TriggerThreshold(yellow=0.05, red=0.01, worse=Worse.LOW),
+    # NEW vs POC (reviewer decision 2026-11-09): alert on the AAA size-class mix like the
+    # other category mixes. The notebook never alerted on it.
+    "AAA size class mix": TriggerThreshold(yellow=0.15, red=0.30, worse=Worse.HIGH, kind=TriggerKind.PCT),
+    # AAA prevalence (cell 19): yellow if Fisher p < 0.05 AND |difference| > 0.05.
+    "patients_prevalence_fisher_p": TriggerThreshold(yellow=0.05, red=None, worse=Worse.LOW),
+    "patients_prevalence_abs_diff": TriggerThreshold(
+        yellow=0.05, red=None, worse=Worse.HIGH, kind=TriggerKind.PP
+    ),
+    # labelling (cell 15): red if the smallest AAA label is more than 3 mm below the line.
+    "labels_smallest_aaa_below_line_mm": TriggerThreshold(
+        yellow=None, red=3.0, worse=Worse.HIGH, kind=TriggerKind.MM
+    ),
+    # labelling (cell 15): yellow if any size class disagrees with its own diameter.
+    "labels_size_class_mismatch_count": TriggerThreshold(yellow=0, red=None, worse=Worse.HIGH),
+    # labelling vs model (cell 24): |cutoff midpoint shift| >= 3 mm red, >= 2 mm yellow.
+    "labels_cutoff_shift_mm": TriggerThreshold(
+        yellow=2.0, red=3.0, worse=Worse.HIGH, kind=TriggerKind.MM, inclusive=True
+    ),
+    # AAA model (cell 22): specificity < 0.90 is a watch.
+    "accuracy_specificity": TriggerThreshold(yellow=0.90, red=None, worse=Worse.LOW, kind=TriggerKind.PCT),
+    # measurement outliers (cell 17): any |error| > 3 x SD(reference error) is a watch.
+    "accuracy_measurement_outlier_count": TriggerThreshold(yellow=0, red=None, worse=Worse.HIGH),
+    # subgroups (cell 23): any flagged subgroup is a watch.
+    "accuracy_subgroup_flag_count": TriggerThreshold(yellow=0, red=None, worse=Worse.HIGH),
+    # Dice (cell 29): median < 0.85 red, < 0.90 yellow; share below 0.90 > 0.10 yellow.
+    "accuracy_dice_median": TriggerThreshold(yellow=0.90, red=0.85, worse=Worse.LOW, kind=TriggerKind.NUM2),
+    "accuracy_dice_share_below_line": TriggerThreshold(
+        yellow=0.10, red=None, worse=Worse.HIGH, kind=TriggerKind.PCT
+    ),
+}
+
+_NOTEBOOK_PARAMETERS: dict[str, float] = {
+    "near_duplicate_similarity": 0.95,  # SIM_DUP, ipynb:81
+    "random_seed": 0,  # every random_state / default_rng seed in the notebook
+    "cv_folds": 5,  # KFold / GroupKFold / StratifiedGroupKFold(5)
+    "embedding_max_pcs": 32,  # PCA(min(32, ...)) in domain_auc, fit_reference, make_model
+    "coverage_knn_k": 5,  # fit_reference k=5
+    "coverage_percentile": 95,  # fit_reference dist_thr percentile
+    "permutation_count": 1000,  # w_test n_perm
+    "numeric_test_min_n": 5,  # w_test returns n/a below 5 values per side
+    "min_aaa_for_sensitivity": 3,  # n_aaa >= 3 (AAA model, subgroups)
+    "subgroup_mae_ref_multiple": 2.0,  # flag_row: mae > max(2.0, 2 x ref_mae)
+    "subgroup_hospital_wide_share": 0.8,  # "hospital-wide" if hits >= 80% of eligible groups
+    "evidence_gap_min_n": 10,  # evidence gaps: n >= 10 and n_aaa == 0
+    "outlier_sd_multiple": 3.0,  # |err| > 3 x SD(reference error)
+    "smallest_dataset_scans": 50,  # Files: "Only N scans" below 50
+    "cutoff_grid_low_mm": 20.0,  # cutoff_range grid np.arange(20, 40.01, 0.5)
+    "cutoff_grid_high_mm": 40.0,
+    "cutoff_grid_step_mm": 0.5,
+    "dice_poor_outline_line": 0.90,  # share_below_0.90, poor-outline split
+    "dice_secondary_line": 0.85,  # share_below_0.85 (reported only)
+    "poor_outline_error_ratio": 2.0,  # e_low > 2 x e_hi
+    "poor_outline_error_floor_mm": 2.0,  # and e_low > 2 mm
+    "poor_outline_min_cases": 3,  # 3 <= low.sum() < n - 3
+    "embedding_probe_min_class_n": 10,  # predictability: classes with >= 10 scans
+    "embedding_probe_min_rows": 25,  # predictability: at least 25 rows
+    "leakage_mlp_max_iter": 3000,  # make_model MLPRegressor(max_iter=3000)
+    "plausible_diameter_low_mm": 8.0,  # ranges (cell 15)
+    "plausible_diameter_high_mm": 120.0,
+    "plausible_hu_low": -150.0,
+    "plausible_hu_high": 1000.0,
+    "plausible_kvp_low": 70.0,
+    "plausible_kvp_high": 150.0,
+    "plausible_slice_low_mm": 0.1,
+    "plausible_slice_high_mm": 10.0,
+    "repeat_scan_icc": 1.0,  # NEW (not in the notebook): ICC for the Kish design effect
+}
+
+
 HACKATHON_DEFAULT_PROFILE = ThresholdProfile(
     profile_id="hackathon-default-v0",
     model_id="hackathon-baseline-aaa",
@@ -216,9 +333,12 @@ HACKATHON_DEFAULT_PROFILE = ThresholdProfile(
             "value 15 is used. (2) The spec's Dice UI markers (0.81/0.90) differ from the "
             "notebook/monitor Dice thresholds (red 0.85 / yellow 0.90), which are kept in "
             "triggers. (3) The spec says population SD; the notebook mixes population and "
-            "sample SD. Not encoded. (4) monitor.py emits the 'Aneurysms the model caught' "
+            "sample SD; slicepoint-core uses population SD (ddof=0) throughout, see core PARITY.md. (4) monitor.py emits the 'Aneurysms the model caught' "
             "row with worse='high' when there are fewer than 3 aneurysms (value n/a); the "
-            "intended direction is low and that is what is stored here."
+            "intended direction is low and that is what is stored here. (5) The notebook-specific "
+            "rules (triggers with snake_case keys and `parameters`) were added for "
+            "slicepoint-core milestone 1; they are transcribed from test_your_hospital.ipynb "
+            "and are what the five checks read."
         ),
     ),
     aaa=AaaRules(
@@ -231,7 +351,8 @@ HACKATHON_DEFAULT_PROFILE = ThresholdProfile(
     dice_markers=DiceMarkers(lower=0.81, upper=0.90),
     min_group_size=15,
     check_targets={"repeats": 90, "scanning": 70, "patients": 70, "labels": 90, "accuracy": 88},
-    triggers=_TRIGGERS,
+    triggers={**_TRIGGERS, **_NOTEBOOK_TRIGGERS},
+    parameters=_NOTEBOOK_PARAMETERS,
     value_sources={
         "aaa.decision_line_mm": f"{_NB}:80 AAA_CUTOFF_MM = 30; monitor.py:147-148; spec",
         "aaa.large_aneurysm_line_mm": f"{_NB} cell 15 size-class expectation (<55 -> 30-54mm); spec",
@@ -247,6 +368,14 @@ HACKATHON_DEFAULT_PROFILE = ThresholdProfile(
         "check_targets.labels": _SPEC,
         "check_targets.accuracy": _SPEC,
         **{f"triggers.{name}": _MON for name in _TRIGGERS},
+        **{f"triggers.{name}": _NB_LINES for name in _NOTEBOOK_TRIGGERS if name != "AAA size class mix"},
+        "triggers.AAA size class mix": "reviewer decision 2026-11-09, new vs POC (same lines as the other mixes)",
+        **{f"parameters.{name}": _NB_LINES for name in _NOTEBOOK_PARAMETERS if name != "repeat_scan_icc"},
+        "parameters.repeat_scan_icc": (
+            "slicepoint-core (new, not in the POC): ICC for the Kish design effect of repeat "
+            "scans per person. 1.0 treats repeat scans of one person as fully redundant, so "
+            "n_effective = (sum m)^2 / sum m^2, the conservative bound."
+        ),
     },
 )
 """POC thresholds with per-value provenance. See ``provenance.notes`` for conflicts."""

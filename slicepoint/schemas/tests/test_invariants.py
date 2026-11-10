@@ -330,7 +330,8 @@ def test_default_profile_values_and_provenance() -> None:
     assert p.check_targets == {"repeats": 90, "scanning": 70, "patients": 70, "labels": 90, "accuracy": 88}
     # every configured number has a cited source
     expected = {f"aaa.{k}" for k in AaaRules.model_fields} | {"dice_markers.lower", "dice_markers.upper",
-                "min_group_size"} | {f"check_targets.{k}" for k in p.check_targets} | {f"triggers.{k}" for k in p.triggers}
+                "min_group_size"} | {f"check_targets.{k}" for k in p.check_targets} | {f"triggers.{k}" for k in p.triggers} \
+        | {f"parameters.{k}" for k in p.parameters}
     assert set(p.value_sources) == expected
     assert "12-14" in (p.provenance.notes or "")
 

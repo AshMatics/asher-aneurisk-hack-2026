@@ -1,0 +1,1214 @@
+{
+  "$defs": {
+    "AaaSizeClass": {
+      "description": "AAA size class as recorded by the hospital.\n\nIt follows the hospital's convention, not the diameter: the 30-54mm class has a\nminimum observed diameter of 25.74 mm (hospital e).",
+      "enum": [
+        "none",
+        "30-54mm",
+        ">=55mm"
+      ],
+      "title": "AaaSizeClass",
+      "type": "string"
+    },
+    "BinMetricsV0": {
+      "additionalProperties": false,
+      "description": "Binary AAA-call metrics (``bin_metrics``, ipynb:835).\n\nCount arithmetic is exact by construction in the notebook and is enforced:\n``tp+fn == n_aaa``, ``tn+fp == n_not_aaa``, ``n_aaa+n_not_aaa == n``, and every no-answer\nis counted as wrong, so ``n_no_answer <= fn+fp``. Rates are null exactly when their\ndenominator is 0, and ``*_lo <= point <= *_hi`` (95% Wilson).",
+      "properties": {
+        "bal_acc": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Bal Acc"
+        },
+        "fn": {
+          "minimum": 0,
+          "title": "Fn",
+          "type": "integer"
+        },
+        "fp": {
+          "minimum": 0,
+          "title": "Fp",
+          "type": "integer"
+        },
+        "g_mean": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "G Mean"
+        },
+        "n": {
+          "minimum": 0,
+          "title": "N",
+          "type": "integer"
+        },
+        "n_aaa": {
+          "minimum": 0,
+          "title": "N Aaa",
+          "type": "integer"
+        },
+        "n_no_answer": {
+          "minimum": 0,
+          "title": "N No Answer",
+          "type": "integer"
+        },
+        "n_not_aaa": {
+          "minimum": 0,
+          "title": "N Not Aaa",
+          "type": "integer"
+        },
+        "sens": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Sens"
+        },
+        "sens_hi": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Sens Hi"
+        },
+        "sens_lo": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Sens Lo"
+        },
+        "spec": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Spec"
+        },
+        "spec_hi": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Spec Hi"
+        },
+        "spec_lo": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Spec Lo"
+        },
+        "tn": {
+          "minimum": 0,
+          "title": "Tn",
+          "type": "integer"
+        },
+        "tp": {
+          "minimum": 0,
+          "title": "Tp",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "n",
+        "n_aaa",
+        "n_not_aaa",
+        "tp",
+        "fn",
+        "tn",
+        "fp",
+        "n_no_answer",
+        "sens",
+        "sens_lo",
+        "sens_hi",
+        "spec",
+        "spec_lo",
+        "spec_hi",
+        "bal_acc",
+        "g_mean"
+      ],
+      "title": "BinMetricsV0",
+      "type": "object"
+    },
+    "CheckResult": {
+      "additionalProperties": false,
+      "description": "The outcome of one check for one assessment.\n\n* ``status`` is primary.\n* ``score`` (0-100) is optional; when present it must name ``score_method`` so a reader\n  knows which formula produced it. No formula is agreed yet (ADR open question 2).\n* ``n`` is required: the number of cases (scans) this check actually used, so thin\n  evidence is visible. New checks must report their own per-check ``n`` (for example\n  the cases with labels, or the AAA-positive cases for sensitivity). Only the legacy\n  converter falls back to the file's scan count, because the POC never recorded it.\n* ``n_effective`` (optional) is the effective sample size and must name\n  ``n_effective_method`` (e.g. ``kish_design_effect_per_person``, ``cluster_icc``),\n  mirroring score/score_method; ``0 < n_effective <= n``. Rationale: repeat scans of the\n  same person (hospital_b has 80 scans from 40 real people) and clustering within a\n  site are correlated, so they carry less information than ``n`` independent cases.\n  That matters for Wilson intervals and for the \"too few to judge\" suppression, which\n  should use the effective size, not the raw scan count.\n* ``subjects`` (optional) is the number of distinct people behind the ``n`` cases, and\n  ``subjects <= n``.\n* ``failing_sub_factors`` must be sub-factors of the registered check, and must be empty\n  when the status is ``ok``.",
+      "properties": {
+        "check_id": {
+          "pattern": "^[a-z][a-z0-9_]{0,63}$",
+          "title": "Check Id",
+          "type": "string"
+        },
+        "evidence": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "failing_sub_factors": {
+          "default": [],
+          "items": {
+            "pattern": "^[a-z][a-z0-9_]{0,63}$",
+            "type": "string"
+          },
+          "title": "Failing Sub Factors",
+          "type": "array"
+        },
+        "n": {
+          "description": "Cases this check actually used (per-check, not per-file).",
+          "minimum": 0,
+          "title": "N",
+          "type": "integer"
+        },
+        "n_effective": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Effective sample size; requires n_effective_method.",
+          "title": "N Effective"
+        },
+        "n_effective_method": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "N Effective Method"
+        },
+        "score": {
+          "anyOf": [
+            {
+              "maximum": 100,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Score"
+        },
+        "score_method": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Score Method"
+        },
+        "source": {
+          "default": "computed",
+          "enum": [
+            "computed",
+            "legacy_v0"
+          ],
+          "title": "Source",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/CheckStatus"
+        },
+        "subjects": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Distinct people behind n.",
+          "title": "Subjects"
+        },
+        "summary": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Summary"
+        }
+      },
+      "required": [
+        "check_id",
+        "status",
+        "n"
+      ],
+      "title": "CheckResult",
+      "type": "object"
+    },
+    "CheckRun": {
+      "additionalProperties": false,
+      "description": "Whether a registered check ran. ``skipped`` means its required inputs were missing\n(for example no labels or no embeddings); ``failed`` means it raised. Neither is ok.",
+      "properties": {
+        "check_id": {
+          "pattern": "^[a-z][a-z0-9_]{0,63}$",
+          "title": "Check Id",
+          "type": "string"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason"
+        },
+        "state": {
+          "$ref": "#/$defs/CheckRunState"
+        }
+      },
+      "required": [
+        "check_id",
+        "state"
+      ],
+      "title": "CheckRun",
+      "type": "object"
+    },
+    "CheckRunState": {
+      "enum": [
+        "evaluated",
+        "skipped",
+        "failed"
+      ],
+      "title": "CheckRunState",
+      "type": "string"
+    },
+    "CheckStatus": {
+      "description": "Categorical outcome of one check. Ordered ok < watch < problem.",
+      "enum": [
+        "ok",
+        "watch",
+        "problem"
+      ],
+      "title": "CheckStatus",
+      "type": "string"
+    },
+    "ContrastPhase": {
+      "enum": [
+        "arterial",
+        "venous",
+        "non-contrast"
+      ],
+      "title": "ContrastPhase",
+      "type": "string"
+    },
+    "DiameterAgreement": {
+      "additionalProperties": false,
+      "description": "Bland-Altman style agreement of the model's diameter with the reference label.\n\n``error = predicted - reference``. ``sd`` is the **population** SD of the error and\nthe 95% limits of agreement are ``bias +/- 1.96 sd``. Every float is null when\n``n < min_n`` (3 in the POC). Tolerances are profile-driven, unlike the legacy\n``DiameterMetricsV0`` whose ``within_2mm`` / ``within_3mm`` names fix them.",
+      "properties": {
+        "bias": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Bias"
+        },
+        "loa_high": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Loa High"
+        },
+        "loa_low": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Loa Low"
+        },
+        "mae": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Mae"
+        },
+        "min_n": {
+          "default": 3,
+          "minimum": 1,
+          "title": "Min N",
+          "type": "integer"
+        },
+        "n": {
+          "minimum": 0,
+          "title": "N",
+          "type": "integer"
+        },
+        "rmse": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Rmse"
+        },
+        "sd": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Sd"
+        },
+        "spearman": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": -1.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Spearman"
+        },
+        "within_tolerance": {
+          "items": {
+            "$ref": "#/$defs/WithinTolerance"
+          },
+          "title": "Within Tolerance",
+          "type": "array"
+        }
+      },
+      "required": [
+        "n",
+        "mae",
+        "rmse",
+        "bias",
+        "sd",
+        "loa_low",
+        "loa_high",
+        "within_tolerance",
+        "spearman"
+      ],
+      "title": "DiameterAgreement",
+      "type": "object"
+    },
+    "DiceMetricsV0": {
+      "additionalProperties": false,
+      "description": "Per-dataset Dice summary. Key names contain a dot, hence the aliases.",
+      "properties": {
+        "mean": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Mean",
+          "type": "number"
+        },
+        "median": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Median",
+          "type": "number"
+        },
+        "share_below_0.85": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Share Below 0.85",
+          "type": "number"
+        },
+        "share_below_0.90": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Share Below 0.90",
+          "type": "number"
+        }
+      },
+      "required": [
+        "median",
+        "mean",
+        "share_below_0.90",
+        "share_below_0.85"
+      ],
+      "title": "DiceMetricsV0",
+      "type": "object"
+    },
+    "Evidence": {
+      "additionalProperties": false,
+      "description": "One named piece of evidence behind a result (e.g. ``tvd = 0.40``).",
+      "properties": {
+        "key": {
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        },
+        "text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Value"
+        }
+      },
+      "required": [
+        "key"
+      ],
+      "title": "Evidence",
+      "type": "object"
+    },
+    "PerformanceSummary": {
+      "additionalProperties": false,
+      "description": "Model performance on this site. Each block is null when its inputs were missing.\n\nThe binary-call and Dice blocks keep the POC shapes (``BinMetricsV0``,\n``DiceMetricsV0``) and their arithmetic validators. The diameter block is the\nprofile-driven :class:`DiameterAgreement`; ``DiameterMetricsV0`` is for legacy files.",
+      "properties": {
+        "aaa_missing_as_wrong": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BinMetricsV0"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "aaa_when_answered": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BinMetricsV0"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "diameter": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DiameterAgreement"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "dice": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DiceMetricsV0"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "PerformanceSummary",
+      "type": "object"
+    },
+    "ReferenceRef": {
+      "additionalProperties": false,
+      "description": "Which reference profile the site was compared against.",
+      "properties": {
+        "embedding_space_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Embedding Space Id"
+        },
+        "fingerprint": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "sha256 of the reference dataset content.",
+          "title": "Fingerprint"
+        },
+        "n_cases": {
+          "minimum": 0,
+          "title": "N Cases",
+          "type": "integer"
+        },
+        "reference_id": {
+          "minLength": 1,
+          "title": "Reference Id",
+          "type": "string"
+        },
+        "site_id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+          "title": "Site Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "reference_id",
+        "site_id",
+        "n_cases"
+      ],
+      "title": "ReferenceRef",
+      "type": "object"
+    },
+    "ScanSummary": {
+      "additionalProperties": false,
+      "description": "One scan as the viewer shows it. ``person_group`` is the real-person grouping\n(same patient id OR near-identical embedding), so it can join scans under different\npatient ids. ``ai_aaa`` null means the model gave no answer, never \"normal\".",
+      "properties": {
+        "aaa": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Aaa"
+        },
+        "aaa_size_class": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AaaSizeClass"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "age_band": {
+          "anyOf": [
+            {
+              "pattern": "^\\d0-\\d9$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Age Band"
+        },
+        "ai_aaa": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ai Aaa"
+        },
+        "ai_diameter_mm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ai Diameter Mm"
+        },
+        "case_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^\\S(?:.*\\S)?$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "contrast_phase": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ContrastPhase"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "person_group": {
+          "pattern": "^p\\d+$",
+          "title": "Person Group",
+          "type": "string"
+        },
+        "reference_diameter_mm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reference Diameter Mm"
+        },
+        "scanner_vendor": {
+          "anyOf": [
+            {
+              "description": "Open set, lowercased. Known: siemens, philips, ge; others (e.g. canon) are accepted.",
+              "examples": [
+                "siemens",
+                "philips",
+                "ge"
+              ],
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^\\S(?:.*\\S)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scanner Vendor"
+        },
+        "sex": {
+          "anyOf": [
+            {
+              "description": "Open set. Known: M, F (normalised to upper case); other strings are kept.",
+              "examples": [
+                "M",
+                "F"
+              ],
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^\\S(?:.*\\S)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sex"
+        },
+        "slice_thickness_class": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SliceThicknessClass"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "case_id",
+        "person_group"
+      ],
+      "title": "ScanSummary",
+      "type": "object"
+    },
+    "SliceThicknessClass": {
+      "description": "Thickness class. In the data the mapping from ``slice_thickness_mm`` is exact:\nthin < 2 mm (0.6-1.5 observed), standard 2.0-3.75, thick 5.0. The schema does not\nenforce that mapping, because detecting inconsistent metadata is the analysis' job.",
+      "enum": [
+        "thin",
+        "standard",
+        "thick"
+      ],
+      "title": "SliceThicknessClass",
+      "type": "string"
+    },
+    "StepRecord": {
+      "additionalProperties": false,
+      "description": "One step of the assessment pipeline. ``detail`` is required unless the step is ok.",
+      "properties": {
+        "detail": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Detail"
+        },
+        "state": {
+          "$ref": "#/$defs/StepState"
+        },
+        "step": {
+          "pattern": "^[a-z][a-z0-9_]{0,63}$",
+          "title": "Step",
+          "type": "string"
+        }
+      },
+      "required": [
+        "step",
+        "state"
+      ],
+      "title": "StepRecord",
+      "type": "object"
+    },
+    "StepState": {
+      "description": "Outcome of one pipeline step.",
+      "enum": [
+        "ok",
+        "skipped",
+        "failed"
+      ],
+      "title": "StepState",
+      "type": "string"
+    },
+    "ToleranceRole": {
+      "enum": [
+        "bland_altman",
+        "size"
+      ],
+      "title": "ToleranceRole",
+      "type": "string"
+    },
+    "Verdict": {
+      "additionalProperties": false,
+      "description": "A verdict with its rationale and the results it rests on.\n\nValidated invariants (hold for any verdict, including a human override):\n\n* ``go`` requires at least one result, every included result ``ok`` and nothing in\n  ``not_evaluated``.\n* ``no_go`` requires at least one ``problem``.\n* check ids are unique and ``not_evaluated`` does not overlap the results.\n\nThese apply to the derived ``outcome``. ``override`` (optional) carries a human\ndecision. It must differ from the derived outcome, and :attr:`final_outcome` returns it.",
+      "properties": {
+        "model_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Id"
+        },
+        "not_evaluated": {
+          "default": [],
+          "description": "Checks the profile expects that produced no result.",
+          "items": {
+            "pattern": "^[a-z][a-z0-9_]{0,63}$",
+            "type": "string"
+          },
+          "title": "Not Evaluated",
+          "type": "array"
+        },
+        "outcome": {
+          "$ref": "#/$defs/VerdictOutcome"
+        },
+        "override": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VerdictOverride"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "profile_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Profile Id"
+        },
+        "rationale": {
+          "minLength": 1,
+          "title": "Rationale",
+          "type": "string"
+        },
+        "results": {
+          "items": {
+            "$ref": "#/$defs/CheckResult"
+          },
+          "title": "Results",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "0.1.0",
+          "default": "0.1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "site_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Site Id"
+        }
+      },
+      "required": [
+        "outcome",
+        "rationale",
+        "results"
+      ],
+      "title": "Verdict",
+      "type": "object"
+    },
+    "VerdictOutcome": {
+      "enum": [
+        "go",
+        "no_go",
+        "borderline"
+      ],
+      "title": "VerdictOutcome",
+      "type": "string"
+    },
+    "VerdictOverride": {
+      "additionalProperties": false,
+      "description": "A human decision that replaces the derived outcome.\n\nOverriding to ``go`` while checks are ``problem`` or not evaluated is allowed, but only\nthrough this record, so the departure from the rule is always attributed and justified.",
+      "properties": {
+        "at": {
+          "description": "When, with a timezone.",
+          "format": "date-time",
+          "title": "At",
+          "type": "string"
+        },
+        "by": {
+          "description": "Who made the decision (person or committee identifier).",
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "By",
+          "type": "string"
+        },
+        "note": {
+          "description": "Required justification, at least 20 characters after trimming whitespace.",
+          "title": "Note",
+          "type": "string"
+        },
+        "outcome": {
+          "$ref": "#/$defs/VerdictOutcome",
+          "description": "The final outcome, replacing the derived one."
+        }
+      },
+      "required": [
+        "outcome",
+        "by",
+        "at",
+        "note"
+      ],
+      "title": "VerdictOverride",
+      "type": "object"
+    },
+    "WithinTolerance": {
+      "additionalProperties": false,
+      "description": "Share of cases with ``|predicted - reference| <= tolerance_mm``. The tolerance\ncomes from the threshold profile (``aaa.bland_altman_tolerance_mm`` /\n``aaa.size_tolerance_mm``); ``share`` is null when there are too few pairs.",
+      "properties": {
+        "role": {
+          "$ref": "#/$defs/ToleranceRole"
+        },
+        "share": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Share"
+        },
+        "tolerance_mm": {
+          "exclusiveMinimum": 0,
+          "title": "Tolerance Mm",
+          "type": "number"
+        }
+      },
+      "required": [
+        "role",
+        "tolerance_mm",
+        "share"
+      ],
+      "title": "WithinTolerance",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "The full result of one assessment of one site against one reference.",
+  "properties": {
+    "checks": {
+      "items": {
+        "$ref": "#/$defs/CheckRun"
+      },
+      "minItems": 1,
+      "title": "Checks",
+      "type": "array"
+    },
+    "dataset_fingerprint": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Dataset Fingerprint"
+    },
+    "embedding_space_id": {
+      "anyOf": [
+        {
+          "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Embedding Space Id"
+    },
+    "generated_at": {
+      "format": "date-time",
+      "title": "Generated At",
+      "type": "string"
+    },
+    "generator": {
+      "description": "Producer and version, e.g. slicepoint-core 0.1.0.",
+      "minLength": 1,
+      "title": "Generator",
+      "type": "string"
+    },
+    "model_id": {
+      "minLength": 1,
+      "title": "Model Id",
+      "type": "string"
+    },
+    "notes": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Notes",
+      "type": "array"
+    },
+    "performance": {
+      "$ref": "#/$defs/PerformanceSummary"
+    },
+    "profile_id": {
+      "minLength": 1,
+      "title": "Profile Id",
+      "type": "string"
+    },
+    "reference": {
+      "$ref": "#/$defs/ReferenceRef"
+    },
+    "result_type": {
+      "const": "slicepoint.assessment_result",
+      "default": "slicepoint.assessment_result",
+      "title": "Result Type",
+      "type": "string"
+    },
+    "scans": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ScanSummary"
+      },
+      "title": "Scans",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "0.1.0",
+      "default": "0.1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "site_id": {
+      "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+      "title": "Site Id",
+      "type": "string"
+    },
+    "steps": {
+      "items": {
+        "$ref": "#/$defs/StepRecord"
+      },
+      "title": "Steps",
+      "type": "array"
+    },
+    "verdict": {
+      "$ref": "#/$defs/Verdict"
+    }
+  },
+  "required": [
+    "site_id",
+    "reference",
+    "profile_id",
+    "model_id",
+    "generated_at",
+    "generator",
+    "steps",
+    "checks",
+    "verdict",
+    "performance"
+  ],
+  "title": "AssessmentResult",
+  "type": "object"
+}
