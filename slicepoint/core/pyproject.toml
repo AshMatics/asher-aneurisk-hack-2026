@@ -20,7 +20,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-test = ["pytest>=8", "mypy>=1.10", "pandas-stubs>=2.0", "jsonschema>=4.20", "types-jsonschema"]
+test = ["pytest>=8", "mypy>=1.10", "pandas-stubs>=2.0", "jsonschema>=4.20", "types-jsonschema>=4.20"]
 # Runs slicepoint/notebooks/slicepoint_quickstart.ipynb headlessly in the test suite.
 notebook = ["nbclient>=0.10", "nbformat>=5.10", "ipykernel>=6.29"]
 
@@ -28,7 +28,7 @@ notebook = ["nbclient>=0.10", "nbformat>=5.10", "ipykernel>=6.29"]
 slicepoint = "slicepoint_core.cli:entry_point"
 
 [tool.uv.sources]
-slicepoint-schemas = { path = "../schemas", editable = true }
+slicepoint-schemas = { workspace = true }
 
 [tool.hatch.version]
 path = "src/slicepoint_core/__init__.py"

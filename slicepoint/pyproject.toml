@@ -1,0 +1,15 @@
+# uv workspace for the SlicePoint Python packages (development and CI).
+#
+#   uv sync --all-packages --all-extras    # one .venv here with schemas + core and their test extras
+#   uv run --directory core pytest         # or: cd core && uv run pytest / uv run mypy
+#
+# One uv.lock pins every dependency for both packages. Hospitals do not need uv: the
+# packages are ordinary pyproject builds, so `pip install -e schemas -e core` still works
+# (docs/getting-started-hospital.md).
+#
+# segmentation/ (slicepoint-model) is left out on purpose: it is the separate GPU worker
+# (ADR 0001 section 4) with torch/TotalSegmentator pins and its own Python range, and it
+# should not constrain the analysis packages' lock.
+[tool.uv.workspace]
+members = ["schemas", "core"]
+exclude = ["segmentation"]

@@ -116,7 +116,7 @@ When it loads a file, the viewer:
 |---|---|
 | `src/viewmodel/` | Plain TypeScript, no React (enforced by eslint), so a Vue shell can reuse it (ADR 0001 §7). `load.ts` (parse and validate), `verdict.ts`, `checks.ts` (generic check cards, evidence drill-down, score gating), `performance.ts`, `strata.ts`, `cases.ts` (sorting and filtering), `about.ts` (methods, limits, thresholds, provenance), `labels.ts` and `format.ts` (the `report.py` label map and humanizer, effective-n formatting), `registry.ts` (display copy for the five built-in checks) |
 | `src/components/` | React views over the view-models: hand-written shadcn-style primitives, tabs and SVG charts |
-| `src/fixtures/` | Bundled samples; regenerate with `scripts/make-fixtures.sh` (needs `slicepoint/core/.venv` and `data/practice`) |
+| `src/fixtures/` | Bundled samples; regenerate with `scripts/make-fixtures.sh` (needs the synced uv workspace in `slicepoint/` and `data/practice`) |
 | `scripts/` | `gen-contract.mjs`, `check-build.mjs`, `make-fixtures.sh` |
 
 Check cards are rendered from whatever is in `result.checks`. A check the viewer has no
