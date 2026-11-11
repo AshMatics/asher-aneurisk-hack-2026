@@ -9,6 +9,7 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
+import slicepoint_api
 from conftest import AUTH, ManualRunner, make_client, needs_data, wait_for
 from slicepoint_api.jobs import INTERRUPTED
 
@@ -54,7 +55,7 @@ def test_lifecycle_202_then_409_then_result(data_root: Path, tmp_path: Path) -> 
         assert audit["requested_by"] == "dr.test" and audit["verdict"] == "no_go"
         assert audit["reference_id"] == "ref-hospital_a" and len(audit["dataset_fingerprint"]) == 64
         assert audit["profile_id"] == "hackathon-default-v0" and audit["embedding_space_id"]
-        assert audit["core_version"] and audit["schemas_version"] and audit["api_version"] == "0.1.1"
+        assert audit["core_version"] and audit["schemas_version"] and audit["api_version"] == slicepoint_api.__version__
         result = c.get(f"/v1/assessments/{job_id}/result", headers=AUTH)
         assert result.status_code == 200 and result.headers["content-type"] == "application/json"
         assert result.json()["site_name"] == "Hospital B"

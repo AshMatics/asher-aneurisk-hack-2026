@@ -34,16 +34,14 @@ should read the report.
 **2. Notebook:** open `slicepoint/notebooks/slicepoint_quickstart.ipynb`, set the folders
 in Step 2 and choose *Run All*.
 
-**3. Service with the live web UI** (needs [uv](https://docs.astral.sh/uv/), Node 22 and pnpm 9):
+**3. Service with the live web UI** (same venv as step 1; the UI ships in the package):
 
 ```bash
-cd slicepoint && uv sync --all-packages --all-extras
-(cd viewer && pnpm install && pnpm build:live)
+pip install -e slicepoint/api
 export SLICEPOINT_SERVICE_TOKEN="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')"
 echo "$SLICEPOINT_SERVICE_TOKEN"                 # paste this into the sign-in page
-SLICEPOINT_DATA_ROOT="$PWD/../data/practice" SLICEPOINT_RESULTS_DIR="$PWD/../.slicepoint-results" \
-SLICEPOINT_UI_DIR="$PWD/viewer/dist-live" SLICEPOINT_COOKIE_SECURE=0 \
-    uv run --directory api slicepoint-api        # open http://127.0.0.1:8100/
+SLICEPOINT_DATA_ROOT="$PWD/data/practice" SLICEPOINT_RESULTS_DIR="$PWD/.slicepoint-results" \
+SLICEPOINT_COOKIE_SECURE=0 slicepoint-api        # open http://127.0.0.1:8100/
 ```
 
 A hospital running it on its own data should follow
@@ -55,7 +53,7 @@ A hospital running it on its own data should follow
 |---|---|---|
 | [schemas/](schemas/README.md) | `slicepoint-schemas` | The data contract: Pydantic models, JSON Schema, threshold profiles, the check registry |
 | [core/](core/README.md) | `slicepoint-core` | The analysis library, CLI, HTML report and notebook support. No server, database or GPU |
-| [api/](api/README.md) | `slicepoint-api` | FastAPI service: job-based assessments, token and browser-session auth, serves the live UI |
+| [api/](api/README.md) | `slicepoint-api` | FastAPI service: job-based assessments, token and browser-session auth, serves the live UI (bundled). |
 | [viewer/](viewer/README.md) | `slicepoint-viewer` | React viewer, built two ways: an offline single file (no network access) and a live build for the API |
 | [segmentation/](segmentation/README.md) | `slicepoint-model` | Separate GPU worker: 3D aorta segmentation and mask comparison |
 | [docs/](docs/) | | ADR, hospital guide, data-contract inventory |
@@ -67,6 +65,7 @@ cd slicepoint
 uv sync --all-packages --all-extras                  # schemas + core + api, one lock
 uv run --directory core pytest -m "not notebook"     # likewise schemas and api; add mypy
 cd viewer && pnpm install && pnpm verify             # contract checks, types, lint, tests, both builds
+pnpm build:core && pnpm build:api                    # copy the viewer builds into core and api (tests fail if stale)
 ```
 
 ## Status and limits

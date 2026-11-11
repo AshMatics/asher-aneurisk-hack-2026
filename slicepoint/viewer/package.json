@@ -22,6 +22,7 @@
     "build": "node scripts/gen-contract.mjs --check && tsc --noEmit -p tsconfig.json && vite build && node scripts/check-build.mjs",
     "build:core": "pnpm build && node scripts/sync-core.mjs",
     "build:live": "node scripts/gen-api.mjs --check && tsc --noEmit -p tsconfig.json && vite build --mode live && node scripts/check-live.mjs",
+    "build:api": "pnpm build:live && node scripts/sync-api.mjs",
     "preview": "vite preview",
     "verify": "pnpm check:contract && pnpm check:api && pnpm typecheck && pnpm lint && pnpm test && pnpm build && pnpm build:live"
   },

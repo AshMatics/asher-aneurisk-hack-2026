@@ -1,6 +1,10 @@
-"""Serve the live viewer (``pnpm build:live`` in ``slicepoint/viewer``) at ``/``.
+"""Serve the live viewer (``slicepoint/viewer``, live build) at ``/``.
 
-Only when ``SLICEPOINT_UI_DIR`` is set. The shell and its hashed assets hold no data, so
+The build ships inside this package under ``_ui/`` (copied in by ``pnpm build:api``), so a
+plain ``pip install`` serves the UI. ``SLICEPOINT_UI_DIR`` points at another build instead
+(for example ``viewer/dist-live`` while developing), and ``SLICEPOINT_UI=off`` serves none.
+``_ui/ui.json`` records which openapi.json and result schema the build was made against;
+the tests fail when it is stale. The shell and its hashed assets hold no data, so
 they are served without authentication; every API call the page makes still needs the
 session cookie. Only ``/``, ``/index.html`` and files under ``/assets/`` are served, with
 plain path segments only (no dot-files, no ``..``), and the resolved file must sit inside
@@ -10,6 +14,7 @@ the UI folder (a symlink pointing out of it is refused).
 from __future__ import annotations
 
 import re
+from importlib import resources
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
@@ -23,6 +28,15 @@ _SEGMENT = re.compile(r"^[A-Za-z0-9_-][A-Za-z0-9._-]{0,127}$")
 _MEDIA = {".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png",
           ".ico": "image/x-icon", ".json": "application/json", ".map": "application/json",
           ".woff2": "font/woff2", ".txt": "text/plain"}
+
+
+_BUNDLED_DIR = "_ui"
+
+
+def bundled_ui_dir() -> Path | None:
+    """The live viewer build shipped in this package, or None if this install lacks it."""
+    path = Path(str(resources.files("slicepoint_api").joinpath(_BUNDLED_DIR)))
+    return path if (path / "index.html").is_file() else None
 
 
 def is_ui_path(path: str) -> bool:
