@@ -44,6 +44,18 @@ SLICEPOINT_DATA_ROOT="$PWD/data/practice" SLICEPOINT_RESULTS_DIR="$PWD/.slicepoi
 SLICEPOINT_COOKIE_SECURE=0 slicepoint-api        # open http://127.0.0.1:8100/
 ```
 
+**4. Docker** (one container: service plus web UI):
+
+```bash
+cd slicepoint
+echo "SLICEPOINT_SERVICE_TOKEN=$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')" > .env
+docker compose up --build                        # open http://127.0.0.1:8100/, paste the token from .env
+```
+
+Set `SLICEPOINT_DATA=/path/to/datasets` or `SLICEPOINT_PORT` in `.env` to change the data
+folder or port. The GPU segmentation worker is a separate container:
+`docker compose --profile segmentation up`.
+
 A hospital running it on its own data should follow
 [docs/getting-started-hospital.md](docs/getting-started-hospital.md).
 
@@ -53,7 +65,7 @@ A hospital running it on its own data should follow
 |---|---|---|
 | [schemas/](schemas/README.md) | `slicepoint-schemas` | The data contract: Pydantic models, JSON Schema, threshold profiles, the check registry |
 | [core/](core/README.md) | `slicepoint-core` | The analysis library, CLI, HTML report and notebook support. No server, database or GPU |
-| [api/](api/README.md) | `slicepoint-api` | FastAPI service: job-based assessments, token and browser-session auth, serves the live UI (bundled). |
+| [api/](api/README.md) | `slicepoint-api` | FastAPI service: job-based assessments, token and browser-session auth, serves the live UI (bundled). Run it with `Dockerfile` / `docker-compose.yml` here in `slicepoint/` |
 | [viewer/](viewer/README.md) | `slicepoint-viewer` | React viewer, built two ways: an offline single file (no network access) and a live build for the API |
 | [segmentation/](segmentation/README.md) | `slicepoint-model` | Separate GPU worker: 3D aorta segmentation and mask comparison |
 | [docs/](docs/) | | ADR, hospital guide, data-contract inventory |

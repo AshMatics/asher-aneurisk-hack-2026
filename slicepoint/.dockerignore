@@ -1,0 +1,14 @@
+# Build context for ./Dockerfile: only the workspace manifest, the lock and the three
+# Python packages. The viewer's build is already inside api/src/slicepoint_api/_ui.
+*
+!pyproject.toml
+!uv.lock
+!schemas/
+!core/
+!api/
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.mypy_cache
+**/*.egg-info
+**/tests

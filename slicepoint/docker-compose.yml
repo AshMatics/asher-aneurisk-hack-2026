@@ -1,0 +1,50 @@
+# SlicePoint with Docker Compose. Run from slicepoint/:
+#
+#   echo "SLICEPOINT_SERVICE_TOKEN=$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')" > .env
+#   docker compose up --build            # then open http://127.0.0.1:8100/ and paste the token
+#
+# The practice data (../data/practice) is mounted read-only; point SLICEPOINT_DATA at
+# another folder in .env to assess your own. Results live in the `slicepoint-results` volume.
+#
+# The GPU segmentation worker is separate and off by default:
+#   docker compose --profile segmentation up --build
+# The two services do not talk to each other yet (the API's port steps are skipped).
+
+services:
+  slicepoint:
+    build: .
+    image: slicepoint:local
+    ports:
+      - "127.0.0.1:${SLICEPOINT_PORT:-8100}:8100"   # loopback only; put TLS in front to expose it
+    environment:
+      SLICEPOINT_SERVICE_TOKEN: ${SLICEPOINT_SERVICE_TOKEN:?set SLICEPOINT_SERVICE_TOKEN in slicepoint/.env}
+      # The browser reaches it over plain http on loopback; set to 1 behind HTTPS.
+      SLICEPOINT_COOKIE_SECURE: ${SLICEPOINT_COOKIE_SECURE:-0}
+    volumes:
+      - ${SLICEPOINT_DATA:-../data/practice}:/data:ro
+      - slicepoint-results:/results
+    restart: unless-stopped
+
+  segmentation:
+    profiles: [segmentation]
+    build: ./segmentation
+    image: slicepoint-segmentation:local
+    ports:
+      - "127.0.0.1:${SEGMENTATION_PORT:-8000}:8000"
+    environment:
+      # Its own token, not SLICEPOINT_SERVICE_TOKEN. Without one (under 32 characters) the
+      # worker refuses every request. Not `:?` here: compose would demand it even with the
+      # profile off.
+      SLICEPOINT_API_TOKEN: ${SLICEPOINT_API_TOKEN:-}
+      SLICEPOINT_DEVICE: ${SLICEPOINT_DEVICE:-cpu}
+    volumes:
+      - segmentation-models:/models
+    # With an NVIDIA GPU and SLICEPOINT_DEVICE=gpu, uncomment:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices: [{ driver: nvidia, count: 1, capabilities: [gpu] }]
+
+volumes:
+  slicepoint-results:
+  segmentation-models:
