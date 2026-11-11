@@ -1,4 +1,4 @@
-FROM pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime
+FROM pytorch/pytorch:2.13.0-cuda12.6-cudnn9-runtime
 WORKDIR /app
 ENV PYTHONUNBUFFERED=1 TOTALSEG_HOME_DIR=/models/totalsegmentator
 COPY pyproject.toml ./
