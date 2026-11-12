@@ -11,7 +11,7 @@ computes a statistic.
 
 from __future__ import annotations
 
-__version__ = "0.1.1"
+__version__ = "0.2.0"
 
 from .app import create_app  # noqa: E402
 from .settings import Settings  # noqa: E402

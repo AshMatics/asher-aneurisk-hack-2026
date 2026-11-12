@@ -37,7 +37,8 @@ written to the results folder, so do not run more than one worker.
 | `SLICEPOINT_MAX_CONCURRENT_JOBS` | 1 | Jobs that run at the same time |
 | `SLICEPOINT_MAX_QUEUED_JOBS` | 16 | Queued plus running jobs before new submissions get 503 |
 | `SLICEPOINT_ENABLE_DOCS` | off | `1` serves `/docs` and `/openapi.json` (still behind the token) |
-| `SLICEPOINT_UI_DIR` | unset | Folder with the live viewer build (`pnpm build:live` -> `slicepoint/viewer/dist-live`); served at `/`. Unset means no UI routes |
+| `SLICEPOINT_UI` | on | `off` serves no web UI (API only) |
+| `SLICEPOINT_UI_DIR` | bundled | Serve the live viewer build in this folder instead of the one shipped in the package (for UI development: `slicepoint/viewer/dist-live`) |
 | `SLICEPOINT_SESSION_TTL_SECONDS` | 28800 | Browser session lifetime (8 hours; not sliding) |
 | `SLICEPOINT_COOKIE_SECURE` | on | `0` drops the cookie's `Secure` flag, for plain-http loopback development only |
 | `SLICEPOINT_API_HOST`, `SLICEPOINT_API_PORT` | 127.0.0.1, 8100 | Bind address |
@@ -47,15 +48,20 @@ GPU segmentation worker, and the two services should not share a secret.
 
 ## The live viewer
 
+The live build of `slicepoint/viewer` ships inside this package (`slicepoint_api/_ui/`),
+so `slicepoint-api` serves it at `/` with no Node or pnpm on the machine:
+
 ```bash
-cd slicepoint/viewer && pnpm build:live
-export SLICEPOINT_UI_DIR="$PWD/dist-live"
 export SLICEPOINT_COOKIE_SECURE=0     # only when browsing over plain http on loopback
-uv run --directory ../api slicepoint-api   # then open http://127.0.0.1:8100/
+slicepoint-api                        # then open http://127.0.0.1:8100/
 ```
 
-The service refuses to start if `SLICEPOINT_UI_DIR` has no `index.html`. The built UI is
-not shipped inside the Python package. `/`, `/index.html` and `/assets/*` are served
+After changing the viewer, openapi.json or the result schema, run `pnpm build:api` in
+`slicepoint/viewer` to refresh the bundled copy. `_ui/ui.json` records the openapi.json and
+schema hashes it was built against, and `tests/test_bundled_ui.py` fails when they drift.
+While working on the UI, point `SLICEPOINT_UI_DIR` at `slicepoint/viewer/dist-live`
+(`pnpm build:live`) or use `pnpm dev:live`. The service refuses to start if
+`SLICEPOINT_UI_DIR` has no `index.html`. `/`, `/index.html` and `/assets/*` are served
 without auth (the shell holds no data) with a same-origin CSP: `default-src 'none';
 script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self';
 base-uri 'none'; form-action 'self'; frame-ancestors 'none'`. Only plain path segments

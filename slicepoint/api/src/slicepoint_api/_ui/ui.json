@@ -1,0 +1,10 @@
+{
+  "viewer_version": "0.2.1",
+  "openapi_sha256": "eb8ac0778c0d9e2b6169f53cc28edc9003427dd3f71b6439238211bea7ea3faf",
+  "schema_sha256": "c13607a35241098b9caddb7255c18e747f6a15f381bf172ea199f3690b8c473b",
+  "files": {
+    "assets/live-DMbh8_jb.js": "1fde1b939157d08c433e3e8a27f777574ed4089d6ef49defb2eaa5df6dd6560f",
+    "assets/style-BtFQEfsc.css": "fdbef92978bd93bcc7db7a995544888b09e35605c1f81da4468f13e9cbf3dfbf",
+    "index.html": "6b94db9ad399742a2186dd431066058bcebe04390365394819178dfca44b8ec9"
+  }
+}

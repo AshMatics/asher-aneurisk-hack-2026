@@ -8,8 +8,10 @@
 ``SLICEPOINT_MAX_CONCURRENT_JOBS``  jobs run at once, default 1
 ``SLICEPOINT_MAX_QUEUED_JOBS``  queued + running jobs before 503, default 16
 ``SLICEPOINT_ENABLE_DOCS``      ``1`` serves /docs and /openapi.json, default off
-``SLICEPOINT_UI_DIR``           folder holding the live viewer build (``pnpm build:live``);
-                                unset (default) serves no UI
+``SLICEPOINT_UI``               ``off`` serves no web UI; default on (the build bundled in
+                                this package, see :mod:`slicepoint_api.ui`)
+``SLICEPOINT_UI_DIR``           serve the live viewer build in this folder instead of the
+                                bundled one (``pnpm build:live`` -> ``viewer/dist-live``)
 ``SLICEPOINT_SESSION_TTL_SECONDS``  browser session lifetime, default 28800 (8 hours)
 ``SLICEPOINT_COOKIE_SECURE``    ``0`` drops the cookie's ``Secure`` flag for plain-http
                                 loopback development; default on
@@ -78,12 +80,23 @@ class Settings(BaseModel):
         for key, name in (("max_body_bytes", "SLICEPOINT_MAX_BODY_BYTES"),
                           ("max_concurrent_jobs", "SLICEPOINT_MAX_CONCURRENT_JOBS"),
                           ("max_queued_jobs", "SLICEPOINT_MAX_QUEUED_JOBS"),
-                          ("ui_dir", "SLICEPOINT_UI_DIR"),
                           ("session_ttl_seconds", "SLICEPOINT_SESSION_TTL_SECONDS"),
                           ("host", "SLICEPOINT_API_HOST"),
                           ("port", "SLICEPOINT_API_PORT")):
             if env.get(name):
                 raw[key] = env[name]
+        if _flag(env.get("SLICEPOINT_UI", "1")):
+            if env.get("SLICEPOINT_UI_DIR"):
+                raw["ui_dir"] = env["SLICEPOINT_UI_DIR"]
+            else:
+                from .ui import bundled_ui_dir
+
+                bundled = bundled_ui_dir()
+                if bundled is None:
+                    raise SettingsError("this install has no bundled web UI; set SLICEPOINT_UI_DIR to a live "
+                                        "viewer build or SLICEPOINT_UI=off (from a source checkout: "
+                                        "`pnpm build:api` in slicepoint/viewer)")
+                raw["ui_dir"] = bundled
         try:
             return cls.model_validate(raw)
         except ValueError as exc:

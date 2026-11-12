@@ -51,8 +51,8 @@ static web server. No server-side code is needed.
 
 ## The live viewer
 
-Served by slicepoint-api at `/` when `SLICEPOINT_UI_DIR` points at `dist-live/` (see
-`slicepoint/api/README.md`). It adds, on top of the same result screen:
+Served by slicepoint-api at `/`: `pnpm build:api` copies the build into the Python package
+(see `slicepoint/api/README.md`). It adds, on top of the same result screen:
 
 - **Sign in**: paste the service token once. The page posts it to `POST /v1/session`,
   clears the field and never stores it (no localStorage, no sessionStorage). The browser
@@ -120,6 +120,7 @@ and `SLICEPOINT_COOKIE_SECURE=0`, because the dev server is plain http):
 pnpm dev:live            # Vite on http://localhost:5173, proxies /v1 to the API
 SLICEPOINT_API_URL=http://127.0.0.1:9000 pnpm dev:live   # another API address
 pnpm build:live          # dist-live/; serve with SLICEPOINT_UI_DIR=$PWD/dist-live
+pnpm build:api           # build:live, then copy it into slicepoint-api (commit the result)
 ```
 
 `?sample=<id>` opens one of the bundled samples (`hospital_b`, `hospital_a_override`,

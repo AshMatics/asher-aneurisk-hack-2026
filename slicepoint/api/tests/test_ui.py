@@ -9,7 +9,7 @@ import pytest
 from conftest import AUTH, TOKEN, make_client, make_settings
 from slicepoint_api import create_app
 from slicepoint_api.settings import Settings, SettingsError
-from slicepoint_api.ui import UI_CSP, resolve_ui_file
+from slicepoint_api.ui import UI_CSP, bundled_ui_dir, resolve_ui_file
 
 INDEX = b"<!doctype html><title>SlicePoint</title><script type=module src=/assets/app.js></script>"
 
@@ -99,7 +99,21 @@ def test_from_env_reads_ui_and_session_settings(dirs: tuple[Path, Path, Path]) -
     base = {"SLICEPOINT_SERVICE_TOKEN": TOKEN, "SLICEPOINT_DATA_ROOT": str(data),
             "SLICEPOINT_RESULTS_DIR": str(results)}
     s = Settings.from_env(base)
-    assert s.ui_dir is None and s.cookie_secure is True and s.session_ttl_seconds == 8 * 3600
+    assert s.ui_dir == bundled_ui_dir() and s.ui_dir is not None
+    assert s.cookie_secure is True and s.session_ttl_seconds == 8 * 3600
+    assert Settings.from_env({**base, "SLICEPOINT_UI": "off"}).ui_dir is None
+    assert Settings.from_env({**base, "SLICEPOINT_UI": "0", "SLICEPOINT_UI_DIR": str(ui)}).ui_dir is None
     s = Settings.from_env({**base, "SLICEPOINT_UI_DIR": str(ui), "SLICEPOINT_COOKIE_SECURE": "0",
                            "SLICEPOINT_SESSION_TTL_SECONDS": "3600"})
     assert s.ui_dir == ui and s.cookie_secure is False and s.session_ttl_seconds == 3600
+
+
+def test_from_env_without_a_bundled_ui_names_the_fix(dirs: tuple[Path, Path, Path],
+                                                       monkeypatch: pytest.MonkeyPatch) -> None:
+    data, results, _ = dirs
+    monkeypatch.setattr("slicepoint_api.ui.bundled_ui_dir", lambda: None)
+    base = {"SLICEPOINT_SERVICE_TOKEN": TOKEN, "SLICEPOINT_DATA_ROOT": str(data),
+            "SLICEPOINT_RESULTS_DIR": str(results)}
+    with pytest.raises(SettingsError, match="no bundled web UI.*SLICEPOINT_UI=off"):
+        Settings.from_env(base)
+    assert Settings.from_env({**base, "SLICEPOINT_UI": "off"}).ui_dir is None
