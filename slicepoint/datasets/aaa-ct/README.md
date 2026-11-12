@@ -34,7 +34,10 @@ configs:
 
 567 abdominal CT scans from the TotalSegmentator dataset, with ground-truth masks, aortic
 measurements, abdominal aortic aneurysm (AAA) labels, a baseline model's predictions and
-image embeddings. The scans were collected through University Hospital Basel but come from
+image embeddings. The AAA labels are not radiologist reads: they come from a 30 mm
+threshold on the aortic diameter measured on the ground-truth aorta masks that ship with
+the TotalSegmentator dataset. The baseline predictions apply the same rule to masks from
+the public TotalSegmentator model. The scans were collected through University Hospital Basel but come from
 10 coded imaging institutes and 15 scanner models (Siemens, Philips, GE); the `institute`
 column in `tables/cases.parquet` says which. It is the canonical dataset of
 [SlicePoint](https://github.com/AshMatics/asher-aneurisk-hack-2026/tree/main/slicepoint),
@@ -42,7 +45,7 @@ an open-source tool that checks whether an imaging AI model fits a hospital's pa
 and scanners before it is switched on.
 
 **Not for clinical use.** The AAA labels come from a diameter rule applied to segmentation
-masks, not from radiology reports.
+masks, not from radiology reports or clinical diagnoses.
 
 ## What is in it
 
@@ -79,11 +82,17 @@ baseline model fails on (for example Dice 0) are kept: a real cohort contains th
 
 ## How the values were made
 
+- **Ground-truth masks:** the segmentations distributed with TotalSegmentator v2.0.1,
+  unchanged. The dataset authors made them with model help and expert review and
+  correction; they are not output of the SlicePoint pipeline.
 - **Labels:** `max_aortic_diameter_mm` is the maximum infrarenal outer-wall diameter,
   measured perpendicular to the centerline of the ground-truth aorta mask. `aaa` is
-  diameter >= 30 mm; `aaa_size_class` is `none`, `30-54mm` or `>=55mm`.
-- **Predictions (baseline model):** the same measurement on the TotalSegmentator `total`
-  model's aorta mask, same 30 mm rule. Null means the model gave no answer.
+  diameter >= 30 mm; `aaa_size_class` is `none`, `30-54mm` or `>=55mm`. These are
+  measurement-derived labels, not radiologist reads.
+- **Predictions (baseline model):** we ran the public TotalSegmentator model (v2.18.0,
+  `total` task) on each CT and applied the same measurement and 30 mm rule to its aorta
+  mask. Null means the model gave no answer. `_ref` columns use the ground-truth masks,
+  `_pred` columns the model's.
 - **Features:** scanner and acquisition fields come from the TotalSegmentator metadata
   (v3.0.0 adds slice thickness). Contrast phase is predicted. `study_description` and
   `protocol_name` are **synthetic**: the source has none, so they are drawn from a

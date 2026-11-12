@@ -55,7 +55,10 @@ AI model behave differently at a new site. They were built for the 2026 Nucleate
 Pittsburgh hackathon, where teams had to find the problems. The game is over, so the keys
 are published.
 
-**Not for clinical use.** AAA labels come from a diameter rule on segmentation masks.
+**Not for clinical use.** AAA labels come from a 30 mm diameter rule on the ground-truth
+aorta masks that ship with TotalSegmentator (at `hospital_e`, a 25 mm lumen rule), not
+from radiologist reads. Predictions apply the same rule to the public TotalSegmentator
+model's masks.
 
 ## The hospitals
 
