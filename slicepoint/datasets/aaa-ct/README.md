@@ -80,6 +80,16 @@ differ (other scanners, thick slices, different labelling rules, repeat patients
 eligibility rule, 6 have no measurable infrarenal diameter, 1 is a thorax CT). Scans the
 baseline model fails on (for example Dice 0) are kept: a real cohort contains them.
 
+## Intended use
+
+A test harness for checking how an imaging AI model behaves at a new site, not a
+leaderboard. The ground-truth masks are independent of any one model, so you can train
+your own classifiers or segmenters (AAA, enlarged kidneys, organ volumes) on one part of the
+data, apply them to another, and see how shifts in scanners, slice thickness, phase, age or
+case mix, or hidden subgroups, change their results. The aim is to show the difference
+between a model's results on clean development data and on a site's own data, not to
+build the best model.
+
 ## How the values were made
 
 - **Ground-truth masks:** the segmentations distributed with TotalSegmentator v2.0.1,
@@ -89,9 +99,11 @@ baseline model fails on (for example Dice 0) are kept: a real cohort contains th
   measured perpendicular to the centerline of the ground-truth aorta mask. `aaa` is
   diameter >= 30 mm; `aaa_size_class` is `none`, `30-54mm` or `>=55mm`. These are
   measurement-derived labels, not radiologist reads.
-- **Predictions (baseline model):** we ran the public TotalSegmentator model (v2.18.0,
-  `total` task) on each CT and applied the same measurement and 30 mm rule to its aorta
-  mask. Null means the model gave no answer. `_ref` columns use the ground-truth masks,
+- **Predictions (baseline model):** the output of an AI model, not a second ground truth.
+  We ran the public TotalSegmentator model (v2.18.0, `total` task) on each CT and applied
+  the same measurement and 30 mm rule to its aorta mask. It stands in for the kind of
+  nnU-Net-based segmentation found in commercial imaging AI products. Null means the
+  model gave no answer. `_ref` columns use the ground-truth masks,
   `_pred` columns the model's.
 - **The baseline model has seen most of these scans.** TotalSegmentator was trained on
   this dataset: of the 567 scans, its own split (`totalsegmentator_split` in
