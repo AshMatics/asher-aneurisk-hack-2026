@@ -1,6 +1,6 @@
 {
-  "viewer_version": "0.2.1",
+  "viewer_version": "0.2.2",
   "schema_version": "0.1.0",
-  "schema_sha256": "c13607a35241098b9caddb7255c18e747f6a15f381bf172ea199f3690b8c473b",
-  "html_sha256": "3338cf4e12e36e625a2cacebad3c489c74e42e005a67d6c48e1b646309dd2654"
+  "schema_sha256": "995b78e04898dd1adbdcf1b2935a3e98945ed4c3c91a897493ea2dc2351d834b",
+  "html_sha256": "3656a82e87fcae824f763744958df9c0639de8d6669325053ae101cd7c915d07"
 }

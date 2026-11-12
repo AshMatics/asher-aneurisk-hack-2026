@@ -238,7 +238,7 @@ def test_review_case_rules() -> None:
 def test_versions() -> None:
     import slicepoint_schemas
 
-    assert slicepoint_schemas.__version__ == "0.2.2"
+    assert slicepoint_schemas.__version__ == "0.2.3"
     assert slicepoint_schemas.SCHEMA_VERSION == "0.1.0"  # the contract version is unchanged
 
 
@@ -288,3 +288,35 @@ def test_is_self_comparison() -> None:
     assert AssessmentResult.model_validate(same).is_self_comparison
     other = _result(dataset_fingerprint=fp_b, reference={**ref, "fingerprint": fp_a})
     assert not AssessmentResult.model_validate(other).is_self_comparison
+
+
+# --------------------------------------------------------------------------- 0.2.3 additions
+
+
+def _comparison(**kw: Any) -> dict[str, Any]:
+    d: dict[str, Any] = {
+        "site_id": "hospital_b", "n_site_scans": 80, "dataset_fingerprint": "a" * 64,
+        "datasheet_id": "ds", "datasheet_title": "t", "model_name": "m", "describes": "training", "scope": "s",
+        "scope_broader": False, "params": {"alpha": 0.01}, "not_disclosed": [], "site_columns_not_in_datasheet": [],
+        "produced_by": "test",
+        "variables": [{"variable": "sex", "status": "differs", "n_site": 80, "n_site_missing": 0,
+                       "value_source": "reported",
+                       "equality": {"method": "chi2", "p_value": 0.001, "effect_name": "tvd", "effect": 0.2,
+                                    "approximate": False}}],
+    }
+    d.update(kw)
+    return d
+
+
+def test_datasheet_section_is_optional_and_round_trips() -> None:
+    assert AssessmentResult.model_validate(_result()).datasheet is None
+    r = AssessmentResult.model_validate(_result(dataset_fingerprint="a" * 64, datasheet=_comparison()))
+    assert r.datasheet is not None and r.datasheet.variables[0].status.value == "differs"
+    assert AssessmentResult.model_validate_json(r.model_dump_json()) == r
+
+
+def test_datasheet_must_be_for_this_site_and_dataset() -> None:
+    with pytest.raises(ValidationError, match="datasheet.site_id"):
+        AssessmentResult.model_validate(_result(datasheet=_comparison(site_id="hospital_c")))
+    with pytest.raises(ValidationError, match="different dataset"):
+        AssessmentResult.model_validate(_result(dataset_fingerprint="b" * 64, datasheet=_comparison()))

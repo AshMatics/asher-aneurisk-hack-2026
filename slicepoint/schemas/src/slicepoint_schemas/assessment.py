@@ -46,6 +46,7 @@ from .checks import CheckDescriptor
 from .embedding import SpaceId
 from .legacy import BinMetricsV0, DiceMetricsV0
 from .thresholds import ThresholdProfile
+from .vendor_datasheet import DatasheetComparison
 from .verdict import Verdict
 
 StepId = Annotated[str, StringConstraints(pattern=r"^[a-z][a-z0-9_]{0,63}$")]
@@ -409,6 +410,11 @@ class AssessmentResult(VersionedModel):
                     "reader renders check cards from the result, not from its own copy. Null in files written "
                     "before schemas 0.2.1; readers then fall back to the default registry.",
     )
+    datasheet: DatasheetComparison | None = Field(
+        default=None,
+        description="The site tested against a vendor datasheet (added in schemas 0.2.3). A separate section: "
+                    "it informs a reviewer and never changes the verdict. Null when no datasheet was given.",
+    )
 
     @property
     def is_self_comparison(self) -> bool:
@@ -427,6 +433,11 @@ class AssessmentResult(VersionedModel):
             unknown = [c.case_id for c in self.cases_to_review.cases if c.case_id not in known]
             if unknown:
                 raise ValueError(f"cases_to_review lists case ids not in scans: {unknown[:5]}")
+        if self.datasheet is not None:
+            if self.datasheet.site_id != self.site_id:
+                raise ValueError(f"datasheet.site_id {self.datasheet.site_id!r} differs from site_id {self.site_id!r}")
+            if self.dataset_fingerprint is not None and self.datasheet.dataset_fingerprint != self.dataset_fingerprint:
+                raise ValueError("datasheet comparison was run on a different dataset (fingerprints differ)")
         steps = [s.step for s in self.steps]
         if len(steps) != len(set(steps)):
             raise ValueError("duplicate step ids")

@@ -385,3 +385,28 @@ describe("loading", () => {
     expect(JSON.stringify(data)).toBe(before);
   });
 });
+
+describe("datasheet", () => {
+  it("is absent when the run had no datasheet", () => {
+    expect(buildViewModel(fixture("hospital_b"), { showScores: false }).datasheet.kind).toBe("none");
+  });
+
+  it("lists findings worst first and counts the flagged ones", () => {
+    const v = buildViewModel(fixture("hospital_d"), { showScores: false }).datasheet;
+    if (v.kind !== "ok") throw new Error("expected a datasheet section");
+    expect(v.datasheetId).toBe("aaa-baseline-v0");
+    expect(v.rows[0]?.status.label).toBe("Differs");
+    expect(v.rows.at(-1)?.status.label).toBe("Similar");
+    expect(v.flagged).toBe(v.rows.filter((r) => r.status.label === "Differs" || r.status.label === "Outside coverage").length);
+    const sex = v.rows.find((r) => r.variable === "sex");
+    expect(sex?.shares.map((s) => s.value).sort()).toEqual(["f", "m"]);
+    expect(v.notes[0]).toMatch(/^TVD/);
+  });
+
+  it("does not change the verdict", () => {
+    const r = fixture("hospital_d");
+    const without = structuredClone(r);
+    without.datasheet = null;
+    expect(buildViewModel(r, { showScores: false }).verdict).toEqual(buildViewModel(without, { showScores: false }).verdict);
+  });
+});

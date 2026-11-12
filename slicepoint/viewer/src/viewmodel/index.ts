@@ -4,6 +4,7 @@
 import type { AssessmentResult } from "../contract";
 import { buildAbout, type AboutView } from "./about";
 import { buildCases, type CasesView } from "./cases";
+import { buildDatasheet, type DatasheetView } from "./datasheet";
 import { buildCheckCards, hasProvisionalScores, scoreMethods, type CheckCard } from "./checks";
 import { formatTimestamp } from "./format";
 import { displaySiteName } from "./labels";
@@ -41,6 +42,7 @@ export interface ResultView {
   readonly performance: PerformanceView;
   readonly strata: StrataView;
   readonly cases: CasesView;
+  readonly datasheet: DatasheetView;
   readonly about: AboutView;
 }
 
@@ -63,6 +65,7 @@ export function buildViewModel(result: AssessmentResult, opts: ViewOptions): Res
     performance: buildPerformance(result.performance, result.thresholds),
     strata: buildStrata(result.strata),
     cases: buildCases(result.cases_to_review),
+    datasheet: buildDatasheet(result.datasheet),
     about: buildAbout(result, opts.readNotes ?? []),
   };
 }
@@ -70,6 +73,7 @@ export function buildViewModel(result: AssessmentResult, opts: ViewOptions): Res
 export * from "./about";
 export * from "./cases";
 export * from "./checks";
+export * from "./datasheet";
 export * from "./format";
 export * from "./labels";
 export * from "./load";

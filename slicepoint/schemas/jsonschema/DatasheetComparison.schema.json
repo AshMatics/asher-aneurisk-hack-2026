@@ -1,0 +1,384 @@
+{
+  "$defs": {
+    "CoverageResult": {
+      "additionalProperties": false,
+      "properties": {
+        "detail": {
+          "title": "Detail",
+          "type": "string"
+        },
+        "outside_n": {
+          "minimum": 0,
+          "title": "Outside N",
+          "type": "integer"
+        },
+        "outside_share": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Outside Share",
+          "type": "number"
+        }
+      },
+      "required": [
+        "outside_n",
+        "outside_share",
+        "detail"
+      ],
+      "title": "CoverageResult",
+      "type": "object"
+    },
+    "DatasheetFindingStatus": {
+      "enum": [
+        "outside_coverage",
+        "differs",
+        "differs_expected",
+        "similar",
+        "not_testable"
+      ],
+      "title": "DatasheetFindingStatus",
+      "type": "string"
+    },
+    "EqualityResult": {
+      "additionalProperties": false,
+      "properties": {
+        "approximate": {
+          "description": "True when the expected distribution was derived, not disclosed, or the datasheet's numbers were digitized or estimated.",
+          "title": "Approximate",
+          "type": "boolean"
+        },
+        "datasheet_shares": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Datasheet Shares"
+        },
+        "df": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Df"
+        },
+        "effect": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Effect"
+        },
+        "effect_name": {
+          "enum": [
+            "tvd",
+            "smd"
+          ],
+          "title": "Effect Name",
+          "type": "string"
+        },
+        "method": {
+          "title": "Method",
+          "type": "string"
+        },
+        "notes": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Notes",
+          "type": "array"
+        },
+        "p_value": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "P Value"
+        },
+        "site_shares": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Site Shares"
+        },
+        "statistic": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Statistic"
+        }
+      },
+      "required": [
+        "method",
+        "effect_name",
+        "approximate"
+      ],
+      "title": "EqualityResult",
+      "type": "object"
+    },
+    "ValueSource": {
+      "description": "How a number got into the datasheet.",
+      "enum": [
+        "reported",
+        "computed",
+        "digitized",
+        "estimated"
+      ],
+      "title": "ValueSource",
+      "type": "string"
+    },
+    "VariableComparison": {
+      "additionalProperties": false,
+      "properties": {
+        "coverage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CoverageResult"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "datasheet_n": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Datasheet N"
+        },
+        "equality": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EqualityResult"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label"
+        },
+        "n_site": {
+          "description": "Site scans with a value.",
+          "minimum": 0,
+          "title": "N Site",
+          "type": "integer"
+        },
+        "n_site_missing": {
+          "minimum": 0,
+          "title": "N Site Missing",
+          "type": "integer"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Why not testable, or what drove the status.",
+          "title": "Reason"
+        },
+        "site_column": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Site Column"
+        },
+        "status": {
+          "$ref": "#/$defs/DatasheetFindingStatus"
+        },
+        "value_source": {
+          "$ref": "#/$defs/ValueSource"
+        },
+        "variable": {
+          "title": "Variable",
+          "type": "string"
+        }
+      },
+      "required": [
+        "variable",
+        "status",
+        "n_site",
+        "n_site_missing",
+        "value_source"
+      ],
+      "title": "VariableComparison",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Result of comparing one site with one vendor datasheet.",
+  "properties": {
+    "dataset_fingerprint": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Dataset Fingerprint",
+      "type": "string"
+    },
+    "datasheet_id": {
+      "title": "Datasheet Id",
+      "type": "string"
+    },
+    "datasheet_title": {
+      "title": "Datasheet Title",
+      "type": "string"
+    },
+    "describes": {
+      "title": "Describes",
+      "type": "string"
+    },
+    "format": {
+      "const": "slicepoint.datasheet_comparison/0.1",
+      "default": "slicepoint.datasheet_comparison/0.1",
+      "title": "Format",
+      "type": "string"
+    },
+    "model_name": {
+      "title": "Model Name",
+      "type": "string"
+    },
+    "n_site_scans": {
+      "minimum": 0,
+      "title": "N Site Scans",
+      "type": "integer"
+    },
+    "not_disclosed": {
+      "description": "What the datasheet says it does not give.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Not Disclosed",
+      "type": "array"
+    },
+    "notes": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Notes",
+      "type": "array"
+    },
+    "params": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "title": "Params",
+      "type": "object"
+    },
+    "produced_by": {
+      "title": "Produced By",
+      "type": "string"
+    },
+    "scope": {
+      "title": "Scope",
+      "type": "string"
+    },
+    "scope_broader": {
+      "title": "Scope Broader",
+      "type": "boolean"
+    },
+    "site_columns_not_in_datasheet": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Site Columns Not In Datasheet",
+      "type": "array"
+    },
+    "site_id": {
+      "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+      "title": "Site Id",
+      "type": "string"
+    },
+    "variables": {
+      "items": {
+        "$ref": "#/$defs/VariableComparison"
+      },
+      "title": "Variables",
+      "type": "array"
+    }
+  },
+  "required": [
+    "site_id",
+    "n_site_scans",
+    "dataset_fingerprint",
+    "datasheet_id",
+    "datasheet_title",
+    "model_name",
+    "describes",
+    "scope",
+    "scope_broader",
+    "params",
+    "variables",
+    "not_disclosed",
+    "site_columns_not_in_datasheet",
+    "produced_by"
+  ],
+  "title": "DatasheetComparison",
+  "type": "object"
+}

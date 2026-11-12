@@ -1,17 +1,19 @@
 import { useMemo, useState } from "react";
 import {
+  DATASHEET_LEAD,
   filterCases,
   sortCases,
   type AboutView,
   type CaseSortKey,
   type CasesView,
+  type DatasheetView,
   type PerformanceView,
   type ReviewReason,
   type SortDir,
   type StrataView,
 } from "../viewmodel";
 import { CiChart, DiceGauge, ShareBar } from "./charts";
-import { Card, KeyValueList, Notice, SectionTitle, StatusPill, TD, TH, TableScroll, cx } from "./ui";
+import { Card, Disclosure, KeyValueList, Notice, SectionTitle, StatusPill, TD, TH, TableScroll, cx } from "./ui";
 
 export function PerformancePanel({ perf }: { perf: PerformanceView }) {
   const b = perf.binary;
@@ -472,5 +474,93 @@ export function AboutPanel({ about }: { about: AboutView }) {
         </TableScroll>
       </section>
     </div>
+  );
+}
+
+export function DatasheetPanel({ datasheet }: { datasheet: DatasheetView }) {
+  if (datasheet.kind === "none") {
+    return (
+      <section aria-labelledby="datasheet-h">
+        <SectionTitle id="datasheet-h">Compared with the vendor&apos;s datasheet</SectionTitle>
+        <Notice tone="skip">No vendor datasheet was given for this run.</Notice>
+      </section>
+    );
+  }
+  const d = datasheet;
+  return (
+    <section aria-labelledby="datasheet-h" className="space-y-4">
+      <SectionTitle id="datasheet-h" lead={DATASHEET_LEAD}>
+        Compared with the vendor&apos;s datasheet
+      </SectionTitle>
+      <Card className="p-4">
+        <KeyValueList
+          items={[
+            { label: "Datasheet", value: `${d.title} (${d.datasheetId})` },
+            { label: "Model", value: d.model },
+            { label: "Describes", value: `the vendor's ${d.describes} data` },
+            { label: "Population", value: d.scope },
+          ]}
+        />
+      </Card>
+      {d.scopeBroader ? (
+        <Notice tone="skip">
+          Marked as describing a broader population than your site, so differences in distribution are expected;
+          coverage findings still count.
+        </Notice>
+      ) : null}
+      <TableScroll>
+        <table className="stack w-full text-sm">
+          <thead>
+            <tr>
+              <th scope="col" className={TH}>Variable</th>
+              <th scope="col" className={TH}>Result</th>
+              <th scope="col" className={TH}>Your scans</th>
+              <th scope="col" className={TH}>Datasheet scans</th>
+              <th scope="col" className={TH}>Detail</th>
+            </tr>
+          </thead>
+          <tbody>
+            {d.rows.map((r) => (
+              <tr key={r.variable}>
+                <th scope="row" className={cx(TD, "text-left font-medium")}>{r.label}</th>
+                <td className={TD} data-label="Result"><StatusPill status={r.status} /></td>
+                <td className={cx(TD, "tabular-nums")} data-label="Your scans">{r.nSite}</td>
+                <td className={cx(TD, "tabular-nums")} data-label="Datasheet scans">{r.nDatasheet}</td>
+                <td className={TD} data-label="Detail">
+                  <div>{r.detail}</div>
+                  {r.shares.length ? (
+                    <Disclosure className="mt-1" label={(open) => (open ? "Hide the distributions" : "Show the distributions")}>
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr>
+                            <th scope="col" className={TH}>Value</th>
+                            <th scope="col" className={TH}>Your scans</th>
+                            <th scope="col" className={TH}>Datasheet</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {r.shares.map((s) => (
+                            <tr key={s.value}>
+                              <th scope="row" className={cx(TD, "text-left font-normal")}>{s.value}</th>
+                              <td className={cx(TD, "tabular-nums")}>{s.site}</td>
+                              <td className={cx(TD, "tabular-nums")}>{s.datasheet}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </Disclosure>
+                  ) : null}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </TableScroll>
+      <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+        {d.notes.map((n, i) => (
+          <li key={i}>{n}</li>
+        ))}
+      </ul>
+    </section>
   );
 }

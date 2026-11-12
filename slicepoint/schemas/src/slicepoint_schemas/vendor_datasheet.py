@@ -34,7 +34,7 @@ from typing import Annotated, Literal
 
 from pydantic import Field, StringConstraints, model_validator
 
-from .common import ContractModel, Modality, NonNegativeFloat, UnitInterval, VersionedModel
+from .common import ContractModel, Modality, NonNegativeFloat, Sha256Hex, SiteId, UnitInterval, VersionedModel
 
 Slug = Annotated[str, StringConstraints(pattern=r"^[a-z0-9][a-z0-9_.-]{0,63}$")]
 """Machine identifier: lowercase letters, digits, ``_``, ``.``, ``-``; at most 64."""
@@ -365,3 +365,78 @@ class VendorDatasheet(VersionedModel):
 
     def variable(self, name: str) -> DatasheetVariable | None:
         return next((v for v in self.variables if v.variable == name), None)
+
+
+# --------------------------------------------------------------------------- comparison result
+
+DATASHEET_COMPARISON_FORMAT: Literal["slicepoint.datasheet_comparison/0.1"] = "slicepoint.datasheet_comparison/0.1"
+"""Format tag of :class:`DatasheetComparison`, the result of testing a site against a datasheet."""
+
+
+class DatasheetFindingStatus(str, Enum):
+    OUTSIDE_COVERAGE = "outside_coverage"
+    """More of the site lies outside what the datasheet discloses than the tolerance allows."""
+    DIFFERS = "differs"
+    """Covered, but distributed differently (significant and larger than the minimum effect)."""
+    DIFFERS_EXPECTED = "differs_expected"
+    """Distributed differently, but the datasheet's scope is broader than the site's."""
+    SIMILAR = "similar"
+    NOT_TESTABLE = "not_testable"
+
+
+class CoverageResult(ContractModel):
+    outside_n: int = Field(ge=0)
+    outside_share: float = Field(ge=0.0, le=1.0)
+    detail: str
+
+
+class EqualityResult(ContractModel):
+    method: str
+    statistic: float | None = None
+    df: float | None = None
+    p_value: float | None = Field(default=None, ge=0.0, le=1.0)
+    effect_name: Literal["tvd", "smd"]
+    effect: float | None = None
+    approximate: bool = Field(description="True when the expected distribution was derived, not disclosed, "
+                                          "or the datasheet's numbers were digitized or estimated.")
+    site_shares: dict[str, float] | None = None
+    datasheet_shares: dict[str, float] | None = None
+    notes: tuple[str, ...] = ()
+
+
+class VariableComparison(ContractModel):
+    variable: str
+    label: str | None = None
+    site_column: str | None = None
+    status: DatasheetFindingStatus
+    reason: str | None = Field(default=None, description="Why not testable, or what drove the status.")
+    n_site: int = Field(ge=0, description="Site scans with a value.")
+    n_site_missing: int = Field(ge=0)
+    datasheet_n: int | None = None
+    value_source: ValueSource
+    coverage: CoverageResult | None = None
+    equality: EqualityResult | None = None
+
+
+class DatasheetComparison(ContractModel):
+    """Result of comparing one site with one vendor datasheet."""
+
+    format: Literal["slicepoint.datasheet_comparison/0.1"] = DATASHEET_COMPARISON_FORMAT
+    site_id: SiteId
+    n_site_scans: int = Field(ge=0)
+    dataset_fingerprint: Sha256Hex
+    datasheet_id: str
+    datasheet_title: str
+    model_name: str
+    describes: str
+    scope: str
+    scope_broader: bool
+    params: dict[str, float]
+    variables: tuple[VariableComparison, ...]
+    not_disclosed: tuple[str, ...] = Field(description="What the datasheet says it does not give.")
+    site_columns_not_in_datasheet: tuple[str, ...]
+    notes: tuple[str, ...] = ()
+    produced_by: str
+
+    def by_status(self, status: DatasheetFindingStatus) -> list[VariableComparison]:
+        return [v for v in self.variables if v.status is status]

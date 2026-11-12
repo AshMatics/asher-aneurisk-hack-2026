@@ -1,10 +1,10 @@
 {
-  "viewer_version": "0.2.1",
-  "openapi_sha256": "eb8ac0778c0d9e2b6169f53cc28edc9003427dd3f71b6439238211bea7ea3faf",
-  "schema_sha256": "c13607a35241098b9caddb7255c18e747f6a15f381bf172ea199f3690b8c473b",
+  "viewer_version": "0.2.2",
+  "openapi_sha256": "07628ef187a8f85e741b228cd256dd2cf4cec0ad5b5d97898075742fb3201d93",
+  "schema_sha256": "995b78e04898dd1adbdcf1b2935a3e98945ed4c3c91a897493ea2dc2351d834b",
   "files": {
-    "assets/live-DMbh8_jb.js": "1fde1b939157d08c433e3e8a27f777574ed4089d6ef49defb2eaa5df6dd6560f",
+    "assets/live-Cww7kMsh.js": "5552aca0d3c8c7b4e83ff668f33493f0b5d3016a5ec9eb258f28c7a1d2ea4acd",
     "assets/style-BtFQEfsc.css": "fdbef92978bd93bcc7db7a995544888b09e35605c1f81da4468f13e9cbf3dfbf",
-    "index.html": "6b94db9ad399742a2186dd431066058bcebe04390365394819178dfca44b8ec9"
+    "index.html": "429ae6fb7ff59d390a47054fa8b02c6cb148938fdd0fb3ed4cde823b8de5752b"
   }
 }

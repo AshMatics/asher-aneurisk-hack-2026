@@ -62,6 +62,7 @@ from slicepoint_schemas.checks import DEFAULT_CHECK_REGISTRY, CheckDescriptor, C
 from slicepoint_schemas.checks import CheckRegistry as SchemaCheckRegistry
 from slicepoint_schemas.common import SCHEMA_VERSION
 from slicepoint_schemas.legacy import BinMetricsV0
+from slicepoint_schemas.vendor_datasheet import VariableComparison
 from slicepoint_schemas.verdict import VerdictOutcome
 
 from . import __version__
@@ -668,6 +669,68 @@ def _strata_section(c: _Ctx) -> str:
             + "".join(body) + "</tbody></table></div></section>")
 
 
+_DS_PILL = {
+    "outside_coverage": ("problem", "✕", "Outside coverage"),
+    "differs": ("watch", "!", "Differs"),
+    "differs_expected": ("skip", "~", "Differs (expected)"),
+    "similar": ("ok", "✓", "Similar"),
+    "not_testable": ("skip", "–", "Not testable"),
+}
+_DS_ORDER = list(_DS_PILL)
+
+
+def _ds_shares(v: VariableComparison) -> str:
+    eq = v.equality
+    if eq is None or eq.site_shares is None or eq.datasheet_shares is None:
+        return ""
+    keys = list(dict.fromkeys([*eq.datasheet_shares, *eq.site_shares]))
+    rows = "".join(f'<tr><th scope="row">{_e(k)}</th><td>{_e(_pct(eq.site_shares.get(k, 0.0)))}</td>'
+                   f'<td>{_e(_pct(eq.datasheet_shares.get(k, 0.0)))}</td></tr>' for k in keys)
+    return ('<details><summary>Show the distributions</summary><div class="scroll"><table class="evidence">'
+            '<thead><tr><th scope="col">Value</th><th scope="col">Your scans</th><th scope="col">Datasheet</th>'
+            f'</tr></thead><tbody>{rows}</tbody></table></div></details>')
+
+
+def _datasheet_section(c: _Ctx) -> str:
+    d = c.r.datasheet
+    if d is None:
+        return ""
+    head = ('<section id="datasheet" aria-labelledby="datasheet-h"><h2 id="datasheet-h">Compared with the vendor\'s '
+            'datasheet</h2>'
+            '<p class="lead">This section does not change the verdict. It tests your scans against what the vendor '
+            f'discloses about its {_e(d.describes)} data ({_e(d.datasheet_title)}; model {_e(d.model_name)}): '
+            '<strong>coverage</strong> asks whether your scans are inside what the model saw, '
+            '<strong>distribution</strong> whether they are spread the same way. Only the datasheet\'s summary '
+            'numbers are used.</p>'
+            f'<p><strong>Datasheet population:</strong> {_e(d.scope)}</p>')
+    if d.scope_broader:
+        head += ('<p class="warn">Marked as describing a broader population than your site, so differences in '
+                 'distribution are expected; coverage findings still count.</p>')
+    rows = []
+    for v in sorted(d.variables, key=lambda r: _DS_ORDER.index(r.status.value)):
+        cls, glyph, label = _DS_PILL[v.status.value]
+        how = "" if v.value_source.value in ("reported", "computed") else f" ({v.value_source.value} values)"
+        approx = " Approximate." if v.equality is not None and v.equality.approximate else ""
+        name = v.label or humanize_column(v.variable)
+        rows.append(f'<tr><th scope="row">{_e(name)}</th><td>{_pill(cls, glyph, label)}</td>'
+                    f'<td>{v.n_site}</td><td>{_e(v.datasheet_n if v.datasheet_n is not None else "not given")}</td>'
+                    f'<td>{_e((v.reason or "") + how + approx)}{_ds_shares(v)}</td></tr>')
+    table = ('<div class="scroll"><table class="datasheet"><thead><tr><th scope="col">Variable</th>'
+             '<th scope="col">Result</th><th scope="col">Your scans</th><th scope="col">Datasheet scans</th>'
+             '<th scope="col">Detail</th></tr></thead><tbody>' + "".join(rows) + "</tbody></table></div>")
+    extra = ["<li>TVD (total variation distance) is the share of scans that would have to change group for the "
+             "two mixes to match: 0 is identical, 1 is nothing in common. SMD is the difference in means in "
+             "standard deviations. A variable differs only when the gap is both larger than the minimum and "
+             "unlikely to be chance.</li>"]
+    if d.site_columns_not_in_datasheet:
+        extra.append("<li>Your data has, but the datasheet does not disclose: "
+                     + _e(", ".join(humanize_column(x) for x in d.site_columns_not_in_datasheet)) + "</li>")
+    if d.not_disclosed:
+        extra.append("<li>The datasheet says it does not disclose: " + _e("; ".join(d.not_disclosed)) + "</li>")
+    extra += [f"<li>{_e(n)}</li>" for n in d.notes]
+    return head + table + "<ul>" + "".join(extra) + "</ul></section>"
+
+
 _MAX_CASES = 40
 
 
@@ -928,7 +991,7 @@ _PAGE = Template("""<!doctype html>
 <nav aria-label="Sections"><ul>
 <li><a href="#verdict">Verdict</a></li><li><a href="#checks">Checks</a></li>
 <li><a href="#performance">Performance</a></li><li><a href="#strata">By group</a></li>
-<li><a href="#cases">Cases to review</a></li><li><a href="#methods">Methods and limits</a></li>
+$nav_datasheet<li><a href="#cases">Cases to review</a></li><li><a href="#methods">Methods and limits</a></li>
 <li><a href="#provenance">Provenance</a></li></ul></nav>
 </header>
 $banner
@@ -936,6 +999,7 @@ $verdict
 $checks
 $performance
 $strata
+$datasheet
 $cases
 $notes
 $methods
@@ -981,6 +1045,8 @@ def render_html(
         checks=_checks_section(c),
         performance=_performance_section(c),
         strata=_strata_section(c),
+        datasheet=_datasheet_section(c),
+        nav_datasheet='<li><a href="#datasheet">Datasheet</a></li>' if res.datasheet is not None else "",
         cases=_cases_section(c),
         notes=_notes_section(c),
         methods=_methods_section(c),
@@ -1062,4 +1128,10 @@ def summarize(
         "checks": checks,
         "skipped_steps": [st.step for st in res.steps if st.state is StepState.SKIPPED],
         "failed_steps": [st.step for st in res.steps if st.state is StepState.FAILED],
+        "datasheet": None if res.datasheet is None else {
+            "datasheet_id": res.datasheet.datasheet_id,
+            "scope_broader": res.datasheet.scope_broader,
+            "status": {v.variable: v.status.value for v in res.datasheet.variables},
+            "affects_verdict": False,
+        },
     }

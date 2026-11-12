@@ -14,8 +14,8 @@
   "model_id": "hackathon-baseline-aaa",
   "embedding_space_id": "merlin-ct-2048:hackathon",
   "dataset_fingerprint": "e412b95248951d1a2ba9f1164e240645cbf6e23e5e62b875f640231d11ec9bfa",
-  "generated_at": "2026-11-10T18:15:19.038281Z",
-  "generator": "slicepoint-core 0.2.1",
+  "generated_at": "2026-11-12T20:10:52.626469Z",
+  "generator": "slicepoint-core 0.2.2",
   "steps": [
     {
       "step": "ingest",
@@ -81,6 +81,11 @@
       "step": "cases_to_review",
       "state": "ok",
       "detail": "11 of 80 scans flagged"
+    },
+    {
+      "step": "datasheet",
+      "state": "ok",
+      "detail": "aaa-baseline-v0: 8 variables, 6 flagged"
     }
   ],
   "checks": [
@@ -2990,5 +2995,338 @@
       ],
       "legacy_check_key": "accuracy"
     }
-  ]
+  ],
+  "datasheet": {
+    "format": "slicepoint.datasheet_comparison/0.1",
+    "site_id": "hospital_d",
+    "n_site_scans": 80,
+    "dataset_fingerprint": "e412b95248951d1a2ba9f1164e240645cbf6e23e5e62b875f640231d11ec9bfa",
+    "datasheet_id": "aaa-baseline-v0",
+    "datasheet_title": "AAA baseline v0: training data summary",
+    "model_name": "AAA baseline v0",
+    "describes": "training",
+    "scope": "Adult abdominal CT showing the infrarenal aorta, iliac arteries and kidneys, from the TotalSegmentator dataset (University Hospital Basel, 10 coded institutes)",
+    "scope_broader": false,
+    "params": {
+      "alpha": 0.01,
+      "min_tvd": 0.1,
+      "min_smd": 0.25,
+      "coverage_tolerance": 0.02
+    },
+    "variables": [
+      {
+        "variable": "age_years",
+        "label": "Age",
+        "site_column": "age_band",
+        "status": "differs",
+        "reason": "TVD 0.37 >= 0.1, p = 6.9e-08",
+        "n_site": 80,
+        "n_site_missing": 0,
+        "datasheet_n": 333,
+        "value_source": "computed",
+        "coverage": {
+          "outside_n": 0,
+          "outside_share": 0.0,
+          "detail": "0 scans in age bands wholly outside the disclosed range [19, 98]"
+        },
+        "equality": {
+          "method": "chi2_goodness_of_fit on age bands (datasheet shares from skew-normal matched to the disclosed quartiles, truncated to min and max)",
+          "statistic": 48.81775178986037,
+          "df": 8.0,
+          "p_value": 6.890188198895918e-8,
+          "effect_name": "tvd",
+          "effect": 0.36940617143913357,
+          "approximate": true,
+          "site_shares": {
+            "10-19": 0.0,
+            "20-29": 0.0,
+            "30-39": 0.0,
+            "40-49": 0.0,
+            "50-59": 0.0,
+            "60-69": 0.375,
+            "70-79": 0.425,
+            "80-89": 0.1875,
+            "90-99": 0.0125
+          },
+          "datasheet_shares": {
+            "10-19": 0.001038392379718485,
+            "20-29": 0.019770960815410743,
+            "30-39": 0.05069897154136236,
+            "40-49": 0.10784544345209694,
+            "50-59": 0.1900172395408201,
+            "60-69": 0.2681946984263905,
+            "70-79": 0.24817685731398897,
+            "80-89": 0.10172227282048696,
+            "90-99": 0.012535163709724961
+          },
+          "notes": [
+            "some expected counts are below 5; the p-value is rough"
+          ]
+        }
+      },
+      {
+        "variable": "sex",
+        "label": "Sex",
+        "site_column": "sex",
+        "status": "differs",
+        "reason": "TVD 0.18 >= 0.1, p = 0.0037",
+        "n_site": 80,
+        "n_site_missing": 0,
+        "datasheet_n": 333,
+        "value_source": "computed",
+        "coverage": {
+          "outside_n": 0,
+          "outside_share": 0.0,
+          "detail": "every site category is in the datasheet"
+        },
+        "equality": {
+          "method": "chi2_contingency",
+          "statistic": 8.422146877584385,
+          "df": 1.0,
+          "p_value": 0.003706778471954456,
+          "effect_name": "tvd",
+          "effect": 0.17642642642642645,
+          "approximate": false,
+          "site_shares": {
+            "f": 0.25,
+            "m": 0.75
+          },
+          "datasheet_shares": {
+            "f": 0.4264264264264264,
+            "m": 0.5735735735735735
+          },
+          "notes": []
+        }
+      },
+      {
+        "variable": "scanner_vendor",
+        "label": "Scanner manufacturer",
+        "site_column": "scanner_vendor",
+        "status": "similar",
+        "reason": "TVD 0.04, p = 0.47",
+        "n_site": 78,
+        "n_site_missing": 2,
+        "datasheet_n": 333,
+        "value_source": "computed",
+        "coverage": {
+          "outside_n": 0,
+          "outside_share": 0.0,
+          "detail": "every site category is in the datasheet"
+        },
+        "equality": {
+          "method": "chi2_contingency",
+          "statistic": 2.5021193676390303,
+          "df": 3.0,
+          "p_value": 0.47490818791260325,
+          "effect_name": "tvd",
+          "effect": 0.041233541233541275,
+          "approximate": false,
+          "site_shares": {
+            "ge": 0.01282051282051282,
+            "philips": 0.08974358974358974,
+            "siemens": 0.8974358974358975,
+            "unknown": 0.0
+          },
+          "datasheet_shares": {
+            "ge": 0.04504504504504504,
+            "philips": 0.08708708708708708,
+            "siemens": 0.8588588588588588,
+            "unknown": 0.009009009009009009
+          },
+          "notes": [
+            "some expected counts are below 5; the p-value is rough"
+          ]
+        }
+      },
+      {
+        "variable": "contrast_phase",
+        "label": "Contrast phase",
+        "site_column": "contrast_phase",
+        "status": "differs",
+        "reason": "TVD 0.48 >= 0.1, p = 4.7e-16",
+        "n_site": 80,
+        "n_site_missing": 0,
+        "datasheet_n": 333,
+        "value_source": "computed",
+        "coverage": {
+          "outside_n": 0,
+          "outside_share": 0.0,
+          "detail": "every site category is in the datasheet"
+        },
+        "equality": {
+          "method": "chi2_contingency",
+          "statistic": 70.59745446347675,
+          "df": 2.0,
+          "p_value": 4.676894195402325e-16,
+          "effect_name": "tvd",
+          "effect": 0.4837837837837837,
+          "approximate": false,
+          "site_shares": {
+            "arterial": 0.7,
+            "non-contrast": 0.075,
+            "venous": 0.225
+          },
+          "datasheet_shares": {
+            "arterial": 0.21621621621621623,
+            "non-contrast": 0.18618618618618618,
+            "venous": 0.5975975975975976
+          },
+          "notes": []
+        }
+      },
+      {
+        "variable": "slice_thickness_class",
+        "label": "Slice thickness class",
+        "site_column": "slice_thickness_class",
+        "status": "similar",
+        "reason": "TVD 0.10, p = 0.22",
+        "n_site": 80,
+        "n_site_missing": 0,
+        "datasheet_n": 333,
+        "value_source": "computed",
+        "coverage": {
+          "outside_n": 0,
+          "outside_share": 0.0,
+          "detail": "every site category is in the datasheet"
+        },
+        "equality": {
+          "method": "chi2_contingency",
+          "statistic": 2.991328297689185,
+          "df": 2.0,
+          "p_value": 0.22409971972517687,
+          "effect_name": "tvd",
+          "effect": 0.09680930930930934,
+          "approximate": false,
+          "site_shares": {
+            "standard": 0.2125,
+            "thick": 0.175,
+            "thin": 0.6125
+          },
+          "datasheet_shares": {
+            "standard": 0.30930930930930933,
+            "thick": 0.14414414414414414,
+            "thin": 0.5465465465465466
+          },
+          "notes": []
+        }
+      },
+      {
+        "variable": "kvp",
+        "label": "Tube voltage",
+        "site_column": "kvp",
+        "status": "differs",
+        "reason": "SMD 0.38 >= 0.25, p = 0.0034; quartiles tie (a discrete variable), so the mean and SD were used",
+        "n_site": 78,
+        "n_site_missing": 2,
+        "datasheet_n": 330,
+        "value_source": "computed",
+        "coverage": {
+          "outside_n": 0,
+          "outside_share": 0.0,
+          "detail": "0 below and 0 above the disclosed range [80, 150]"
+        },
+        "equality": {
+          "method": "welch_t_from_summary_statistics",
+          "statistic": -2.9948152445431306,
+          "df": null,
+          "p_value": 0.0033574224460668546,
+          "effect_name": "smd",
+          "effect": -0.37724706230042876,
+          "approximate": false,
+          "site_shares": null,
+          "datasheet_shares": null,
+          "notes": []
+        }
+      },
+      {
+        "variable": "aaa",
+        "label": "AAA (diameter >= 30 mm)",
+        "site_column": "aaa",
+        "status": "differs",
+        "reason": "TVD 0.14 >= 0.1, p = 0.00087",
+        "n_site": 80,
+        "n_site_missing": 0,
+        "datasheet_n": 333,
+        "value_source": "computed",
+        "coverage": {
+          "outside_n": 0,
+          "outside_share": 0.0,
+          "detail": "every site category is in the datasheet"
+        },
+        "equality": {
+          "method": "chi2_contingency",
+          "statistic": 11.080087440381558,
+          "df": 1.0,
+          "p_value": 0.0008725968586412432,
+          "effect_name": "tvd",
+          "effect": 0.14189189189189189,
+          "approximate": false,
+          "site_shares": {
+            "false": 0.75,
+            "true": 0.25
+          },
+          "datasheet_shares": {
+            "false": 0.8918918918918919,
+            "true": 0.10810810810810811
+          },
+          "notes": []
+        }
+      },
+      {
+        "variable": "max_aortic_diameter_mm",
+        "label": "Max infrarenal aortic diameter",
+        "site_column": "max_aortic_diameter_mm",
+        "status": "differs",
+        "reason": "TVD 0.20 >= 0.1, p = 0.0028",
+        "n_site": 80,
+        "n_site_missing": 0,
+        "datasheet_n": 333,
+        "value_source": "computed",
+        "coverage": {
+          "outside_n": 1,
+          "outside_share": 0.0125,
+          "detail": "0 below and 1 above the disclosed range [12.5, 72.76]"
+        },
+        "equality": {
+          "method": "chi2_contingency on the datasheet's quartiles",
+          "statistic": 14.09475309395542,
+          "df": 3.0,
+          "p_value": 0.0027789739010144975,
+          "effect_name": "tvd",
+          "effect": 0.2,
+          "approximate": false,
+          "site_shares": {
+            "[12.5, 19.21)": 0.1375,
+            "[19.21, 21.02)": 0.175,
+            "[21.02, 23.9)": 0.2375,
+            "[23.9, 91.1661)": 0.45
+          },
+          "datasheet_shares": {
+            "[12.5, 19.21)": 0.25,
+            "[19.21, 21.02)": 0.25,
+            "[21.02, 23.9)": 0.25,
+            "[23.9, 91.1661)": 0.25
+          },
+          "notes": []
+        }
+      }
+    ],
+    "not_disclosed": [
+      "individual cases",
+      "joint distributions",
+      "embeddings",
+      "protocol names",
+      "race and ethnicity (not recorded in the source)"
+    ],
+    "site_columns_not_in_datasheet": [
+      "slice_thickness_mm",
+      "aaa_size_class"
+    ],
+    "notes": [
+      "Distribution tests are meaningful only if the datasheet's population (its scope) matches your site's; coverage findings hold either way.",
+      "Marginals only: each variable is compared on its own; combinations (e.g. older women on one scanner) cannot be checked against a datasheet.",
+      "Decision lines are provisional and uncalibrated."
+    ],
+    "produced_by": "slicepoint-core 0.2.2"
+  }
 }

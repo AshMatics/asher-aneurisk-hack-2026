@@ -14,8 +14,8 @@
   "model_id": "hackathon-baseline-aaa",
   "embedding_space_id": "merlin-ct-2048:hackathon",
   "dataset_fingerprint": "d240ac3e638de3679e16485f3a71d19dbaa2da6226e05c981059f507dd67ff63",
-  "generated_at": "2026-11-10T18:15:15.864299Z",
-  "generator": "slicepoint-core 0.2.1",
+  "generated_at": "2026-11-12T20:10:49.703981Z",
+  "generator": "slicepoint-core 0.2.2",
   "steps": [
     {
       "step": "ingest",
@@ -2859,5 +2859,6 @@
       ],
       "legacy_check_key": "accuracy"
     }
-  ]
+  ],
+  "datasheet": null
 }

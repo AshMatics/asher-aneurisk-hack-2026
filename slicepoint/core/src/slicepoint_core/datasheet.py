@@ -35,17 +35,20 @@ import math
 import re
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass
-from enum import Enum
 from typing import Literal
 
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
-from pydantic import Field
 from scipy import stats as sst
-from slicepoint_schemas.common import ContractModel, Sha256Hex, SiteId
 from slicepoint_schemas.vendor_datasheet import (
+    DATASHEET_COMPARISON_FORMAT as FORMAT,
     CategoricalSummary,
+    CoverageResult,
+    DatasheetComparison,
+    DatasheetFindingStatus as Status,
+    EqualityResult,
+    VariableComparison,
     ContinuousSummary,
     DatasheetVariable,
     ValueSource,
@@ -54,9 +57,6 @@ from slicepoint_schemas.vendor_datasheet import (
 
 from . import __version__
 from .ingestion import TabularDataset
-
-FORMAT: Literal["slicepoint.datasheet_comparison/0.1"] = "slicepoint.datasheet_comparison/0.1"
-
 
 @dataclass(frozen=True)
 class DatasheetCheckParams:
@@ -70,75 +70,6 @@ class DatasheetCheckParams:
     """Smallest |standardized mean difference| that counts (mean/SD-only variables)."""
     coverage_tolerance: float = 0.02
     """Largest share of site scans outside the disclosed range that still counts as covered."""
-
-
-class Status(str, Enum):
-    OUTSIDE_COVERAGE = "outside_coverage"
-    """More of the site lies outside what the datasheet discloses than the tolerance allows."""
-    DIFFERS = "differs"
-    """Covered, but distributed differently (significant and larger than the minimum effect)."""
-    DIFFERS_EXPECTED = "differs_expected"
-    """Distributed differently, but the datasheet's scope is broader than the site's."""
-    SIMILAR = "similar"
-    NOT_TESTABLE = "not_testable"
-
-
-class CoverageResult(ContractModel):
-    outside_n: int = Field(ge=0)
-    outside_share: float = Field(ge=0.0, le=1.0)
-    detail: str
-
-
-class EqualityResult(ContractModel):
-    method: str
-    statistic: float | None = None
-    df: float | None = None
-    p_value: float | None = Field(default=None, ge=0.0, le=1.0)
-    effect_name: Literal["tvd", "smd"]
-    effect: float | None = None
-    approximate: bool = Field(description="True when the expected distribution was derived, not disclosed, "
-                                          "or the datasheet's numbers were digitized or estimated.")
-    site_shares: dict[str, float] | None = None
-    datasheet_shares: dict[str, float] | None = None
-    notes: tuple[str, ...] = ()
-
-
-class VariableComparison(ContractModel):
-    variable: str
-    label: str | None = None
-    site_column: str | None = None
-    status: Status
-    reason: str | None = Field(default=None, description="Why not testable, or what drove the status.")
-    n_site: int = Field(ge=0, description="Site scans with a value.")
-    n_site_missing: int = Field(ge=0)
-    datasheet_n: int | None = None
-    value_source: ValueSource
-    coverage: CoverageResult | None = None
-    equality: EqualityResult | None = None
-
-
-class DatasheetComparison(ContractModel):
-    """Result of comparing one site with one vendor datasheet."""
-
-    format: Literal["slicepoint.datasheet_comparison/0.1"] = FORMAT
-    site_id: SiteId
-    n_site_scans: int = Field(ge=0)
-    dataset_fingerprint: Sha256Hex
-    datasheet_id: str
-    datasheet_title: str
-    model_name: str
-    describes: str
-    scope: str
-    scope_broader: bool
-    params: dict[str, float]
-    variables: tuple[VariableComparison, ...]
-    not_disclosed: tuple[str, ...] = Field(description="What the datasheet says it does not give.")
-    site_columns_not_in_datasheet: tuple[str, ...]
-    notes: tuple[str, ...] = ()
-    produced_by: str
-
-    def by_status(self, status: Status) -> list[VariableComparison]:
-        return [v for v in self.variables if v.status is status]
 
 
 # --------------------------------------------------------------------------- site columns
@@ -523,8 +454,8 @@ def compare_to_datasheet(data: TabularDataset, datasheet: VendorDatasheet, *,
     disclosed_cols = {SITE_COLUMNS[v.variable] for v in datasheet.variables if v.variable in SITE_COLUMNS}
     extra = tuple(c for c in _TESTED_SITE_COLUMNS if c in frame.columns and c not in disclosed_cols)
     notes = [
-        "Equality tests are meaningful only if the datasheet's population matches your site's. "
-        f"Datasheet scope: {datasheet.scope.description}",
+        "Distribution tests are meaningful only if the datasheet's population (its scope) matches your site's; "
+        "coverage findings hold either way.",
         "Marginals only: each variable is compared on its own; combinations (e.g. older women on one scanner) "
         "cannot be checked against a datasheet.",
         "Decision lines are provisional and uncalibrated.",

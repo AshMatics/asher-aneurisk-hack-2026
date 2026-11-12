@@ -32,6 +32,7 @@ from slicepoint_schemas.assessment import (
 from slicepoint_schemas.checks import CheckResult
 from slicepoint_schemas.ingestion import CuratedDataset
 from slicepoint_schemas.thresholds import HACKATHON_DEFAULT_PROFILE, ThresholdProfile
+from slicepoint_schemas.vendor_datasheet import DatasheetComparison, VendorDatasheet
 from slicepoint_schemas.verdict import Verdict, derive_verdict
 
 from . import __version__
@@ -173,9 +174,16 @@ class Assessment:
         services: Mapping[str, ServicePort] | None = None,
         now: dt.datetime | None = None,
         site_name: str | None = None,
+        datasheet: VendorDatasheet | None = None,
+        datasheet_scope_broader: bool = False,
     ) -> None:
         """``site_name`` is an optional display name for the report (for example
-        "St. Mary's Hospital"); it is stored in the result and never used as a key."""
+        "St. Mary's Hospital"); it is stored in the result and never used as a key.
+
+        ``datasheet`` is an optional vendor datasheet. The site is tested against it in its own
+        step and the comparison is stored in the result as a separate section; it never changes
+        the verdict. ``datasheet_scope_broader`` says the datasheet describes a broader population
+        than the site (differences in distribution are then expected)."""
         self.dataset = dataset if isinstance(dataset, TabularDataset) else TabularDataset.from_curated(dataset)
         self.site_name = site_name.strip() if site_name and site_name.strip() else None
         self.reference = reference
@@ -184,6 +192,8 @@ class Assessment:
         self.services = dict(services or {})
         self.now = now
         self.context = CheckContext(self.dataset, reference, profile)
+        self.datasheet = datasheet
+        self.datasheet_scope_broader = datasheet_scope_broader
 
     def run(self) -> AssessmentReport:
         ds, ctx = self.dataset, self.context
@@ -255,6 +265,7 @@ class Assessment:
 
         scans = self._scans()
         strata, cases = self._review_tables(scans, steps)
+        datasheet = self._datasheet(steps)
 
         result = AssessmentResult.model_validate(
             {
@@ -283,12 +294,32 @@ class Assessment:
                 "strata": strata,
                 "cases_to_review": cases,
                 "check_descriptors": self.registry.schema_registry().checks,
+                "datasheet": datasheet,
             },
             context=self.registry.validation_context(),
         )
         return AssessmentReport(result=result, findings=findings, validation_context=self.registry.validation_context())
 
     # ------------------------------------------------------------------ pieces
+
+    def _datasheet(self, steps: list[StepRecord]) -> DatasheetComparison | None:
+        """The vendor-datasheet comparison, as its own step. Never feeds the verdict."""
+        if self.datasheet is None:
+            return None  # optional: no step recorded, so ordinary runs do not list it as skipped
+        from .datasheet import compare_to_datasheet
+
+        try:
+            cmp = compare_to_datasheet(self.dataset, self.datasheet, scope_broader=self.datasheet_scope_broader)
+        except Exception as exc:  # noqa: BLE001 - a failed comparison must not lose the assessment
+            detail = f"{type(exc).__name__}: {exc}"
+            _log.warning("datasheet comparison failed: %s", detail)
+            _log.debug("traceback for datasheet comparison", exc_info=True)
+            steps.append(StepRecord(step="datasheet", state=StepState.FAILED, detail=detail[:2000]))
+            return None
+        flagged = sum(1 for v in cmp.variables if v.status.value in ("outside_coverage", "differs"))
+        steps.append(StepRecord(step="datasheet", state=StepState.OK,
+                                detail=f"{cmp.datasheet_id}: {len(cmp.variables)} variables, {flagged} flagged"))
+        return cmp
 
     def _review_tables(
         self, scans: list[ScanSummary], steps: list[StepRecord]

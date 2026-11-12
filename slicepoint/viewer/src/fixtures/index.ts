@@ -2,10 +2,11 @@
 // slicepoint-core from the synthetic hackathon practice data (data/practice), with
 // hospital_a as the reference; scripts/make-fixtures.sh regenerates them. They are read
 // through the same validation path as a user's file. No real patient data.
-// Only these three are bundled; the rest of the fixtures are test-only (./all.ts).
+// Only these four are bundled; the rest of the fixtures are test-only (./all.ts).
 import hospitalAOverride from "./hospital_a_override.json";
 import hospitalB from "./hospital_b.json";
 import hospitalCScores from "./hospital_c_scores.json";
+import hospitalD from "./hospital_d.json";
 
 export interface Sample {
   readonly id: string;
@@ -21,6 +22,12 @@ export const SAMPLES: readonly Sample[] = [
     title: "Hospital A, committee override",
     description: "Hospital A against its own reference (a sanity check): BORDERLINE derived, set to GO by an example committee decision.",
     data: hospitalAOverride,
+  },
+  {
+    id: "hospital_d",
+    title: "Hospital D with a vendor datasheet",
+    description: "NO-GO: patient and scan mix, plus the site tested against the vendor's training-data datasheet.",
+    data: hospitalD,
   },
   {
     id: "hospital_c_scores",

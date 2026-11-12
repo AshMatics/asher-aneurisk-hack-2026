@@ -303,7 +303,10 @@ def _cmd_assess(args: argparse.Namespace) -> int:
         ref_data = _input_guard(lambda: _load_site(args.reference_dir, args.reference_site_id, args.on_inconsistency))
         reference = ReferenceProfile.build(ref_data, profile)
     site = _input_guard(lambda: _load_site(args.data, args.site_id, args.on_inconsistency))
-    assessment = _input_guard(lambda: Assessment(site, reference, profile, site_name=args.site_name))
+    datasheet = _input_guard(lambda: _load_datasheet(args.datasheet)) if args.datasheet else None
+    assessment = _input_guard(lambda: Assessment(site, reference, profile, site_name=args.site_name,
+                                                 datasheet=datasheet,
+                                                 datasheet_scope_broader=args.datasheet_scope_broader))
 
     report = assessment.run()
     result = report.result
@@ -364,10 +367,9 @@ def _detect_model(data: Any) -> str | None:
 def _models() -> dict[str, type[BaseModel]]:
     from slicepoint_schemas.export import TOP_LEVEL_MODELS
 
-    from .datasheet import DatasheetComparison
     from .reference import ReferenceSummary
 
-    return {**TOP_LEVEL_MODELS, "ReferenceSummary": ReferenceSummary, "DatasheetComparison": DatasheetComparison}
+    return {**TOP_LEVEL_MODELS, "ReferenceSummary": ReferenceSummary}
 
 
 def _cmd_validate(args: argparse.Namespace) -> int:
@@ -488,6 +490,12 @@ def build_parser() -> argparse.ArgumentParser:
     a.add_argument("--viewer", action="store_true",
                    help="also write the interactive viewer (slicepoint-viewer.html) next to --out; open it "
                         "in a browser and drop result.json onto it (it makes no network requests)")
+    a.add_argument("--datasheet", metavar="FILE", default=None,
+                   help="also test the site against a vendor datasheet (VendorDatasheet JSON); reported as a "
+                        "separate section that never changes the verdict")
+    a.add_argument("--datasheet-scope-broader", action="store_true",
+                   help="the datasheet describes a broader population than your site: report distribution "
+                        "differences as expected")
     a.add_argument("--show-provisional-scores", action="store_true",
                    help="keep the unvalidated 0-100 scores in result.json and show them in the report and summary "
                         "(left out by default; ADR 0001: not for hospitals until ratified)")

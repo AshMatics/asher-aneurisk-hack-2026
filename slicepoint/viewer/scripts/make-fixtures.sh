@@ -14,7 +14,8 @@ data=../../data/practice
 cli() { "$py" -m slicepoint_core.cli "$@" >/dev/null || [ $? -eq 3 ]; }
 cli reference build --data "$data/hospital_a" --site-id hospital_a --out "$tmp/ref_a"
 for h in b c d e; do
-  cli assess --data "$data/hospital_$h" --site-id "hospital_$h" --reference-profile "$tmp/ref_a" --out "$out/hospital_$h.json"
+  ds=(); [ "$h" = d ] && ds=(--datasheet ../schemas/examples/aaa-baseline-v0.vendor-datasheet.json)
+  cli assess --data "$data/hospital_$h" --site-id "hospital_$h" --reference-profile "$tmp/ref_a" --out "$out/hospital_$h.json" ${ds[@]+"${ds[@]}"}
 done
 cli assess --data "$data/hospital_a" --site-id hospital_a --reference-profile "$tmp/ref_a" --out "$out/hospital_a_self.json"
 cli assess --data "$data/hospital_c" --site-id hospital_c --site-name "Hospital C (provisional scores)" \

@@ -3,12 +3,12 @@
 // result fetched from slicepoint-api). Both pass a result that went through
 // viewmodel/load.ts, so both validate against the contract the same way.
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AboutPanel, CasesPanel, PerformancePanel, StrataPanel } from "./Panels";
+import { AboutPanel, CasesPanel, DatasheetPanel, PerformancePanel, StrataPanel } from "./Panels";
 import { ChecksSection, VerdictPanel } from "./Overview";
 import { Tabs } from "./Tabs";
 import { PROVISIONAL_BANNER, buildViewModel, type AssessmentResult } from "../viewmodel";
 
-type TabId = "overview" | "performance" | "groups" | "cases" | "about";
+type TabId = "overview" | "performance" | "groups" | "cases" | "datasheet" | "about";
 
 export function ResultScreen({
   result,
@@ -72,6 +72,9 @@ export function ResultScreen({
             label: "Cases to review",
             ...(view.cases.kind === "ok" ? { badge: String(view.cases.rows.length) } : {}),
           },
+          ...(view.datasheet.kind === "ok"
+            ? [{ id: "datasheet", label: "Datasheet", ...(view.datasheet.flagged ? { badge: String(view.datasheet.flagged) } : {}) }]
+            : []),
           { id: "about", label: "Methods & provenance" },
         ]}
       >
@@ -84,6 +87,7 @@ export function ResultScreen({
         {tab === "performance" ? <PerformancePanel perf={view.performance} /> : null}
         {tab === "groups" ? <StrataPanel strata={view.strata} /> : null}
         {tab === "cases" ? <CasesPanel cases={view.cases} /> : null}
+        {tab === "datasheet" ? <DatasheetPanel datasheet={view.datasheet} /> : null}
         {tab === "about" ? <AboutPanel about={view.about} /> : null}
       </Tabs>
     </>

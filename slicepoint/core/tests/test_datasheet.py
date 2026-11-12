@@ -215,3 +215,47 @@ def test_cli_exit_codes_and_output(tmp_path: Path, capsys: pytest.CaptureFixture
     bad_file.write_text(json.dumps(bad), encoding="utf-8")
     assert main([*base, "--data", str(PRACTICE_DIR / "hospital_a"), "--site-id", "hospital_a",
                  "--datasheet", str(bad_file)]) == 1
+
+
+# --------------------------------------------------------------------------- inside an assessment
+
+
+@needs_data
+def test_assessment_carries_datasheet_without_touching_verdict(reference: Any) -> None:
+    from slicepoint_core.assessment import Assessment
+    from slicepoint_core.report import render_html, summarize
+
+    data = load_site("hospital_d")
+    plain = Assessment(data, reference).run().result
+    with_ds = Assessment(data, reference, datasheet=example()).run().result
+    assert plain.datasheet is None
+    assert with_ds.datasheet is not None and with_ds.datasheet.datasheet_id == "aaa-baseline-v0"
+    assert with_ds.verdict.outcome == plain.verdict.outcome
+    assert [r.status for r in with_ds.verdict.results] == [r.status for r in plain.verdict.results]
+    step = {s.step: s for s in with_ds.steps}["datasheet"]
+    assert step.state.value == "ok" and "flagged" in (step.detail or "")
+    assert "datasheet" not in {s.step for s in plain.steps}
+    html = render_html(with_ds)
+    assert 'id="datasheet"' in html and "does not change the verdict" in html and 'href="#datasheet"' in html
+    assert 'id="datasheet"' not in render_html(plain) and 'href="#datasheet"' not in render_html(plain)
+    s = summarize(with_ds)["datasheet"]
+    assert isinstance(s, dict) and s["affects_verdict"] is False and s["status"]["age_years"] == "differs"
+    from slicepoint_schemas import AssessmentResult
+
+    assert AssessmentResult.model_validate_json(with_ds.model_dump_json()) == with_ds
+
+
+@needs_data
+def test_assess_cli_accepts_datasheet(tmp_path: Path) -> None:
+    from conftest import PRACTICE_DIR
+    from slicepoint_schemas import AssessmentResult
+
+    out = tmp_path / "result.json"
+    code = main(["assess", "--data", str(PRACTICE_DIR / "hospital_c"), "--site-id", "hospital_c",
+                 "--reference-dir", str(PRACTICE_DIR / "hospital_a"), "--reference-site-id", "hospital_a",
+                 "--datasheet", str(EXAMPLE), "--datasheet-scope-broader", "--out", str(out),
+                 "--html", str(tmp_path / "r.html")])
+    assert code in (0, 3)
+    res = AssessmentResult.model_validate_json(out.read_text(encoding="utf-8"))
+    assert res.datasheet is not None and res.datasheet.scope_broader
+    assert {v.variable: v.status.value for v in res.datasheet.variables}["slice_thickness_class"] == "differs_expected"

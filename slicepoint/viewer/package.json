@@ -1,6 +1,6 @@
 {
   "name": "slicepoint-viewer",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "description": "SlicePoint viewer: a static build that renders an AssessmentResult JSON offline, and a live build served by slicepoint-api.",
   "license": "MIT",

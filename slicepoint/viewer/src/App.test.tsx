@@ -105,6 +105,27 @@ describe("App", () => {
     expect(screen.getByTestId("self-comparison")).toHaveTextContent("compared against its own reference data");
   });
 
+  it("shows the vendor datasheet in its own tab, only when the result has one", async () => {
+    const { unmount } = render(<App />);
+    await upload(jsonFile(hospitalB));
+    await screen.findByRole("heading", { name: "SlicePoint fit check: Hospital B" });
+    expect(screen.queryByRole("tab", { name: /Datasheet/ })).not.toBeInTheDocument();
+    unmount();
+    render(<App />);
+    const user = await upload(jsonFile(JSON.stringify(findSample("hospital_d")?.data)));
+    await screen.findByRole("heading", { name: "SlicePoint fit check: Hospital D" });
+    const verdict = screen.getByTestId("final-verdict").textContent;
+    await user.click(screen.getByRole("tab", { name: /Datasheet/ }));
+    expect(screen.getByRole("heading", { name: "Compared with the vendor's datasheet" })).toBeInTheDocument();
+    expect(screen.getByText(/does not change the verdict/)).toBeInTheDocument();
+    const age = screen.getByRole("rowheader", { name: "Age" }).closest("tr") as HTMLElement;
+    expect(within(age).getByText("Differs")).toBeInTheDocument();
+    await user.click(within(age).getByRole("button", { name: "Show the distributions" }));
+    expect(within(age).getByRole("columnheader", { name: "Datasheet" })).toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: "Overview" }));
+    expect(screen.getByTestId("final-verdict").textContent).toBe(verdict);
+  });
+
   it("moves between tabs with the keyboard and sorts cases", async () => {
     const user = userEvent.setup();
     render(<App />);
