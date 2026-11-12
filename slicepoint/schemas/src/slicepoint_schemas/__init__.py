@@ -52,11 +52,39 @@ from .ingestion import (
 )
 from .legacy import CompareResponseV1, DiceSummaryV0, MonthlySummaryV0, SlicePointFileV0
 from .thresholds import HACKATHON_DEFAULT_PROFILE, ThresholdProfile, TriggerThreshold
+from .vendor_datasheet import (
+    KNOWN_VARIABLES,
+    CategoricalSummary,
+    ContinuousSummary,
+    DatasheetPartition,
+    DatasheetSource,
+    DatasheetVariable,
+    Histogram,
+    ModelIdentity,
+    PopulationScope,
+    SourceKind,
+    SourceRef,
+    ValueSource,
+    VendorDatasheet,
+)
 from .verdict import Verdict, VerdictOutcome, VerdictOverride, derive_verdict
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 
 __all__ = [
+    "KNOWN_VARIABLES",
+    "CategoricalSummary",
+    "ContinuousSummary",
+    "DatasheetPartition",
+    "DatasheetSource",
+    "DatasheetVariable",
+    "Histogram",
+    "ModelIdentity",
+    "PopulationScope",
+    "SourceKind",
+    "SourceRef",
+    "ValueSource",
+    "VendorDatasheet",
     "AssessmentResult",
     "CasesToReview",
     "CheckRun",

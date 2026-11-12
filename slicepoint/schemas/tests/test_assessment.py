@@ -238,7 +238,7 @@ def test_review_case_rules() -> None:
 def test_versions() -> None:
     import slicepoint_schemas
 
-    assert slicepoint_schemas.__version__ == "0.2.1"
+    assert slicepoint_schemas.__version__ == "0.2.2"
     assert slicepoint_schemas.SCHEMA_VERSION == "0.1.0"  # the contract version is unchanged
 
 

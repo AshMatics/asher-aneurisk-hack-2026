@@ -24,6 +24,7 @@ from .embedding import EmbeddingComparisonRequest, EmbeddingSet, EmbeddingSpace
 from .ingestion import CuratedDataset, DatasetManifest, FeatureRow, LabelRow, PredictionRow
 from .legacy import CompareResponseV1, DiceSummaryV0, MonthlySummaryV0, SlicePointFileV0
 from .thresholds import ThresholdProfile
+from .vendor_datasheet import VendorDatasheet
 from .verdict import Verdict
 
 TOP_LEVEL_MODELS: Mapping[str, type[BaseModel]] = {
@@ -42,6 +43,7 @@ TOP_LEVEL_MODELS: Mapping[str, type[BaseModel]] = {
     "CheckResult": CheckResult,
     "Verdict": Verdict,
     "AssessmentResult": AssessmentResult,
+    "VendorDatasheet": VendorDatasheet,
     # legacy POC payloads
     "SlicePointFileV0": SlicePointFileV0,
     "MonthlySummaryV0": MonthlySummaryV0,

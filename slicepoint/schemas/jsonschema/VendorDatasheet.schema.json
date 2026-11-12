@@ -1,0 +1,823 @@
+{
+  "$defs": {
+    "CategoricalSummary": {
+      "additionalProperties": false,
+      "description": "A categorical variable (sex, scanner maker, contrast phase, AAA yes/no).\n\nKeys are category labels as the source writes them; keep ``unknown`` or ``other`` as\ncategories when the source reports them. Give ``counts``, ``proportions`` or both.",
+      "properties": {
+        "counts": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              "propertyNames": {
+                "maxLength": 200,
+                "minLength": 1
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Counts"
+        },
+        "kind": {
+          "const": "categorical",
+          "default": "categorical",
+          "title": "Kind",
+          "type": "string"
+        },
+        "proportions": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              "propertyNames": {
+                "maxLength": 200,
+                "minLength": 1
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Proportions"
+        }
+      },
+      "title": "CategoricalSummary",
+      "type": "object"
+    },
+    "ContinuousSummary": {
+      "additionalProperties": false,
+      "description": "A numeric variable (age, kVp, slice thickness, diameter).\n\nNeeds at least one description of shape: mean with SD, median with IQR (``q1`` and\n``q3``), or a histogram. ``min`` and ``max`` alone are not enough to test against, but\nthey matter for the coverage question, so give them whenever the source does.",
+      "properties": {
+        "histogram": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Histogram"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "kind": {
+          "const": "continuous",
+          "default": "continuous",
+          "title": "Kind",
+          "type": "string"
+        },
+        "max": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max"
+        },
+        "mean": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mean"
+        },
+        "median": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Median"
+        },
+        "min": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Min"
+        },
+        "q1": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Q1"
+        },
+        "q3": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Q3"
+        },
+        "sd": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sd"
+        },
+        "unit": {
+          "examples": [
+            "years",
+            "kV",
+            "mm"
+          ],
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Unit",
+          "type": "string"
+        }
+      },
+      "required": [
+        "unit"
+      ],
+      "title": "ContinuousSummary",
+      "type": "object"
+    },
+    "DatasheetPartition": {
+      "description": "Which part of the vendor's data the datasheet describes.",
+      "enum": [
+        "training",
+        "validation",
+        "test",
+        "development",
+        "unspecified"
+      ],
+      "title": "DatasheetPartition",
+      "type": "string"
+    },
+    "DatasheetSource": {
+      "additionalProperties": false,
+      "description": "A document the datasheet draws numbers from.",
+      "properties": {
+        "accessed": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Accessed"
+        },
+        "citation": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Citation",
+          "type": "string"
+        },
+        "doi": {
+          "anyOf": [
+            {
+              "pattern": "^10\\.\\d{4,9}/\\S+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Doi"
+        },
+        "kind": {
+          "$ref": "#/$defs/SourceKind"
+        },
+        "source_id": {
+          "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$",
+          "title": "Source Id",
+          "type": "string"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "pattern": "^https?://\\S+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        }
+      },
+      "required": [
+        "source_id",
+        "kind",
+        "citation"
+      ],
+      "title": "DatasheetSource",
+      "type": "object"
+    },
+    "DatasheetVariable": {
+      "additionalProperties": false,
+      "description": "One disclosed variable: its summary, how many scans it covers, and its sources.",
+      "properties": {
+        "label": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Display name, e.g. as the source words it.",
+          "title": "Label"
+        },
+        "n": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Scans the summary is based on.",
+          "title": "N"
+        },
+        "n_missing": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Scans with no value for this variable.",
+          "title": "N Missing"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "sources": {
+          "items": {
+            "$ref": "#/$defs/SourceRef"
+          },
+          "minItems": 1,
+          "title": "Sources",
+          "type": "array"
+        },
+        "summary": {
+          "discriminator": {
+            "mapping": {
+              "categorical": "#/$defs/CategoricalSummary",
+              "continuous": "#/$defs/ContinuousSummary"
+            },
+            "propertyName": "kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/ContinuousSummary"
+            },
+            {
+              "$ref": "#/$defs/CategoricalSummary"
+            }
+          ],
+          "title": "Summary"
+        },
+        "variable": {
+          "pattern": "^[a-z][a-z0-9_]{0,63}$",
+          "title": "Variable",
+          "type": "string"
+        }
+      },
+      "required": [
+        "variable",
+        "summary",
+        "sources"
+      ],
+      "title": "DatasheetVariable",
+      "type": "object"
+    },
+    "Histogram": {
+      "additionalProperties": false,
+      "description": "Binned distribution: ``len(edges) == len(bins) + 1``, edges strictly increasing.\n\nGive ``counts`` or ``proportions`` (or both). Counts may be fractional, since bars\nread off a figure rarely land on whole numbers.",
+      "properties": {
+        "counts": {
+          "anyOf": [
+            {
+              "items": {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Counts"
+        },
+        "edges": {
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "title": "Edges",
+          "type": "array"
+        },
+        "proportions": {
+          "anyOf": [
+            {
+              "items": {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Proportions"
+        }
+      },
+      "required": [
+        "edges"
+      ],
+      "title": "Histogram",
+      "type": "object"
+    },
+    "Modality": {
+      "description": "Input modality of an embedding space.",
+      "enum": [
+        "CT",
+        "MR",
+        "report_text",
+        "other"
+      ],
+      "title": "Modality",
+      "type": "string"
+    },
+    "ModelIdentity": {
+      "additionalProperties": false,
+      "description": "The model the datasheet is about.",
+      "properties": {
+        "intended_use": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Intended Use"
+        },
+        "manufacturer": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Manufacturer"
+        },
+        "name": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "regulatory_ids": {
+          "default": [],
+          "examples": [
+            [
+              "K231234"
+            ]
+          ],
+          "items": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Regulatory Ids",
+          "type": "array"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "ModelIdentity",
+      "type": "object"
+    },
+    "PopulationScope": {
+      "additionalProperties": false,
+      "description": "What population the datasheet's numbers describe.\n\n``description`` is required and is what a person reads. The structured fields are\noptional; checks use them, when present, to warn that a site and a datasheet describe\ndifferent populations.",
+      "properties": {
+        "age_range_years": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "minimum": 0.0,
+                  "type": "number"
+                },
+                {
+                  "minimum": 0.0,
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Age Range Years"
+        },
+        "body_regions": {
+          "default": [],
+          "examples": [
+            [
+              "abdomen",
+              "pelvis"
+            ]
+          ],
+          "items": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Body Regions",
+          "type": "array"
+        },
+        "countries": {
+          "default": [],
+          "items": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Countries",
+          "type": "array"
+        },
+        "description": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "exclusion": {
+          "default": [],
+          "items": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Exclusion",
+          "type": "array"
+        },
+        "inclusion": {
+          "default": [],
+          "items": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Inclusion",
+          "type": "array"
+        },
+        "modality": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Modality"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "n_sites": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "N Sites"
+        },
+        "study_period": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "examples": [
+            "2012, 2016 and 2020"
+          ],
+          "title": "Study Period"
+        }
+      },
+      "required": [
+        "description"
+      ],
+      "title": "PopulationScope",
+      "type": "object"
+    },
+    "SourceKind": {
+      "enum": [
+        "publication",
+        "regulatory_summary",
+        "model_card",
+        "vendor_document",
+        "dataset_release",
+        "other"
+      ],
+      "title": "SourceKind",
+      "type": "string"
+    },
+    "SourceRef": {
+      "additionalProperties": false,
+      "description": "Where in a source a variable's numbers come from, and how they were obtained.",
+      "properties": {
+        "locator": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "examples": [
+            "Figure 3",
+            "Table 1",
+            "Section 7.2"
+          ],
+          "title": "Locator"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "source_id": {
+          "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$",
+          "title": "Source Id",
+          "type": "string"
+        },
+        "value_source": {
+          "$ref": "#/$defs/ValueSource"
+        }
+      },
+      "required": [
+        "source_id",
+        "value_source"
+      ],
+      "title": "SourceRef",
+      "type": "object"
+    },
+    "ValueSource": {
+      "description": "How a number got into the datasheet.",
+      "enum": [
+        "reported",
+        "computed",
+        "digitized",
+        "estimated"
+      ],
+      "title": "ValueSource",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "A vendor's disclosed summary of the data behind a model (versioned top-level payload).",
+  "properties": {
+    "datasheet_id": {
+      "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$",
+      "title": "Datasheet Id",
+      "type": "string"
+    },
+    "datasheet_version": {
+      "anyOf": [
+        {
+          "maxLength": 200,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Revision of the datasheet itself, e.g. the document's date or version.",
+      "title": "Datasheet Version"
+    },
+    "describes": {
+      "$ref": "#/$defs/DatasheetPartition"
+    },
+    "model": {
+      "$ref": "#/$defs/ModelIdentity"
+    },
+    "n_patients": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "N Patients"
+    },
+    "n_scans": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "N Scans"
+    },
+    "not_disclosed": {
+      "default": [],
+      "description": "What the source does not give, e.g. 'joint distributions', 'scanner models'.",
+      "items": {
+        "maxLength": 200,
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Not Disclosed",
+      "type": "array"
+    },
+    "notes": {
+      "default": [],
+      "items": {
+        "maxLength": 2000,
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Notes",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "0.1.0",
+      "default": "0.1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "scope": {
+      "$ref": "#/$defs/PopulationScope"
+    },
+    "sources": {
+      "items": {
+        "$ref": "#/$defs/DatasheetSource"
+      },
+      "minItems": 1,
+      "title": "Sources",
+      "type": "array"
+    },
+    "title": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "variables": {
+      "items": {
+        "$ref": "#/$defs/DatasheetVariable"
+      },
+      "minItems": 1,
+      "title": "Variables",
+      "type": "array"
+    }
+  },
+  "required": [
+    "datasheet_id",
+    "title",
+    "model",
+    "describes",
+    "scope",
+    "sources",
+    "variables"
+  ],
+  "title": "VendorDatasheet",
+  "type": "object"
+}
