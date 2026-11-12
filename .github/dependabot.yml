@@ -28,3 +28,6 @@ updates:
       # The Python base image moves deliberately (CI and the lock are tested on 3.12), not by bot.
       - dependency-name: "python"
         update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      # The segmentation worker's torch stack (base image plus the pins in its pyproject.toml)
+      # is upgraded deliberately, together, with a Dice check on real CTs; not by bot.
+      - dependency-name: "pytorch/pytorch"

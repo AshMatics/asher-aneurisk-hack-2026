@@ -20,7 +20,8 @@ package versions it contains. Packages are not tagged on their own.
   tornado 6.6.1. On 3.10 the notebook test skips.
 - Dependabot alert 14 (minimatch, a development-only ESLint dependency): pinned to 11.x with a
   pnpm override; lint, typecheck and tests pass.
-- Dependabot no longer proposes major `@types/node` updates or Python base-image moves.
+- Dependabot no longer proposes major `@types/node` updates, Python base-image moves or
+  `pytorch/pytorch` image updates (the segmentation torch stack is upgraded deliberately).
 
 ## [0.2.0] - 2026-11-12
 
