@@ -2,12 +2,10 @@
   "schema_version": "0.1.0",
   "datasheet_id": "aaa-baseline-v0",
   "title": "AAA baseline v0: training data summary",
-  "datasheet_version": "2026-11-12",
   "model": {
     "name": "AAA baseline v0",
     "version": "0",
-    "intended_use": "abdominal aortic aneurysm detection on CT; infrarenal max outer-wall diameter (centerline-orthogonal) >= 30 mm on the TotalSegmentator aorta mask",
-    "regulatory_ids": []
+    "intended_use": "abdominal aortic aneurysm detection on CT; infrarenal max outer-wall diameter (centerline-orthogonal) >= 30 mm on the TotalSegmentator aorta mask"
   },
   "describes": "training",
   "scope": {
@@ -23,8 +21,7 @@
     "inclusion": [
       "aorta, iliac arteries and kidneys in the field of view",
       "measurable infrarenal aortic diameter"
-    ],
-    "exclusion": []
+    ]
   },
   "n_scans": 333,
   "n_patients": 333,
@@ -40,6 +37,14 @@
     {
       "variable": "age_years",
       "label": "Age",
+      "n": 333,
+      "sources": [
+        {
+          "source_id": "slicepoint-aaa-ct",
+          "value_source": "computed",
+          "locator": "cohorts/vendor_train"
+        }
+      ],
       "summary": {
         "kind": "continuous",
         "unit": "years",
@@ -50,26 +55,11 @@
         "q3": 74.0,
         "min": 19.0,
         "max": 98.0
-      },
-      "n": 333,
-      "sources": [
-        {
-          "source_id": "slicepoint-aaa-ct",
-          "value_source": "computed",
-          "locator": "cohorts/vendor_train"
-        }
-      ]
+      }
     },
     {
       "variable": "sex",
       "label": "Sex",
-      "summary": {
-        "kind": "categorical",
-        "proportions": {
-          "F": 0.4264,
-          "M": 0.5736
-        }
-      },
       "n": 333,
       "sources": [
         {
@@ -77,20 +67,18 @@
           "value_source": "computed",
           "locator": "cohorts/vendor_train"
         }
-      ]
+      ],
+      "summary": {
+        "kind": "categorical",
+        "counts": {
+          "F": 142.0,
+          "M": 191.0
+        }
+      }
     },
     {
       "variable": "scanner_vendor",
       "label": "Scanner manufacturer",
-      "summary": {
-        "kind": "categorical",
-        "proportions": {
-          "ge": 0.045,
-          "philips": 0.0871,
-          "siemens": 0.8589,
-          "unknown": 0.009
-        }
-      },
       "n": 333,
       "sources": [
         {
@@ -98,19 +86,20 @@
           "value_source": "computed",
           "locator": "cohorts/vendor_train"
         }
-      ]
+      ],
+      "summary": {
+        "kind": "categorical",
+        "counts": {
+          "ge": 15.0,
+          "philips": 29.0,
+          "siemens": 286.0,
+          "unknown": 3.0
+        }
+      }
     },
     {
       "variable": "contrast_phase",
       "label": "Contrast phase",
-      "summary": {
-        "kind": "categorical",
-        "proportions": {
-          "arterial": 0.2162,
-          "non-contrast": 0.1862,
-          "venous": 0.5976
-        }
-      },
       "n": 333,
       "sources": [
         {
@@ -118,19 +107,19 @@
           "value_source": "computed",
           "locator": "cohorts/vendor_train"
         }
-      ]
+      ],
+      "summary": {
+        "kind": "categorical",
+        "counts": {
+          "arterial": 72.0,
+          "non-contrast": 62.0,
+          "venous": 199.0
+        }
+      }
     },
     {
       "variable": "slice_thickness_class",
       "label": "Slice thickness class",
-      "summary": {
-        "kind": "categorical",
-        "proportions": {
-          "standard": 0.3093,
-          "thick": 0.1441,
-          "thin": 0.5465
-        }
-      },
       "n": 333,
       "sources": [
         {
@@ -138,11 +127,27 @@
           "value_source": "computed",
           "locator": "cohorts/vendor_train"
         }
-      ]
+      ],
+      "summary": {
+        "kind": "categorical",
+        "counts": {
+          "standard": 103.0,
+          "thick": 48.0,
+          "thin": 182.0
+        }
+      }
     },
     {
       "variable": "kvp",
       "label": "Tube voltage",
+      "n": 330,
+      "sources": [
+        {
+          "source_id": "slicepoint-aaa-ct",
+          "value_source": "computed",
+          "locator": "cohorts/vendor_train"
+        }
+      ],
       "summary": {
         "kind": "continuous",
         "unit": "kV",
@@ -154,26 +159,11 @@
         "min": 80.0,
         "max": 150.0
       },
-      "n": 330,
-      "n_missing": 3,
-      "sources": [
-        {
-          "source_id": "slicepoint-aaa-ct",
-          "value_source": "computed",
-          "locator": "cohorts/vendor_train"
-        }
-      ]
+      "n_missing": 3
     },
     {
       "variable": "aaa",
       "label": "AAA (diameter >= 30 mm)",
-      "summary": {
-        "kind": "categorical",
-        "proportions": {
-          "true": 0.1081,
-          "false": 0.8919
-        }
-      },
       "n": 333,
       "sources": [
         {
@@ -181,11 +171,26 @@
           "value_source": "computed",
           "locator": "cohorts/vendor_train"
         }
-      ]
+      ],
+      "summary": {
+        "kind": "categorical",
+        "counts": {
+          "false": 297.0,
+          "true": 36.0
+        }
+      }
     },
     {
       "variable": "max_aortic_diameter_mm",
       "label": "Max infrarenal aortic diameter",
+      "n": 333,
+      "sources": [
+        {
+          "source_id": "slicepoint-aaa-ct",
+          "value_source": "computed",
+          "locator": "cohorts/vendor_train"
+        }
+      ],
       "summary": {
         "kind": "continuous",
         "unit": "mm",
@@ -196,15 +201,7 @@
         "q3": 23.9,
         "min": 12.5,
         "max": 72.76
-      },
-      "n": 333,
-      "sources": [
-        {
-          "source_id": "slicepoint-aaa-ct",
-          "value_source": "computed",
-          "locator": "cohorts/vendor_train"
-        }
-      ]
+      }
     }
   ],
   "not_disclosed": [

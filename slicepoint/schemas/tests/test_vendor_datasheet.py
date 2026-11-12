@@ -178,3 +178,9 @@ def test_datasheet_is_frozen() -> None:
     ds = VendorDatasheet.model_validate(minimal())
     with pytest.raises(ValidationError):
         ds.title = "changed"  # type: ignore[misc]
+
+
+@pytest.mark.parametrize("path", sorted((SCHEMAS_ROOT / "examples").glob("*.vendor-datasheet.json")), ids=lambda p: p.name)
+def test_every_example_validates(path: Any) -> None:
+    ds = VendorDatasheet.model_validate(json.loads(path.read_text(encoding="utf-8")))
+    assert path.name == f"{ds.datasheet_id}.vendor-datasheet.json"

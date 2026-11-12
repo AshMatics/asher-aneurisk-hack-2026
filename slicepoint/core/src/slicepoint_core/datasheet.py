@@ -164,6 +164,9 @@ _TRUE = {"true", "yes", "y", "1", "aaa", "positive"}
 _FALSE = {"false", "no", "n", "0", "none", "negative", "no aaa"}
 _CATCH_ALL = {"other", "others", "unknown", "missing", "not reported"}
 
+TIE_SHARE = 0.05
+"""Share of site values exactly on a disclosed quartile above which quartile bins are not used."""
+
 FloatArray = npt.NDArray[np.float64]
 Cdf = Callable[[FloatArray], FloatArray]
 
@@ -313,6 +316,18 @@ def _compare_continuous(values: FloatArray, s: ContinuousSummary, ds_n: int | No
         return coverage, _binned(values, edges, np.asarray(h.shares()), counts, approx, "the datasheet's histogram bins"), None
     if s.median is not None and s.q1 is not None and s.q3 is not None:
         cuts = [s.q1, s.median, s.q3]
+        on_cut = float(np.isin(values, cuts).mean()) if len(values) else 0.0
+        if len(set(cuts)) == 3 and on_cut > TIE_SHARE:
+            # Many values sit exactly on a quartile (a discrete variable such as slice thickness): the
+            # datasheet's bins then need not hold 25% each, so binning on quartiles would mislead.
+            welch = _welch(values, s, ds_n, approx)
+            if welch is not None:
+                return coverage, welch, (f"{on_cut:.0%} of site values sit exactly on a quartile (a discrete "
+                                         "variable), so the mean and SD were used")
+            eq = _binned(values, np.array([min(float(np.min(values)), s.q1), *cuts,
+                                           max(float(np.max(values)), s.q3)]), np.full(4, 0.25),
+                         np.full(4, 0.25) * ds_n if ds_n is not None else None, True, "the datasheet's quartiles")
+            return coverage, eq, f"{on_cut:.0%} of site values sit exactly on a quartile; result is approximate"
         if len(set(cuts)) == 3:
             lo = min(float(np.min(values)), s.min if s.min is not None else math.inf) if len(values) else s.q1
             hi = max(float(np.max(values)), s.max if s.max is not None else -math.inf) if len(values) else s.q3

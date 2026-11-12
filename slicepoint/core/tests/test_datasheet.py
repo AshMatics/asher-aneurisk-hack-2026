@@ -125,6 +125,15 @@ def test_tied_quartiles_fall_back_to_mean_and_sd() -> None:
     assert v.reason is not None and "quartiles tie" in v.reason
 
 
+def test_values_on_quartiles_avoid_quartile_bins() -> None:
+    """Slice thickness: half the site at exactly 1.5 mm, which is also the datasheet's median."""
+    values = np.array([1.5] * 100 + [1.0] * 50 + [3.0] * 50)
+    ds = sheet(cont("slice_thickness_mm", unit="mm", mean=1.8, sd=0.9, median=1.5, q1=1.0, q3=2.875))
+    v = compare_to_datasheet(site(slice_thickness_mm=values), ds).variables[0]
+    assert v.equality is not None and v.equality.method == "welch_t_from_summary_statistics"
+    assert v.reason is not None and "exactly on a quartile" in v.reason
+
+
 def test_histogram_bins_are_used() -> None:
     values = np.random.default_rng(1).normal(25, 5, 300)
     d = site(300, max_aortic_diameter_mm=values)

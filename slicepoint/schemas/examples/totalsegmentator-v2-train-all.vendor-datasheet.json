@@ -1,0 +1,371 @@
+{
+  "schema_version": "0.1.0",
+  "datasheet_id": "totalsegmentator-v2-train-all",
+  "title": "TotalSegmentator, training data (all scans)",
+  "datasheet_version": "TotalSegmentator dataset v2.0.1",
+  "model": {
+    "name": "TotalSegmentator",
+    "version": "2.x, task total",
+    "manufacturer": "University Hospital Basel",
+    "intended_use": "Segmentation of 104+ anatomic structures in CT (research use)",
+    "regulatory_ids": []
+  },
+  "describes": "training",
+  "scope": {
+    "description": "Routine clinical CT of every body region (head to feet, including whole-body, polytrauma and extremity studies) from University Hospital Basel, years 2012, 2016 and 2020",
+    "modality": "CT",
+    "body_regions": [
+      "head",
+      "neck",
+      "thorax",
+      "abdomen",
+      "pelvis",
+      "extremities"
+    ],
+    "countries": [
+      "Switzerland"
+    ],
+    "inclusion": [],
+    "exclusion": []
+  },
+  "n_scans": 1082,
+  "sources": [
+    {
+      "source_id": "ts-v201-meta",
+      "kind": "dataset_release",
+      "citation": "Wasserthal J. et al. TotalSegmentator dataset v2.0.1, meta.csv (Zenodo)",
+      "url": "https://doi.org/10.5281/zenodo.10047292"
+    },
+    {
+      "source_id": "ts-v300-meta",
+      "kind": "dataset_release",
+      "citation": "TotalSegmentator dataset v3.0.0, meta.csv (Zenodo): acquisition slice thickness",
+      "url": "https://doi.org/10.5281/zenodo.22688904"
+    },
+    {
+      "source_id": "ts-paper",
+      "kind": "publication",
+      "citation": "Wasserthal J. et al. TotalSegmentator: Robust Segmentation of 104 Anatomic Structures in CT Images. Radiology: Artificial Intelligence 2023;5(5)",
+      "doi": "10.1148/ryai.230024"
+    }
+  ],
+  "variables": [
+    {
+      "variable": "age_years",
+      "label": "Age",
+      "summary": {
+        "kind": "continuous",
+        "unit": "years",
+        "mean": 63.414,
+        "sd": 14.847,
+        "median": 65.0,
+        "q1": 55.0,
+        "q3": 74.0,
+        "min": 15.0,
+        "max": 94.0,
+        "histogram": {
+          "edges": [
+            10.0,
+            20.0,
+            30.0,
+            40.0,
+            50.0,
+            60.0,
+            70.0,
+            80.0,
+            90.0,
+            100.0,
+            110.0
+          ],
+          "counts": [
+            5.0,
+            29.0,
+            36.0,
+            110.0,
+            210.0,
+            286.0,
+            266.0,
+            124.0,
+            16.0,
+            0.0
+          ]
+        }
+      },
+      "n": 1082,
+      "sources": [
+        {
+          "source_id": "ts-v201-meta",
+          "value_source": "computed",
+          "locator": "meta.csv: age"
+        }
+      ]
+    },
+    {
+      "variable": "sex",
+      "label": "Sex",
+      "summary": {
+        "kind": "categorical",
+        "counts": {
+          "M": 636.0,
+          "F": 445.0
+        }
+      },
+      "n": 1081,
+      "n_missing": 1,
+      "sources": [
+        {
+          "source_id": "ts-v201-meta",
+          "value_source": "computed",
+          "locator": "meta.csv: gender"
+        }
+      ]
+    },
+    {
+      "variable": "scanner_vendor",
+      "label": "Scanner manufacturer",
+      "summary": {
+        "kind": "categorical",
+        "counts": {
+          "siemens": 971.0,
+          "philips": 68.0,
+          "ge": 43.0
+        }
+      },
+      "n": 1082,
+      "sources": [
+        {
+          "source_id": "ts-v201-meta",
+          "value_source": "computed",
+          "locator": "meta.csv: manufacturer"
+        }
+      ]
+    },
+    {
+      "variable": "scanner_model",
+      "label": "Scanner model",
+      "summary": {
+        "kind": "categorical",
+        "counts": {
+          "somatom definition flash": 310.0,
+          "somatom definition as+": 181.0,
+          "somatom definition edge": 153.0,
+          "somatom force": 117.0,
+          "emotion 16": 83.0,
+          "sensation 64": 56.0,
+          "ingenuity core 128": 51.0,
+          "lightspeed vct": 39.0,
+          "sensation 16": 35.0,
+          "somatom go.top": 27.0,
+          "iqon - spectral ct": 12.0,
+          "somatom definition as": 7.0,
+          "brilliance 64": 5.0,
+          "discovery ste": 4.0,
+          "sensation 10": 1.0,
+          "biograph128": 1.0
+        }
+      },
+      "n": 1082,
+      "sources": [
+        {
+          "source_id": "ts-v201-meta",
+          "value_source": "computed",
+          "locator": "meta.csv: scanner_model"
+        }
+      ]
+    },
+    {
+      "variable": "kvp",
+      "label": "Tube voltage",
+      "summary": {
+        "kind": "continuous",
+        "unit": "kV",
+        "mean": 111.627,
+        "sd": 14.173,
+        "median": 120.0,
+        "q1": 100.0,
+        "q3": 120.0,
+        "min": 70.0,
+        "max": 150.0,
+        "histogram": {
+          "edges": [
+            65.0,
+            75.0,
+            85.0,
+            95.0,
+            105.0,
+            115.0,
+            125.0,
+            135.0,
+            145.0,
+            155.0,
+            165.0
+          ],
+          "counts": [
+            2.0,
+            58.0,
+            20.0,
+            356.0,
+            47.0,
+            503.0,
+            51.0,
+            31.0,
+            14.0,
+            0.0
+          ]
+        }
+      },
+      "n": 1082,
+      "sources": [
+        {
+          "source_id": "ts-v201-meta",
+          "value_source": "computed",
+          "locator": "meta.csv: kvp"
+        }
+      ]
+    },
+    {
+      "variable": "slice_thickness_mm",
+      "label": "Slice thickness (acquisition)",
+      "summary": {
+        "kind": "continuous",
+        "unit": "mm",
+        "mean": 1.952,
+        "sd": 1.188,
+        "median": 1.5,
+        "q1": 1.0,
+        "q3": 2.875,
+        "min": 0.6,
+        "max": 5.0,
+        "histogram": {
+          "edges": [
+            0.0,
+            0.7,
+            0.95,
+            1.1,
+            1.4,
+            1.75,
+            2.25,
+            2.75,
+            3.4,
+            4.5,
+            6.0
+          ],
+          "counts": [
+            43.0,
+            82.0,
+            184.0,
+            32.0,
+            293.0,
+            176.0,
+            1.0,
+            174.0,
+            1.0,
+            96.0
+          ]
+        }
+      },
+      "n": 1082,
+      "sources": [
+        {
+          "source_id": "ts-v300-meta",
+          "value_source": "computed",
+          "locator": "meta.csv: slice_thickness",
+          "note": "v3.0.0 metadata joined on image_id"
+        }
+      ]
+    },
+    {
+      "variable": "study_type",
+      "label": "Study type",
+      "summary": {
+        "kind": "categorical",
+        "counts": {
+          "ct thorax-abdomen-pelvis": 120.0,
+          "ct neck-thorax-abdomen-pelvis": 96.0,
+          "ct abdomen-pelvis": 74.0,
+          "ct thorax-neck": 72.0,
+          "ct neck": 59.0,
+          "ct angiography head": 58.0,
+          "ct abdomen": 52.0,
+          "ct thorax-abdomen": 50.0,
+          "ct pelvis": 48.0,
+          "ct angiography neck-thx-abd-pelvis-leg": 47.0,
+          "ct polytrauma": 43.0,
+          "ct heart-thorakale aorta": 42.0,
+          "ct  intervention": 38.0,
+          "ct spine": 38.0,
+          "ct thorax-chest": 36.0,
+          "other": 209.0
+        }
+      },
+      "n": 1082,
+      "sources": [
+        {
+          "source_id": "ts-v201-meta",
+          "value_source": "computed",
+          "locator": "meta.csv: study_type"
+        }
+      ]
+    },
+    {
+      "variable": "site",
+      "label": "Institute (coded)",
+      "summary": {
+        "kind": "categorical",
+        "counts": {
+          "I": 799.0,
+          "C": 83.0,
+          "A": 70.0,
+          "E": 51.0,
+          "B": 47.0,
+          "G": 21.0,
+          "J": 5.0,
+          "F": 5.0,
+          "H": 1.0
+        }
+      },
+      "n": 1082,
+      "sources": [
+        {
+          "source_id": "ts-v201-meta",
+          "value_source": "computed",
+          "locator": "meta.csv: institute"
+        }
+      ]
+    },
+    {
+      "variable": "pathology",
+      "label": "Pathology",
+      "summary": {
+        "kind": "categorical",
+        "counts": {
+          "no_pathology": 372.0,
+          "tumor": 205.0,
+          "unclear": 140.0,
+          "vascular": 136.0,
+          "inflammation": 81.0,
+          "trauma": 80.0,
+          "other": 57.0,
+          "bleeding": 11.0
+        }
+      },
+      "n": 1082,
+      "sources": [
+        {
+          "source_id": "ts-v201-meta",
+          "value_source": "computed",
+          "locator": "meta.csv: pathology"
+        }
+      ]
+    }
+  ],
+  "not_disclosed": [
+    "contrast phase",
+    "race and ethnicity (not recorded in the source)",
+    "joint distributions"
+  ],
+  "notes": [
+    "Computed from the dataset's row-level metadata (training split only), not read off the paper's Figure 3, which describes the v1 dataset (1,204 scans).",
+    "Institute codes are the dataset's own. The paper's Figure 3 site letters are a different coding."
+  ]
+}

@@ -56,7 +56,7 @@ masks, not from radiology reports or clinical diagnoses.
 | `tables/cases.parquet` | Every scan: age, sex, institute (coded `a` to `j`), scanner, kVp, study type, pathology, voxel spacing, `eligible` and `exclusion_reason` |
 | `tables/pipeline/` | All computed measurements: four aortic diameter methods (outer wall / lumen, axial / centerline-orthogonal) on the ground-truth (`_ref`) and model (`_pred`) masks, organ volumes, Dice per structure, Merlin embeddings |
 | `cohorts/<name>/` | The SlicePoint input contract (`features`, `labels`, `predictions`, `embeddings` parquet, joined on `case_id`) for three cohorts below |
-| `vendor_datasheet/aaa-baseline-v0.json` | Summary statistics of `vendor_train` only: what a vendor might disclose about its training data |
+| `vendor_datasheet/` | Vendor datasheets (summary statistics only, in the SlicePoint `VendorDatasheet` format): `aaa-baseline-v0.json` summarises `vendor_train`, as a vendor might disclose it; `totalsegmentator-v2-train-all.json` and `totalsegmentator-v2-train-abdominal.json` describe the TotalSegmentator model's real training data (all 1,082 training scans, every body region, and the 481 of them in this dataset), computed from the source metadata |
 | `manifest.json` | Counts and sha256 of every table |
 
 `case_id` is TotalSegmentator's own image id (`s0001`...), so every row traces back to
@@ -136,6 +136,18 @@ hf download slicepoint/slicepoint-aaa-ct --repo-type dataset                    
 ```python
 from datasets import load_dataset
 labels = load_dataset("slicepoint/slicepoint-aaa-ct", "labels", split="site_retrospective")
+```
+
+Test a site against a vendor datasheet (summary statistics only, no vendor rows). The two
+TotalSegmentator datasheets show why a datasheet's population matters: the abdominal
+`site_retrospective` cohort is covered by the all-regions datasheet but distributed
+differently (thinner slices there), and matches the abdominal one:
+
+```bash
+slicepoint datasheet check --data cohorts/site_retrospective --site-id site \
+    --datasheet vendor_datasheet/totalsegmentator-v2-train-all.json --scope-broader
+slicepoint datasheet check --data cohorts/site_retrospective --site-id site \
+    --datasheet vendor_datasheet/totalsegmentator-v2-train-abdominal.json
 ```
 
 Run SlicePoint on the demo pair:
