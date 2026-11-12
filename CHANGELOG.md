@@ -22,10 +22,17 @@ Current versions: `slicepoint-schemas` 0.2.3 (data contract 0.1.0), `slicepoint-
 - Root `README.md` with a repository map, the datasets and the license and contributor
   status; `DATASETS.md`; this changelog.
 - Continuous integration (`.github/workflows/ci.yml`): Ruff, mypy and pytest for schemas,
-  core and api on Python 3.10 and 3.12; viewer lint, typecheck and tests; checks that the
+  core and api on Python 3.10 and 3.12 (mypy on 3.12); viewer lint, typecheck and tests; checks that the
   JSON Schemas, `openapi.json` and the TypeScript contract and client are current.
 - Ruff configuration (`slicepoint/pyproject.toml`) and Dependabot version updates
   (`.github/dependabot.yml`).
+
+### Known issues
+- On Python 3.10 the lock resolves older numpy (2.2), scipy (1.15) and scikit-learn (1.7),
+  and four core tests differ from the reference results (a domain-classifier gap of +0.21
+  instead of +0.17, one sub-factor for `hospital_d`, and the CLI and library results
+  disagreeing within one run, which points to non-determinism). CI runs 3.10 without
+  blocking; Python 3.12 is the verified version until this is resolved.
 
 ### Fixed
 - Unused imports flagged by Ruff in `slicepoint_core.datasheet` and the segmentation

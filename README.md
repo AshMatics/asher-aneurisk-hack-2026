@@ -3,7 +3,7 @@
 [![CI](https://github.com/AshMatics/slicepoint/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AshMatics/slicepoint/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Dependabot](https://img.shields.io/badge/dependabot-enabled-025E8C?logo=dependabot)](.github/dependabot.yml)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white)](slicepoint/pyproject.toml)
+[![Python 3.12](https://img.shields.io/badge/python-3.12-3776AB?logo=python&logoColor=white)](CHANGELOG.md#known-issues)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Dataset: SlicePoint AAA CT](https://img.shields.io/badge/%F0%9F%A4%97%20dataset-slicepoint--aaa--ct-yellow)](https://huggingface.co/datasets/slicepoint/slicepoint-aaa-ct)
 [![Dataset: SlicePoint Hospitals](https://img.shields.io/badge/%F0%9F%A4%97%20dataset-slicepoint--hospitals-yellow)](https://huggingface.co/datasets/slicepoint/slicepoint-hospitals)
