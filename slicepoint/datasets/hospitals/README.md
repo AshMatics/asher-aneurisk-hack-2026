@@ -95,7 +95,9 @@ have added noise and a few slices dropped, so no file is a byte copy of another.
 | `hospital_<x>/{features,labels,predictions,embeddings}.parquet` | The SlicePoint input contract, joined on `case_id` |
 | `keys/`, `crosswalk.parquet` | Answer keys, as above |
 
-Column meanings are the same as in SlicePoint AAA CT. `study_description` and
+Column meanings are the same as in SlicePoint AAA CT. Race and ethnicity are not
+recorded in the source, so no hospital differs along those lines and none can be tested
+for them. `study_description` and
 `protocol_name` are synthetic; at `hospital_g` they carry the shortcut.
 
 ## Download and use

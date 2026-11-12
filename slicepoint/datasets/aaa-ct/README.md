@@ -62,6 +62,11 @@ masks, not from radiology reports or clinical diagnoses.
 `case_id` is TotalSegmentator's own image id (`s0001`...), so every row traces back to
 the source dataset. The source has no patient id; each scan is treated as one patient.
 
+**Not recorded: race and ethnicity.** The source has no race, ethnicity, ancestry or
+residence fields (Swiss hospital records generally do not hold them), so this dataset
+cannot show shifts or subgroup differences along those lines. The population is that of
+a Swiss university hospital system.
+
 ### Cohorts
 
 | Cohort | Scans | AAA | Use |
