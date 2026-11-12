@@ -1,0 +1,137 @@
+---
+license: cc-by-4.0
+pretty_name: SlicePoint AAA CT
+language: [en]
+tags: [medical, ct, abdominal-aortic-aneurysm, segmentation, nifti, distribution-shift, totalsegmentator]
+size_categories: [n<1K]
+task_categories: [image-segmentation, image-classification]
+configs:
+  - config_name: cases
+    data_files: tables/cases.parquet
+  - config_name: features
+    data_files:
+      - {split: all, path: cohorts/all/features.parquet}
+      - {split: vendor_train, path: cohorts/vendor_train/features.parquet}
+      - {split: site_retrospective, path: cohorts/site_retrospective/features.parquet}
+  - config_name: labels
+    data_files:
+      - {split: all, path: cohorts/all/labels.parquet}
+      - {split: vendor_train, path: cohorts/vendor_train/labels.parquet}
+      - {split: site_retrospective, path: cohorts/site_retrospective/labels.parquet}
+  - config_name: predictions
+    data_files:
+      - {split: all, path: cohorts/all/predictions.parquet}
+      - {split: vendor_train, path: cohorts/vendor_train/predictions.parquet}
+      - {split: site_retrospective, path: cohorts/site_retrospective/predictions.parquet}
+  - config_name: embeddings
+    data_files:
+      - {split: all, path: cohorts/all/embeddings.parquet}
+      - {split: vendor_train, path: cohorts/vendor_train/embeddings.parquet}
+      - {split: site_retrospective, path: cohorts/site_retrospective/embeddings.parquet}
+---
+
+# SlicePoint AAA CT
+
+567 abdominal CT scans from the TotalSegmentator dataset, with ground-truth masks, aortic
+measurements, abdominal aortic aneurysm (AAA) labels, a baseline model's predictions and
+image embeddings. The scans were collected through University Hospital Basel but come from
+10 coded imaging institutes and 15 scanner models (Siemens, Philips, GE); the `institute`
+column in `tables/cases.parquet` says which. It is the canonical dataset of
+[SlicePoint](https://github.com/AshMatics/asher-aneurisk-hack-2026/tree/main/slicepoint),
+an open-source tool that checks whether an imaging AI model fits a hospital's patients
+and scanners before it is switched on.
+
+**Not for clinical use.** The AAA labels come from a diameter rule applied to segmentation
+masks, not from radiology reports.
+
+## What is in it
+
+| Path | What |
+|---|---|
+| `images/<id>.nii.gz` | CT volume, 1.5 mm isotropic, int16 HU (567 files) |
+| `masks/<structure>/<id>.nii.gz` | Ground-truth binary masks: `aorta`, `kidney_left`, `kidney_right`, `liver`, `spleen`, `iliac_artery_left`, `iliac_artery_right` |
+| `tables/cases.parquet` | Every scan: age, sex, institute (coded `a` to `j`), scanner, kVp, study type, pathology, voxel spacing, `eligible` and `exclusion_reason` |
+| `tables/pipeline/` | All computed measurements: four aortic diameter methods (outer wall / lumen, axial / centerline-orthogonal) on the ground-truth (`_ref`) and model (`_pred`) masks, organ volumes, Dice per structure, Merlin embeddings |
+| `cohorts/<name>/` | The SlicePoint input contract (`features`, `labels`, `predictions`, `embeddings` parquet, joined on `case_id`) for three cohorts below |
+| `vendor_datasheet/aaa-baseline-v0.json` | Summary statistics of `vendor_train` only: what a vendor might disclose about its training data |
+| `manifest.json` | Counts and sha256 of every table |
+
+`case_id` is TotalSegmentator's own image id (`s0001`...), so every row traces back to
+the source dataset. The source has no patient id; each scan is treated as one patient.
+
+### Cohorts
+
+| Cohort | Scans | AAA | Use |
+|---|---|---|---|
+| `all` | 555 | 60 | Every eligible, labelled scan |
+| `vendor_train` | 333 | 36 | Stands in for the data a vendor trained on |
+| `site_retrospective` | 222 | 24 | Stands in for a hospital's retrospective pull ("the last 6 to 9 months of abdominal CTs") |
+
+The two halves are a random split stratified on AAA and sex (not on institute), so they
+come from the same population: a fair check should not find a meaningful difference. In practice a hospital
+never sees the vendor's rows, only something like `vendor_datasheet/`. For sites that do
+differ (other scanners, thick slices, different labelling rules, repeat patients), see
+[slicepoint-hospitals](https://huggingface.co/datasets/slicepoint/slicepoint-hospitals).
+
+12 scans are not in the cohorts; `tables/cases.parquet` gives each reason (5 fail the
+eligibility rule, 6 have no measurable infrarenal diameter, 1 is a thorax CT). Scans the
+baseline model fails on (for example Dice 0) are kept: a real cohort contains them.
+
+## How the values were made
+
+- **Labels:** `max_aortic_diameter_mm` is the maximum infrarenal outer-wall diameter,
+  measured perpendicular to the centerline of the ground-truth aorta mask. `aaa` is
+  diameter >= 30 mm; `aaa_size_class` is `none`, `30-54mm` or `>=55mm`.
+- **Predictions (baseline model):** the same measurement on the TotalSegmentator `total`
+  model's aorta mask, same 30 mm rule. Null means the model gave no answer.
+- **Features:** scanner and acquisition fields come from the TotalSegmentator metadata
+  (v3.0.0 adds slice thickness). Contrast phase is predicted. `study_description` and
+  `protocol_name` are **synthetic**: the source has none, so they are drawn from a
+  vocabulary of realistic orderables. HU and organ volumes come from the masks.
+- **Embeddings:** 2048-dimensional image embeddings from the Merlin CT encoder.
+- **Images:** unchanged voxels and affines; four free-text NIfTI header fields emptied.
+
+## Download
+
+```bash
+hf download slicepoint/slicepoint-aaa-ct --repo-type dataset --include "cohorts/*" "vendor_datasheet/*"   # tables only, ~20 MB
+hf download slicepoint/slicepoint-aaa-ct --repo-type dataset --include "masks/aorta/*"                    # one structure
+hf download slicepoint/slicepoint-aaa-ct --repo-type dataset                                              # everything, ~17 GB
+```
+
+```python
+from datasets import load_dataset
+labels = load_dataset("slicepoint/slicepoint-aaa-ct", "labels", split="site_retrospective")
+```
+
+Run SlicePoint on the demo pair:
+
+```bash
+slicepoint assess --data cohorts/site_retrospective --site-id site \
+    --reference-dir cohorts/vendor_train --reference-site-id vendor --html report.html
+```
+
+## Source, license and citation
+
+Built from the **TotalSegmentator dataset v2.0.1** (Wasserthal J. et al., University
+Hospital Basel, [doi:10.5281/zenodo.10047292](https://doi.org/10.5281/zenodo.10047292)),
+with acquisition details from v3.0.0
+([doi:10.5281/zenodo.22688904](https://doi.org/10.5281/zenodo.22688904)), licensed
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). This dataset is a modified
+version (subset, header fields emptied, derived tables added) by Asher Informatics PBC
+and is released under CC BY 4.0. Segmentations by the TotalSegmentator `total` model
+(Apache-2.0). Embeddings by [Merlin](https://huggingface.co/stanfordmimi/Merlin) (MIT).
+
+Please cite TotalSegmentator:
+
+```bibtex
+@article{wasserthal2023totalsegmentator,
+  title   = {TotalSegmentator: Robust Segmentation of 104 Anatomic Structures in CT Images},
+  author  = {Wasserthal, Jakob and Breit, Hanns-Christian and Meyer, Manfred T. and others},
+  journal = {Radiology: Artificial Intelligence},
+  volume  = {5}, number = {5}, year = {2023},
+  doi     = {10.1148/ryai.230024}
+}
+```
+
+The scans came out of the 2026 Nucleate Pittsburgh hackathon, where SlicePoint started.
