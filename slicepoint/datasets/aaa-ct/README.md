@@ -40,7 +40,7 @@ the TotalSegmentator dataset. The baseline predictions apply the same rule to ma
 the public TotalSegmentator model. The scans were collected through University Hospital Basel but come from
 10 coded imaging institutes and 15 scanner models (Siemens, Philips, GE); the `institute`
 column in `tables/cases.parquet` says which. It is the canonical dataset of
-[SlicePoint](https://github.com/AshMatics/asher-aneurisk-hack-2026/tree/main/slicepoint),
+[SlicePoint](https://github.com/AshMatics/slicepoint),
 an open-source tool that checks whether an imaging AI model fits a hospital's patients
 and scanners before it is switched on.
 
