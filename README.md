@@ -60,9 +60,10 @@ of the work listed in that row is pending.
 
 | Contributor | Contributed | MIT affirmed |
 |---|---|---|
-| Yajushi Khurana (student team) | The original proof of concept: notebooks and monitoring scripts in `slicepoint/python_notebooks/` | Pending |
-| Umang Pandey (student team) | The aorta segmentation and comparison service in `slicepoint/segmentation/` | Pending |
-| Other student team members | The hackathon design and presentation | Pending |
+| Yajushi Khurana (PhD student, Carnegie Mellon University and University of Pittsburgh) | The original proof of concept: notebooks and monitoring scripts in `slicepoint/python_notebooks/` | Pending |
+| Umang Pandey (graduate student, Bioengineering, Carnegie Mellon University) | The aorta segmentation and comparison service in `slicepoint/segmentation/` | Pending |
+| Manya Natakala (University of Pittsburgh) | The hackathon design and presentation | Pending |
+| Evangeline Gulea (University of Pittsburgh) | The hackathon design and presentation | Pending |
 | Asher Informatics PBC (John Kalafut, with AI assistance) | The rebuild: schemas, core, API, viewer, datasets, documentation | Yes (copyright holder) |
 
 To affirm, a contributor sends Asher Informatics (or posts on the repository's license issue) this sentence:
