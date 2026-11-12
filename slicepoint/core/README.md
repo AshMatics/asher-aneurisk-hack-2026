@@ -78,7 +78,10 @@ slicepoint assess --data DIR --site-id ID [--site-name NAME]
                   (--reference-profile PROFILE_DIR | --reference-dir DIR --reference-site-id ID)
                   --out result.json [--html report.html] [--legacy-json poc.json] [--profile threshold_profile.json]
                   [--on-inconsistency raise|drop_and_note] [--show-provisional-scores] [--json] [--debug]
-slicepoint validate FILE [--type MODEL]     # AssessmentResult, ThresholdProfile, reference.json or a legacy POC file
+slicepoint datasheet check --data DIR --site-id ID --datasheet vendor_datasheet.json
+                  [--out comparison.json] [--scope-broader] [--json]   # exit 3 if anything differs or is outside coverage
+slicepoint validate FILE [--type MODEL]     # AssessmentResult, ThresholdProfile, reference.json, VendorDatasheet,
+                                            # a datasheet comparison or a legacy POC file
 slicepoint schema [MODEL] [--list]          # JSON Schema (default AssessmentResult)
 ```
 
@@ -159,6 +162,7 @@ the copy being rebuilt: run `pnpm build:core` in `slicepoint/viewer`.
 | `checks` | `CheckRegistry`, `CheckSpec` (descriptor + function + requirements + factor-to-sub-factor map), `CheckContext` (shared lazy analyses), and the five checks in `checks/builtin.py` |
 | `params` | Typed access to a `ThresholdProfile`. Checks read every threshold through it; a missing key raises `MissingThresholdError`. |
 | `assessment` | `Assessment(...).run()`: the sequential local runner. Each step records ok, skipped or failed. Returns an `AssessmentReport` wrapping `slicepoint_schemas.AssessmentResult` (`to_json` / `write_json`, provisional scores stripped by default; `to_html` / `write_html`, `summary`). Also `strip_provisional_scores`. |
+| `datasheet` | `compare_to_datasheet(data, datasheet)`: tests a site against a `VendorDatasheet` (summary statistics only). Per variable, **coverage** (share of site scans outside the disclosed range or in unlisted categories) and **equality** (chi-square on counts, or on the datasheet's own histogram bins or quartiles; Welch t from summary statistics when only mean/SD are given; age bands against shares derived from the datasheet's age summary), with TVD or SMD as the effect size. A difference needs p < alpha and an effect above the minimum (`DatasheetCheckParams`, provisional). `--scope-broader` reports differences as expected when the datasheet describes a wider population. Returns `DatasheetComparison`. Separate from the five checks and the verdict for now. |
 | `strata` | `stratified_table` and `cases_to_review`: build the contract `Strata` and `CasesToReview` models from the per-scan table during `run()` |
 | `ports` | `ServicePort` protocol and service names (segmentation, OpenCPU, FORGE PGM, embedding). Declared only; an absent service makes its step skipped. |
 | `legacy` | `to_slicepoint_v0`: export to the POC `<hospital>_slicepoint.json` (`SlicePointFileV0`) |
@@ -226,6 +230,12 @@ environment, and the POC's own output for hospital_c differed in the second deci
 
 ## Known gaps
 
+- **Datasheet checks stand alone.** `slicepoint datasheet check` is not part of `assess`,
+  the verdict, the HTML report or the viewer yet. Its decision lines (alpha 0.01, TVD 0.10,
+  SMD 0.25, 2% outside coverage) are uncalibrated. Age is tested on decade bands against
+  shares derived from the datasheet (histogram, else a skew-normal fitted to the quartiles,
+  else a normal), so it is marked approximate. Repeat scans of one person are counted as
+  separate scans.
 - **Reference data is a sibling site.** The reference is hospital_a, not the model's
   training distribution (ADR open question 4). `ReferenceProfile` is the container, not
   the answer.

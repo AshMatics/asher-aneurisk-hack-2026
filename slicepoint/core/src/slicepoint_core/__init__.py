@@ -18,7 +18,7 @@ Command line: ``slicepoint --help`` (see :mod:`slicepoint_core.cli`).
 
 from __future__ import annotations
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 
 from . import report, stats  # noqa: E402
 from .assessment import SELF_COMPARISON_NOTE, Assessment, AssessmentReport, strip_provisional_scores  # noqa: E402

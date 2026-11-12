@@ -249,6 +249,41 @@ def _cmd_reference_build(args: argparse.Namespace) -> int:
     return EXIT_GO
 
 
+def _load_datasheet(path: str) -> Any:
+    from slicepoint_schemas.vendor_datasheet import VendorDatasheet
+
+    p = Path(path)
+    if not p.is_file():
+        raise _UsageError(f"{p}: datasheet file not found")
+    try:
+        return VendorDatasheet.model_validate_json(p.read_text(encoding="utf-8"))
+    except ValidationError as exc:
+        raise _UsageError(f"{p}: not a valid VendorDatasheet: {_first_error(exc)}") from exc
+
+
+def _cmd_datasheet_check(args: argparse.Namespace) -> int:
+    from .datasheet import Status, compare_to_datasheet, format_text
+
+    datasheet = _input_guard(lambda: _load_datasheet(args.datasheet))
+    data = _input_guard(lambda: _load_site(args.data, args.site_id, args.on_inconsistency))
+    result = compare_to_datasheet(data, datasheet, scope_broader=args.scope_broader)
+    outputs: dict[str, str] = {}
+    if args.out:
+        out = Path(args.out)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(result.model_dump_json(indent=2) + "\n", encoding="utf-8")
+        outputs["comparison"] = str(out)
+    flagged = result.by_status(Status.OUTSIDE_COVERAGE) + result.by_status(Status.DIFFERS)
+    code = EXIT_REVIEW if flagged else EXIT_GO
+    payload = {
+        "ok": True, "exit_code": code, "site_id": result.site_id, "datasheet_id": result.datasheet_id,
+        "status": {v.variable: v.status.value for v in result.variables}, "outputs": outputs,
+    }
+    text = format_text(result) + (f"\n\nSaved to {outputs['comparison']}" if outputs else "")
+    _emit(args, payload, text)
+    return code
+
+
 def _cmd_assess(args: argparse.Namespace) -> int:
     from slicepoint_schemas.verdict import VerdictOutcome
 
@@ -319,15 +354,20 @@ def _detect_model(data: Any) -> str | None:
         return "ThresholdProfile"
     if "average" in data and "note" in data:
         return "DiceSummaryV0"
+    if "datasheet_id" in data and "variables" in data and "format" not in data:
+        return "VendorDatasheet"
+    if str(data.get("format", "")).startswith("slicepoint.datasheet_comparison/"):
+        return "DatasheetComparison"
     return None
 
 
 def _models() -> dict[str, type[BaseModel]]:
     from slicepoint_schemas.export import TOP_LEVEL_MODELS
 
+    from .datasheet import DatasheetComparison
     from .reference import ReferenceSummary
 
-    return {**TOP_LEVEL_MODELS, "ReferenceSummary": ReferenceSummary}
+    return {**TOP_LEVEL_MODELS, "ReferenceSummary": ReferenceSummary, "DatasheetComparison": DatasheetComparison}
 
 
 def _cmd_validate(args: argparse.Namespace) -> int:
@@ -452,6 +492,33 @@ def build_parser() -> argparse.ArgumentParser:
                    help="keep the unvalidated 0-100 scores in result.json and show them in the report and summary "
                         "(left out by default; ADR 0001: not for hospitals until ratified)")
     a.set_defaults(func=_cmd_assess)
+
+    dsp = sub.add_parser("datasheet", help="compare your site with a vendor datasheet",
+                         description="Vendor datasheets (summary statistics of a model's training data).",
+                         formatter_class=fmt)
+    ds_sub = dsp.add_subparsers(dest="ds_command", metavar="ACTION", parser_class=_Parser)
+    ds_sub.required = True
+    dc = ds_sub.add_parser(
+        "check", parents=[common], formatter_class=fmt,
+        help="test a site's data against a VendorDatasheet JSON",
+        description="Compare one site's data folder with a VendorDatasheet, variable by variable: coverage (is "
+                    "the site inside what the model saw?) and equality (is it distributed the same way?). Uses only "
+                    "the datasheet's summary statistics. `slicepoint schema VendorDatasheet` shows the format.",
+        epilog="example:\n  slicepoint datasheet check --data data/practice/hospital_d --site-id hospital_d "
+               "--datasheet slicepoint/schemas/examples/aaa-baseline-v0.vendor-datasheet.json\n\n"
+               "exit codes:\n  0  no variable outside coverage or different\n  3  at least one variable outside "
+               "coverage or different: needs human review\n  1  usage or input error\n  2  internal failure\n",
+    )
+    dc.add_argument("--data", required=True, metavar="DIR", help="your site's data folder")
+    dc.add_argument("--site-id", required=True, metavar="ID", help="stable id for your site, e.g. hospital_b")
+    dc.add_argument("--datasheet", required=True, metavar="FILE", help="VendorDatasheet JSON")
+    dc.add_argument("--out", metavar="JSON", default=None, help="also write the full comparison JSON here")
+    dc.add_argument("--scope-broader", action="store_true",
+                    help="the datasheet describes a broader population than your site (e.g. all CT vs your "
+                         "abdominal CT): report distribution differences as expected, keep coverage findings")
+    dc.add_argument("--on-inconsistency", choices=("raise", "drop_and_note"), default="raise",
+                    help="if the parquet files disagree on case_ids: stop (default) or drop and note")
+    dc.set_defaults(func=_cmd_datasheet_check)
 
     v = sub.add_parser(
         "validate", parents=[common], formatter_class=fmt,
