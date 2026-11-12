@@ -9,7 +9,7 @@
 # workspace uv.lock (--frozen): the image installs exactly what the tests ran against.
 # The GPU segmentation worker is a separate image (segmentation/Dockerfile).
 
-FROM python:3.12-slim AS build
+FROM python:3.15-slim AS build
 COPY --from=ghcr.io/astral-sh/uv:0.5.13 /uv /bin/uv
 ENV UV_PROJECT_ENVIRONMENT=/opt/venv UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=never
 WORKDIR /src
@@ -19,7 +19,7 @@ COPY core ./core
 COPY api ./api
 RUN uv sync --frozen --no-dev --no-editable --package slicepoint-api
 
-FROM python:3.12-slim
+FROM python:3.15-slim
 RUN useradd --uid 10001 --no-create-home --shell /usr/sbin/nologin slicepoint \
     && mkdir -p /data /results && chown slicepoint /results
 COPY --from=build /opt/venv /opt/venv
