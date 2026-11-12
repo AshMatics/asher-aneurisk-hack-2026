@@ -1,5 +1,6 @@
 <h1 align="center"><img src=".github/assets/slicepoint-logo.png" alt="SlicePoint: Slice. Spot. Decide." width="600"></h1>
 
+[![Release](https://img.shields.io/github/v/tag/AshMatics/slicepoint?label=release&sort=semver)](CHANGELOG.md)
 [![CI](https://github.com/AshMatics/slicepoint/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AshMatics/slicepoint/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Dependabot](https://img.shields.io/badge/dependabot-enabled-025E8C?logo=dependabot)](.github/dependabot.yml)
@@ -18,9 +19,11 @@ model is abdominal aortic aneurysm (AAA) detection on CT; the checks are not spe
 SlicePoint began as the runner-up project at the 2026 Nucleate Pittsburgh hackathon and is
 being rebuilt here as open source by Asher Informatics PBC with the student team.
 
+**Version 0.2.0** (last updated 2026-11-12); see [CHANGELOG.md](CHANGELOG.md).
+
 **Start here:** [slicepoint/README.md](slicepoint/README.md) has the quick start (install,
 run one assessment, open the report), the package map and how to run the service with
-its web UI. Changes are in [CHANGELOG.md](CHANGELOG.md).
+its web UI.
 
 ## What is in this repository
 
