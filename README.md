@@ -1,4 +1,4 @@
-# SlicePoint
+<h1 align="center"><img src=".github/assets/slicepoint-logo.png" alt="SlicePoint: Slice. Spot. Decide." width="600"></h1>
 
 [![CI](https://github.com/AshMatics/slicepoint/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AshMatics/slicepoint/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
