@@ -1,0 +1,22 @@
+# Weekly dependency updates, grouped so they arrive as a few PRs. Security alerts and their
+# fix PRs come from the repository's Dependabot security settings, independently of this file.
+version: 2
+updates:
+  - package-ecosystem: uv
+    directory: /slicepoint
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 5
+    groups:
+      python-minor-and-patch: { update-types: [minor, patch] }
+  - package-ecosystem: npm
+    directory: /slicepoint/viewer
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 5
+    groups:
+      npm-minor-and-patch: { update-types: [minor, patch] }
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: monthly }
+  - package-ecosystem: docker
+    directories: [/slicepoint, /slicepoint/segmentation]
+    schedule: { interval: monthly }

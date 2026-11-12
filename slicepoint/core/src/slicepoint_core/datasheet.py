@@ -35,14 +35,12 @@ import math
 import re
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass
-from typing import Literal
 
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
 from scipy import stats as sst
 from slicepoint_schemas.vendor_datasheet import (
-    DATASHEET_COMPARISON_FORMAT as FORMAT,
     CategoricalSummary,
     CoverageResult,
     DatasheetComparison,

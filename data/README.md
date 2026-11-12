@@ -1,18 +1,27 @@
 # Data
 
-The data is not stored in this repo. See [../docs/getting-started.md](../docs/getting-started.md) for where it is, when each part is released and how to download it.
+Sample data for SlicePoint lives here, outside git (everything in this folder except this
+README is ignored, so it cannot be committed by accident).
 
-Unzip downloads into this folder. You should get:
+## The practice hospitals (`data/practice/`)
 
+The SlicePoint tests, notebooks and examples use the hackathon's practice hospitals. They are
+published on Hugging Face as
+[slicepoint/slicepoint-hospitals](https://huggingface.co/datasets/slicepoint/slicepoint-hospitals).
+Download the tables (about 10 MB) into `data/practice/`:
+
+```bash
+pip install -U "huggingface_hub[cli]"
+hf download slicepoint/slicepoint-hospitals --repo-type dataset --local-dir data/practice \
+    --include "hospital_*/*.parquet" --include "manifest.json"
 ```
-data/
-  practice/
-    manifest.json        what was released and when
-    CREDITS.md           data sources and licenses
-    hospital_a/ ...      one folder per hospital (files listed in the data card)
-    tutorial_keys/       early answer keys
-```
 
-Files here are ignored by git, so they cannot be committed by accident.
+You get one folder per hospital (`hospital_a` to `hospital_g`), each with
+`features.parquet`, `labels.parquet`, `predictions.parquet` and `embeddings.parquet`, joined
+on `case_id`, plus `manifest.json` (row counts and sha256 of the `hospital_a` to `hospital_e`
+tables as first released). Add `--include "hospital_c/images/*" --include "hospital_c/masks/*"`
+for one site's CT volumes and aorta masks, or leave out `--include` for everything (about 14 GB).
 
-Files and columns: [../docs/data-card.md](../docs/data-card.md).
+Columns and what each hospital hides: the
+[dataset card](https://huggingface.co/datasets/slicepoint/slicepoint-hospitals) and
+[DATASETS.md](../DATASETS.md).
