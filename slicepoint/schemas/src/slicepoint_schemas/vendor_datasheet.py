@@ -279,6 +279,8 @@ KNOWN_VARIABLES: Mapping[str, tuple[Literal["continuous", "categorical"], str]] 
     "tube_current_ma": ("continuous", "Tube current in mA."),
     "study_type": ("categorical", "Study or protocol type as the source groups it."),
     "body_region": ("categorical", "Body region scanned."),
+    "race": ("categorical", "Race as the source reports it (categories vary by country and source)."),
+    "ethnicity": ("categorical", "Ethnicity as the source reports it (e.g. Hispanic or Latino / not)."),
     "site": ("categorical", "Contributing site or institute (codes are the source's own)."),
     "pathology": ("categorical", "Main pathology group as the source reports it."),
     "max_aortic_diameter_mm": ("continuous", "`labels.max_aortic_diameter_mm`."),

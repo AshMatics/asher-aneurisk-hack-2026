@@ -101,8 +101,14 @@ def test_known_variable_must_use_its_kind() -> None:
 
 def test_unknown_variable_name_is_accepted() -> None:
     d = minimal()
-    d["variables"][1]["variable"] = "ethnicity_reported"
-    assert VendorDatasheet.model_validate(d).variable("ethnicity_reported") is not None
+    d["variables"][1]["variable"] = "insurance_type"
+    assert VendorDatasheet.model_validate(d).variable("insurance_type") is not None
+
+
+def test_race_and_ethnicity_are_known_categoricals() -> None:
+    assert KNOWN_VARIABLES["race"][0] == "categorical"
+    assert KNOWN_VARIABLES["ethnicity"][0] == "categorical"
+    _invalid(lambda d: d["variables"][0].update(variable="race"), "race must be a categorical summary")
 
 
 def test_rejects_n_beyond_n_scans() -> None:
