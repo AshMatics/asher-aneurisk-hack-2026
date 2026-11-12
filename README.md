@@ -1,68 +1,74 @@
-# SlicePoint (from the IID Is a Lie hackathon)
+# SlicePoint
 
-The 2026 Nucleate Pittsburgh hackathon is over. This repo is now the home of **SlicePoint**, the runner-up project, which is being rebuilt here as open source. SlicePoint checks whether an imaging AI model fits a hospital's patients and scanners before go-live, and returns a GO / BORDERLINE / NO-GO verdict with the evidence behind it.
+[![CI](https://github.com/AshMatics/slicepoint/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AshMatics/slicepoint/actions/workflows/ci.yml)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Dependabot](https://img.shields.io/badge/dependabot-enabled-025E8C?logo=dependabot)](.github/dependabot.yml)
+[![Python 3.12](https://img.shields.io/badge/python-3.12-3776AB?logo=python&logoColor=white)](CHANGELOG.md#known-issues)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Dataset: SlicePoint AAA CT](https://img.shields.io/badge/%F0%9F%A4%97%20dataset-slicepoint--aaa--ct-yellow)](https://huggingface.co/datasets/slicepoint/slicepoint-aaa-ct)
+[![Dataset: SlicePoint Hospitals](https://img.shields.io/badge/%F0%9F%A4%97%20dataset-slicepoint--hospitals-yellow)](https://huggingface.co/datasets/slicepoint/slicepoint-hospitals)
 
-**To start, go to [slicepoint/README.md](slicepoint/README.md).** It has the quick start (install, run one assessment, open the report), the package map, and how to run the service with the live web UI. The practice data goes in `data/practice/` (see [data/README.md](data/README.md)).
+SlicePoint checks whether an imaging AI model fits a hospital's patients and scanners
+before it is switched on. It compares a sample of the site's scans with a reference (the
+data the model was validated on) and returns a **GO / BORDERLINE / NO-GO** verdict, five
+health checks with their evidence, AI performance by group, cases to review and, when the
+vendor publishes one, a comparison with the vendor's training-data datasheet. The first
+model is abdominal aortic aneurysm (AAA) detection on CT; the checks are not specific to AAA.
 
-The original hackathon brief is kept below for context.
+SlicePoint began as the runner-up project at the 2026 Nucleate Pittsburgh hackathon and is
+being rebuilt here as open source by Asher Informatics PBC with the student team.
 
----
+**Start here:** [slicepoint/README.md](slicepoint/README.md) has the quick start (install,
+run one assessment, open the report), the package map and how to run the service with
+its web UI. Changes are in [CHANGELOG.md](CHANGELOG.md).
 
-# The hackathon brief: IID Is a Lie
+## What is in this repository
 
-Sponsor problem for the 2026 Nucleate Pittsburgh hackathon, presented by **Asher Informatics PBC** and **Aneurisk Inc.**
+| Path | What |
+|---|---|
+| [`slicepoint/schemas/`](slicepoint/schemas) | `slicepoint-schemas`: the data contract (Pydantic models, JSON Schemas) |
+| [`slicepoint/core/`](slicepoint/core) | `slicepoint-core`: the analysis library, the `slicepoint` command line, the HTML report |
+| [`slicepoint/api/`](slicepoint/api) | `slicepoint-api`: the FastAPI service, with the web UI bundled |
+| [`slicepoint/viewer/`](slicepoint/viewer) | The React result viewer (a single offline file, and the live UI for the API) |
+| [`slicepoint/segmentation/`](slicepoint/segmentation) | `slicepoint-model`: the aorta segmentation worker (GPU, TotalSegmentator) |
+| [`slicepoint/docs/`](slicepoint/docs) | Architecture decisions, the data contract, a hospital guide, references |
+| [`slicepoint/datasets/`](slicepoint/datasets) | The source of the Hugging Face dataset cards |
+| [`slicepoint/notebooks/`](slicepoint/notebooks) | The quick-start notebook |
+| [`slicepoint/python_notebooks/`](slicepoint/python_notebooks) | The student team's original proof of concept, kept as written |
+| [`data/`](data) | Where sample data goes (not in git); [data/README.md](data/README.md) says how to download it |
+| [`nucleate-hack-2026/`](nucleate-hack-2026) | The hackathon material: brief, documents, starter and federated harness |
 
-> [docs/README.md](docs/README.md) is the guide to the hackathon documents. For the data, go to [docs/getting-started.md](docs/getting-started.md).
+## Datasets
 
-## The problem
+Two public datasets on Hugging Face, both CC BY 4.0 and derived from the TotalSegmentator
+dataset (University Hospital Basel). [DATASETS.md](DATASETS.md) describes them in full.
 
-Nearly every medical AI model assumes its training and test data are independent and identically distributed (IID). Usually that gets justified with "we shuffled it." In practice, many scans come from the same patient, hospitals use different scanners and protocols, and readers measure the same finding differently. Left unmeasured and unmitigated, these problems produce impressive accuracy on test data sets but cause an AI system to perform very differently on data in a particular clinic. And often the performance is worse in sites and patient subgroups that can lead to further marginalization or biased care. Tools like Cleanlab catch label errors and duplicates in data cohorts. But there are few, if any, integrated tools that help answer the bigger questions: can this dataset support the claims made about it, how and in what ways does a training cohort violate the IID assumption, and does the training data resemble the patients a model will serve?
+| Dataset | What | Size |
+|---|---|---|
+| [slicepoint/slicepoint-aaa-ct](https://huggingface.co/datasets/slicepoint/slicepoint-aaa-ct) | 567 abdominal CT scans with ground-truth masks, aortic measurements, AAA labels, a baseline model's predictions and embeddings; cohorts for a vendor/site demo; vendor datasheets | ~17 GB (tables ~20 MB) |
+| [slicepoint/slicepoint-hospitals](https://huggingface.co/datasets/slicepoint/slicepoint-hospitals) | The seven simulated hospitals from the hackathon, with planted problems and the answer keys; used by the tests | ~14 GB (tables ~10 MB) |
 
-## The weekend
+## License and contributors
 
-**Where's 'waldo' features .** You are given five practice hospitals built from real abdominal CT studies, assembled to look like data seen 'in the wild'. Most of them hide at least one flaw that would affect an AI model trained or tested on them. At least one is clean (or as close to our best assumptions about training data as we could make it). Find these flaws with your solution, name what kind of problem each is, and be able to explain these flaws such that a user (like a vascular surgeon) would understand its importance when using an AI trained, or tested, with those data. You get two more hospitals Sunday morning. See [docs/hunt-rules.md](docs/hunt-rules.md).
+The code is released under the [MIT License](LICENSE). The datasets keep their own
+license (CC BY 4.0, from TotalSegmentator); see [DATASETS.md](DATASETS.md).
 
-**The customers.** Pick one customer type and orient your solution to their persona needs. These customer types will be available to interact with throughout the weekend during scheduled office hours or ad hoc. Our notifications may be off at 3AM though. See [docs/personas.md](docs/personas.md).
+SlicePoint started as a student project. Under the hackathon terms each contributor owns
+their work, so each is asked to confirm in writing that their contributions are licensed
+under MIT (ADR 0001, open question 1). Until every row below reads "affirmed", the license
+of the work listed in that row is pending.
 
-| Customer | Their question |
-| --- | --- |
-| Regulated developer | "Characterize my test and external validation cohorts for my regulatory and clinical team." |
-| Hospital AI committee | "Will this AAA model work on our patients, and what should we watch after go-live?" |
-| Data network | "I have six hospitals and can't move their data. Can I audit them anyway?" |
+| Contributor | Contributed | MIT affirmed |
+|---|---|---|
+| Yajushi Khurana (PhD student, Carnegie Mellon University and University of Pittsburgh) | The original proof of concept: notebooks and monitoring scripts in `slicepoint/python_notebooks/` | Pending |
+| Umang Pandey (graduate student, Bioengineering, Carnegie Mellon University) | The aorta segmentation and comparison service in `slicepoint/segmentation/` | Pending |
+| Manya Natakala (University of Pittsburgh) | The hackathon design and presentation | Pending |
+| Evangeline Gulea (University of Pittsburgh) | The hackathon design and presentation | Pending |
+| Asher Informatics PBC (John Kalafut, with AI assistance) | The rebuild: schemas, core, API, viewer, datasets, documentation | Yes (copyright holder) |
 
-**You decide the form and function of the solution.** It could be purely an SDK/library, a report generator, an agent that interrogates a dataset, a visualization, a deployment-match tool, or a holographic projector.
+To affirm, a contributor sends Asher Informatics (or posts on the repository's license issue) this sentence:
+*"I agree that my contributions to SlicePoint (github.com/AshMatics/slicepoint) are licensed
+under the MIT License."*
 
-## The data (preview)
-
-Abdominal CT drawn from public datasets, resampled into virtual hospitals with heterogeneity and structure we established for this exercise.
-
-- **Fast lane (default):** per-case tables, image embeddings, baseline model predictions. Under five minutes from download to first result.
-- **Deep lane (opt-in):** CT volumes and aorta masks (NIfTI) for the same cases. The images let you check, in the pixels, what the tables suggest.
-
-Schema: [docs/data-card.md](docs/data-card.md).
-
-## Compute
-
-Each team gets cloud GPU credits, and each participant gets LLM inference and search API credits. Details at kickoff and see the Slack channel.
-
-## Repo layout
-
-```
-slicepoint/ SlicePoint: schemas, core library + CLI, API, viewer, segmentation worker
-docs/       hackathon documentation; start at docs/README.md
-harness/    federated audit harness: run your audit inside each hospital, return only summaries
-starter/    starter notes
-data/       download instructions (data itself is hosted elsewhere)
-```
-
-## Background reading
-
-Start with [docs/background.md](docs/background.md), then [docs/measures.md](docs/measures.md) and [docs/directions.md](docs/directions.md). The full list, with what each document is for, is in [docs/README.md](docs/README.md).
-
-## Ownership
-
-Anything promising that comes out of the weekend, whether a research direction, a paper or a commercial idea, is yours to pursue. The work stays open, and nobody gets exclusive rights to it, sponsors included.
-
-## License
-
-Code and documentation in this repo are under the [MIT License](LICENSE). The hackathon data is not in this repo and keeps its source licenses, listed in `CREDITS.md` inside each download.
+**Not for clinical use.** SlicePoint supports a decision; it is not a medical device and
+its outputs are not medical advice.

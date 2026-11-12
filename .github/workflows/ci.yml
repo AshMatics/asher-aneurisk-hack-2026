@@ -1,0 +1,94 @@
+# SlicePoint CI: lint, type-check and test the Python packages and the viewer, and check
+# that every generated file (JSON Schemas, openapi.json, the TypeScript contract and client)
+# is current. The practice data is the public Hugging Face dataset slicepoint/slicepoint-hospitals.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    name: Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    # Python 3.10 resolves older numpy/scipy/scikit-learn, and four parity tests then differ
+    # (see CHANGELOG, Known issues). It runs, but does not block, until that is resolved.
+    continue-on-error: ${{ matrix.python == '3.10' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.12"]
+    defaults:
+      run:
+        working-directory: slicepoint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.5.13"
+          python-version: ${{ matrix.python }}
+          enable-cache: true
+      - name: Install the workspace
+        run: uv sync --all-packages --all-extras --frozen
+      - name: Download the practice data
+        uses: actions/cache@v4
+        id: practice
+        with:
+          path: data/practice
+          key: practice-${{ hashFiles('data/README.md') }}
+      - if: steps.practice.outputs.cache-hit != 'true'
+        working-directory: .
+        run: |
+          uvx --from "huggingface_hub[cli]==2.4.0" hf download slicepoint/slicepoint-hospitals --repo-type dataset \
+            --local-dir data/practice --include "hospital_*/*.parquet" --include "manifest.json"
+      - name: Ruff
+        run: uvx ruff@0.8.4 check .
+      - name: mypy
+        # Type stubs differ by Python version (the lock picks older numpy/pandas stubs for 3.10),
+        # so type-check once, on the newest; the tests run on both.
+        if: matrix.python == '3.12'
+        run: |
+          uv run --directory schemas mypy
+          uv run --directory core mypy
+          uv run --directory api mypy
+      - name: Generated files are current
+        run: |
+          uv run --directory schemas slicepoint-schemas-export --check
+          uv run --directory api slicepoint-api-openapi --check
+      - name: pytest
+        run: |
+          uv run --directory schemas pytest -q
+          uv run --directory core pytest -q
+          uv run --directory api pytest -q
+
+  viewer:
+    name: Viewer
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: slicepoint/viewer
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: slicepoint/viewer/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: slicepoint/viewer/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check:contract
+      - run: pnpm check:api
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test

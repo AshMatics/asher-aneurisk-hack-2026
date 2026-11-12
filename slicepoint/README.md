@@ -13,7 +13,7 @@ rebuilt here as open source. The architecture is in
 
 ## Quick start
 
-You need Python 3.10+ and the practice data unzipped into `data/practice/` at the repo
+You need Python 3.10+ and the practice data downloaded into `data/practice/` at the repo
 root (see [data/README.md](../data/README.md)). Run these from the repo root.
 
 **1. Install and run one assessment (CLI):**

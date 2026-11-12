@@ -14,3 +14,20 @@
 [tool.uv.workspace]
 members = ["schemas", "core", "api"]
 exclude = ["segmentation"]
+
+# Lint (CI runs `ruff check .` from slicepoint/). A small, high-signal rule set: syntax
+# errors, undefined names, unused imports and statement-level mistakes.
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+extend-exclude = [
+    "core/tests/notebook_reference.py",   # a line-by-line transcription of the POC notebook, kept for parity
+    "python_notebooks",                   # the student team's original POC notebooks and scripts, kept as written
+    "**/node_modules/**",
+]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+
+[tool.ruff.lint.per-file-ignores]
+"segmentation/tests/*" = ["E702"]   # the student team's compact test style

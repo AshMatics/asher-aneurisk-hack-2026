@@ -29,7 +29,7 @@ Then run the starter script ([starter/README.md](../starter/README.md)). It take
 | [technical-reference.md](technical-reference.md) | The long, careful version of background.md, with the conditions behind each claim and sources | When you need to be precise or cite something |
 | [harness/README.md](../harness/README.md) | The federated audit harness: what may leave a hospital and how to run your audit inside it | Required if you build for the data network; useful for everyone |
 | [starter/README.md](../starter/README.md) | Loading the tables, the example audit, and `hook.py` | Friday night |
-| [data/README.md](../data/README.md) | Where to unzip downloads so git ignores them | When you download |
+| [data/README.md](../../data/README.md) | Where to unzip downloads so git ignores them | When you download |
 
 ## Reading paths by background
 

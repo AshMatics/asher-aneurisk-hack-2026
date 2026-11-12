@@ -94,6 +94,7 @@ have added noise and a few slices dropped, so no file is a byte copy of another.
 | `hospital_<x>/masks/<case_id>_aorta.nii.gz` | Ground-truth aorta mask on the same grid |
 | `hospital_<x>/{features,labels,predictions,embeddings}.parquet` | The SlicePoint input contract, joined on `case_id` |
 | `keys/`, `crosswalk.parquet` | Answer keys, as above |
+| `manifest.json` | The practice release manifest: row counts and sha256 of the `hospital_a` to `hospital_e` tables as first released (they are unchanged) |
 
 Column meanings are the same as in SlicePoint AAA CT. Race and ethnicity are not
 recorded in the source, so no hospital differs along those lines and none can be tested
