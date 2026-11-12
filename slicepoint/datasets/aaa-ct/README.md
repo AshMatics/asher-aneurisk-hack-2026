@@ -93,6 +93,14 @@ baseline model fails on (for example Dice 0) are kept: a real cohort contains th
   `total` task) on each CT and applied the same measurement and 30 mm rule to its aorta
   mask. Null means the model gave no answer. `_ref` columns use the ground-truth masks,
   `_pred` columns the model's.
+- **The baseline model has seen most of these scans.** TotalSegmentator was trained on
+  this dataset: of the 567 scans, its own split (`totalsegmentator_split` in
+  `tables/cases.parquet`) marks 491 as training, 21 as validation and 55 as test. So
+  `_pred` results are not an independent test of the model. Here it scores about the same
+  on its test scans as on its training scans (aorta Dice 0.968 vs 0.967; AAA agreement 98%
+  vs 99%), but the test scans include only 4 AAA cases, too few to rule out a difference.
+  For a fair baseline, use the `test` scans; if you train your own model on part of this
+  data, compare it with TotalSegmentator on scans neither model was trained on.
 - **Features:** scanner and acquisition fields come from the TotalSegmentator metadata
   (v3.0.0 adds slice thickness). Contrast phase is predicted. `study_description` and
   `protocol_name` are **synthetic**: the source has none, so they are drawn from a

@@ -58,7 +58,10 @@ are published.
 **Not for clinical use.** AAA labels come from a 30 mm diameter rule on the ground-truth
 aorta masks that ship with TotalSegmentator (at `hospital_e`, a 25 mm lumen rule), not
 from radiologist reads. Predictions apply the same rule to the public TotalSegmentator
-model's masks.
+model's masks; that model was trained on this dataset and has seen most of these scans, so
+its results are not an independent test (see the SlicePoint AAA CT card;
+`crosswalk.parquet` links each case to its scan there, and that card's `tables/cases.parquet` has the
+`totalsegmentator_split`).
 
 ## The hospitals
 
