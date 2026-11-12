@@ -22,7 +22,13 @@ dependencies = [
 [project.optional-dependencies]
 test = ["pytest>=8", "mypy>=1.10", "pandas-stubs>=2.0", "jsonschema>=4.20", "types-jsonschema>=4.20"]
 # Runs slicepoint/notebooks/slicepoint_quickstart.ipynb headlessly in the test suite.
-notebook = ["nbclient>=0.10", "nbformat>=5.10", "ipykernel>=6.29"]
+# Python 3.11+ only: the kernel stack needs tornado, whose fixed release (6.6, Dependabot
+# alerts 11-13) dropped Python 3.10. On 3.10 the notebook test skips.
+notebook = [
+    "nbclient>=0.10; python_version >= '3.11'",
+    "nbformat>=5.10; python_version >= '3.11'",
+    "ipykernel>=6.29; python_version >= '3.11'",
+]
 
 [project.scripts]
 slicepoint = "slicepoint_core.cli:entry_point"

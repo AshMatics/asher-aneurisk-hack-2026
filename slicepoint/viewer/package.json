@@ -60,6 +60,9 @@
       "allowedVersions": {
         "openapi-typescript>typescript": "6"
       }
+    },
+    "overrides": {
+      "minimatch@<11.0.1": "^11.0.1"
     }
   }
 }

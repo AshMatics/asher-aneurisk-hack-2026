@@ -14,6 +14,14 @@ package versions it contains. Packages are not tagged on their own.
 - CI tests Python 3.12 on pushes and pull requests; Python 3.10 runs only on a manual run
   until the known 3.10 discrepancy is fixed (it showed as a failed check on every PR).
 
+### Security
+- Dependabot alerts 11-13 (tornado): core's `notebook` extra now installs only on Python
+  3.11 and newer, because the fixed tornado (6.6) dropped Python 3.10; the lock now holds only
+  tornado 6.6.1. On 3.10 the notebook test skips.
+- Dependabot alert 14 (minimatch, a development-only ESLint dependency): pinned to 11.x with a
+  pnpm override; lint, typecheck and tests pass.
+- Dependabot no longer proposes major `@types/node` updates or Python base-image moves.
+
 ## [0.2.0] - 2026-11-12
 
 The rebuild: SlicePoint as a library, command line, API and web viewer, with public

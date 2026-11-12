@@ -14,9 +14,17 @@ updates:
     open-pull-requests-limit: 5
     groups:
       npm-minor-and-patch: { update-types: [minor, patch] }
+    ignore:
+      # The viewer targets Node 22 (package.json engines); keep the types on the same major.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: monthly }
   - package-ecosystem: docker
     directories: [/slicepoint, /slicepoint/segmentation]
     schedule: { interval: monthly }
+    ignore:
+      # The Python base image moves deliberately (CI and the lock are tested on 3.12), not by bot.
+      - dependency-name: "python"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
