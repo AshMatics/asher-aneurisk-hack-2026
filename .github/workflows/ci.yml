@@ -50,6 +50,9 @@ jobs:
       - name: Ruff
         run: uvx ruff@0.8.4 check .
       - name: mypy
+        # Type stubs differ by Python version (the lock picks older numpy/pandas stubs for 3.10),
+        # so type-check once, on the newest; the tests run on both.
+        if: matrix.python == '3.12'
         run: |
           uv run --directory schemas mypy
           uv run --directory core mypy
@@ -73,6 +76,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: slicepoint/viewer/package.json
       - uses: actions/setup-node@v4
         with:
           node-version: 22
