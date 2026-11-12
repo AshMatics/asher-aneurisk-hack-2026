@@ -20,7 +20,7 @@ from .core import compare_masks, load_volume, predict, require_same_grid
 from .presentation import agreement_assessment, render_comparison
 from .security import SecurityMiddleware, valid_token
 
-app = FastAPI(title='SlicePoint aorta segmentation', version='0.3.0',
+app = FastAPI(title='SlicePoint aorta segmentation', version='0.3.1',
               docs_url=None, redoc_url=None, openapi_url=None)
 app.add_middleware(SecurityMiddleware)
 lock = threading.Lock()
